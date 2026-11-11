@@ -253,6 +253,29 @@ Route::middleware(['auth', 'verified', 'cabang'])->group(function () {
         Route::put('/produk/{produk}', 'update')->name('produk.update');
         Route::get('/cari-akun', 'cariAkun')->name('cari-akun');
     });
+    // BABA Tahap 2b — pesanan online (gudang memproses) & pengaturan toko online
+    Route::prefix('toko-online')->name('toko-online.')->group(function () {
+        Route::controller(\App\Http\Controllers\PesananOnlineController::class)->group(function () {
+            Route::get('/pesanan', 'index')->name('pesanan.index');
+            Route::get('/pesanan/{pesanan}', 'show')->name('pesanan.show');
+            Route::post('/pesanan/{pesanan}/ongkir', 'ongkir')->name('pesanan.ongkir');
+            Route::post('/pesanan/{pesanan}/bayar/{bayar}/terima', 'terimaBukti')->name('pesanan.bukti.terima');
+            Route::post('/pesanan/{pesanan}/bayar/{bayar}/tolak', 'tolakBukti')->name('pesanan.bukti.tolak');
+            Route::get('/pesanan/{pesanan}/bayar/{bayar}/file', 'lihatBukti')->name('pesanan.bukti.file');
+            Route::post('/pesanan/{pesanan}/keluarkan', 'keluarkan')->name('pesanan.keluarkan');
+            Route::post('/pesanan/{pesanan}/sudah-diambil', 'sudahDiambil')->name('pesanan.diambil');
+            Route::post('/pesanan/{pesanan}/batal', 'batal')->name('pesanan.batal');
+        });
+        Route::controller(\App\Http\Controllers\TokoOnlinePengaturanController::class)->group(function () {
+            Route::get('/pengaturan', 'index')->name('pengaturan');
+            Route::put('/pengaturan/umum', 'simpanUmum')->name('pengaturan.umum');
+            Route::post('/pengaturan/rekening', 'simpanRekening')->name('pengaturan.rekening');
+            Route::put('/pengaturan/rekening/{rekening}', 'simpanRekening')->name('pengaturan.rekening.ubah');
+            Route::post('/pengaturan/rekening/{rekening}/aktif', 'aktifRekening')->name('pengaturan.rekening.aktif');
+            Route::post('/pengaturan/tagihan', 'simpanAturan')->name('pengaturan.tagihan');
+            Route::post('/pengaturan/tagihan/{aturan}/nonaktif', 'nonaktifAturan')->name('pengaturan.tagihan.nonaktif');
+        });
+    });
 
     // ===== 4.49 Tahap B1 — PRODUKSI bahan setengah jadi di gudang (porting erp-coffeeshop) =====
     Route::prefix('produksi')->name('produksi.')->controller(\App\Http\Controllers\ProduksiController::class)->group(function () {

@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Api\Member;
 use App\Http\Controllers\Controller;
 use App\Models\ProdukOnline;
 use App\Services\HargaOnlineService;
-use App\Services\StokService;
+use App\Services\PesananOnlineService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -16,7 +16,7 @@ use Illuminate\Http\Request;
  */
 class KatalogController extends Controller
 {
-    public function __invoke(Request $request, HargaOnlineService $harga, StokService $stok): JsonResponse
+    public function __invoke(Request $request, HargaOnlineService $harga, PesananOnlineService $pesanan): JsonResponse
     {
         $member = $request->attributes->get('member_akun');
         if (! $member) {
@@ -31,7 +31,7 @@ class KatalogController extends Controller
             ->whereHas('item', fn ($q) => $q->where('is_active', true))
             ->orderBy('urutan')->orderBy('nama_tampil')->get();
 
-        $data = $produk->map(function (ProdukOnline $p) use ($member, $harga, $stok, $sumber) {
+        $data = $produk->map(function (ProdukOnline $p) use ($member, $harga, $pesanan, $sumber) {
             $h = $harga->untuk($p, $member, $sumber);
             if (! $h) {
                 return null;
@@ -47,7 +47,9 @@ class KatalogController extends Controller
                 'harga'       => $h['harga'],
                 'dasar'       => $h['dasar'],
                 'label_harga' => HargaOnlineService::LABEL[$h['dasar']],
-                'stok'        => $p->item->cabang_id ? max(0, floor($stok->getStok($p->item_id, (int) $p->item->cabang_id))) : 0,
+                'gudang_id'   => (int) $p->item->cabang_id,
+                // stok yang masih bisa dipesan = stok gudang − pesanan yang belum keluar
+                'stok'        => $p->item->cabang_id ? $pesanan->tersedia($p->item_id, (int) $p->item->cabang_id) : 0,
             ];
         })->filter()->values();
 

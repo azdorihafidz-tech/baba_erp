@@ -126,5 +126,12 @@ class ContohParfumSeeder extends Seeder
                 ProdukOnlineHarga::create(['produk_online_id' => $p->id, 'jenis' => $jenis, 'jabatan_id' => $jab, 'harga' => $harga]);
             }
         }
+        // Tahap 2b — rekening contoh & tagihan contoh untuk Distributor (21): batas Rp 1.000.000, tempo 14 hari
+        if (\Illuminate\Support\Facades\Schema::hasTable('toko_online_rekening')) {
+            \App\Models\TokoOnlineRekening::firstOrCreate(['cabang_id' => $gudang->id, 'nomor' => '0000000000'],
+                ['bank' => 'BCA', 'atas_nama' => 'BABA PARFUME (rekening contoh)', 'aktif' => true]);
+            \App\Models\AturanTagihan::firstOrCreate(['cakupan' => 'jabatan', 'jabatan_id' => 21, 'aktif' => true],
+                ['batas_nominal' => 1000000, 'tempo_hari' => 14, 'catatan' => 'Data contoh']);
+        }
     }
 }

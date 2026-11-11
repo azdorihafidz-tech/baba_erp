@@ -63,13 +63,19 @@ class AplikasiMemberClient
         return $this->kirimAman('GET', '/api/erp/akun', ['cari' => $q])->json('data') ?? [];
     }
 
-    private function kirimAman(string $method, string $path, array $query = []): Response
+    /** Lonceng aplikasi member untuk satu akun (status pesanan dsb.). Melempar \RuntimeException bila gagal. */
+    public function notifikasi(int $memberId, string $judul, ?string $isi, ?string $url): void
+    {
+        $this->kirimAman('POST', '/api/erp/notifikasi', [], ['user_id' => $memberId, 'jenis' => 'pesanan', 'judul' => $judul, 'isi' => $isi, 'url' => $url]);
+    }
+
+    private function kirimAman(string $method, string $path, array $query = [], ?array $data = null): Response
     {
         if (! $this->siap()) {
             throw new \RuntimeException('Alamat aplikasi member (BABA_MEMBER_APP_URL) atau kunci sambungan belum diatur.');
         }
         try {
-            $res = $this->kirim($method, $path, $query);
+            $res = $this->kirim($method, $path, $query, $data);
         } catch (\Throwable $e) {
             \Log::warning(__METHOD__ . ': ' . $e->getMessage());
             throw new \RuntimeException('Aplikasi member tidak bisa dihubungi.');

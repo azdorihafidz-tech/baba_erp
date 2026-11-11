@@ -20,3 +20,6 @@ Schedule::command('aset:generate-depresiasi')->monthlyOn(1, '01:00');
 
 // Cek pencapaian program loyalty otomatis harian jam 03:00 WIB (idempotent)
 Schedule::command('loyalty:cek-pencapaian')->dailyAt('03:00');
+
+// BABA Tahap 2b: pesanan online diterima / dibatalkan otomatis (idempotent)
+Schedule::command('pesanan-online:otomatis')->hourly();

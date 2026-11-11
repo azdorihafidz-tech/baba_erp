@@ -615,15 +615,36 @@
         {{-- BABA: grup Antrian Produksi (Cek/Kelola Antrian, Mode Produksi, Display TV — khusus dimsum) dihapus;
              antrian mati sebagai bawaan per cabang (migration 2026_11_11_000001) --}}
 
-        <!-- TOKO ONLINE (BABA Tahap 2a: produk & harga menu Belanja aplikasi member) -->
-        @can('toko_online.kelola')
+        <!-- TOKO ONLINE (BABA Tahap 2: produk, harga, pesanan menu Belanja aplikasi member) -->
+        @if(auth()->check() && (auth()->user()->can('toko_online.kelola') || auth()->user()->can('toko_online.pesanan')))
         <div class="nav-section-title">Toko Online</div>
+        @can('toko_online.pesanan')
+        @php
+            try {
+                $jmlPesananPerlu = \App\Models\PesananOnline::whereIn('sumber_cabang_id', \App\Services\ProduksiService::gudangUntuk()->pluck('id'))
+                    ->where(fn ($w) => $w->whereIn('status', ['menunggu_ongkir', 'menunggu_cek', 'disiapkan'])->orWhere(fn ($t) => $t->where('status_bayar', 'menunggu_cek')->where('status', '!=', 'batal')))->count();
+            } catch (\Throwable $e) { $jmlPesananPerlu = 0; }
+        @endphp
+        <a href="{{ route('toko-online.pesanan.index') }}"
+           class="nav-link {{ request()->routeIs('toko-online.pesanan.*') ? 'active' : '' }}">
+            <i class="bi bi-bag-check"></i>
+            <span>Pesanan Online</span>
+            @if($jmlPesananPerlu > 0)<span class="badge rounded-pill bg-danger ms-auto" title="Perlu tindakan">{{ $jmlPesananPerlu }}</span>@endif
+        </a>
+        @endcan
+        @can('toko_online.kelola')
         <a href="{{ route('toko-online.produk.index') }}"
            class="nav-link {{ request()->routeIs('toko-online.produk.*') ? 'active' : '' }}">
             <i class="bi bi-bag-heart"></i>
             <span>Produk Online</span>
         </a>
+        <a href="{{ route('toko-online.pengaturan') }}"
+           class="nav-link {{ request()->routeIs('toko-online.pengaturan*') ? 'active' : '' }}">
+            <i class="bi bi-sliders"></i>
+            <span>Pengaturan Toko Online</span>
+        </a>
         @endcan
+        @endif
 
         <!-- STOK & GUDANG -->
         @canany(['stok.view', 'stok.request', 'stok.transfer', 'master.bahan_baku.view', 'master.produk_jual.view', 'item.view', 'pemakaian_perlengkapan.view', 'produksi.view', 'kiriman.view', 'retur.view'])
