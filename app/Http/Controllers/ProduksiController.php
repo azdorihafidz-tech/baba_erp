@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Item;
 use App\Models\ParfumKonsentrasi;
+use App\Services\ParfumBaruService;
 use App\Models\ProduksiBatch;
 use App\Models\ResepProduksi;
 use App\Models\Stock;
@@ -186,6 +187,60 @@ class ProduksiController extends Controller
         return redirect()->route('produksi.show', $batch)->with('success',
             "Produksi {$batch->kode_batch} selesai — stok {$batch->item->nama_item} bertambah " . ProduksiService::angka((float) $batch->qty_hasil) . " {$batch->item->satuan}"
             . ($batch->susut > 0 ? ' (susut ' . ProduksiService::angka($batch->susut) . " {$batch->item->satuan})." : '.'));
+    }
+
+    // ===== BABA Tahap 1b — Buat Parfum (cairan + resep racik + botol per ukuran + resep isi botol) =====
+
+    public function parfumCreate(Request $request)
+    {
+        abort_unless(auth()->user()->can('produksi.resep.kelola'), 403);
+
+        $gudang = ProduksiService::gudangUntuk();
+        $pilih = $gudang->firstWhere('id', $request->integer('cabang_id')) ?? ProduksiService::gudangDefault($gudang);
+        $barang = $pilih ? ProduksiService::barangOptions($pilih->id) : collect();
+
+        return view('produksi.parfum-baru', [
+            'gudang'      => $gudang,
+            'gudangPilih' => $pilih,
+            'barang'      => $barang,
+            'konsentrasi' => ParfumKonsentrasi::aktif()->orderBy('urutan')->orderBy('nama')->get(),
+            'volumeRacik' => ParfumBaruService::VOLUME_RACIK,
+        ]);
+    }
+
+    public function parfumStore(Request $request, ParfumBaruService $parfum)
+    {
+        abort_unless(auth()->user()->can('produksi.resep.kelola'), 403);
+
+        $data = $request->validate([
+            'cabang_id'        => ['required', 'integer', Rule::in(ProduksiService::gudangUntuk()->pluck('id')->all())],
+            'bibit_id'         => ['required', 'integer'],
+            'nama_aroma'       => ['required', 'string', 'max:60'],
+            'konsentrasi_id'   => ['required', 'integer', 'exists:parfum_konsentrasi,id'],
+            'fixative_id'      => ['nullable', 'integer'],
+            'alkohol_id'       => ['required', 'integer'],
+            'ukuran'           => ['required', 'array', 'min:1'],
+            'ukuran.*.ml'      => ['nullable', 'numeric', 'gt:0', 'max:100000'],
+            'ukuran.*.botol_id'=> ['nullable', 'integer'],
+            'kemasan_ids'      => ['nullable', 'array'],
+            'kemasan_ids.*'    => ['nullable', 'integer'],
+        ], [
+            'cabang_id.in'        => 'Gudang tidak valid atau bukan gudang yang Anda kelola.',
+            'bibit_id.required'   => 'Pilih bibit (aroma).',
+            'nama_aroma.required' => 'Isi nama aroma.',
+            'alkohol_id.required' => 'Pilih barang alkohol.',
+        ]);
+
+        try {
+            $hasil = $parfum->buat($data, auth()->id());
+        } catch (\Exception $e) {
+            return back()->withInput()->with('error', $e->getMessage());
+        }
+
+        $botol = collect($hasil['botol'])->pluck('nama_item')->implode(', ');
+
+        return redirect()->route('produksi.resep.index')->with('success',
+            "Parfum dibuat: {$hasil['cairan']->nama_item} (resep racik) dan {$botol} (resep isi botol). Catat produksi racik dulu, lalu isi botol.");
     }
 
     // ===== BABA Tahap 1a — Konsentrasi parfum (resep persen + lama peram) =====

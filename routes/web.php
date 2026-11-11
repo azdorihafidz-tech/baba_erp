@@ -253,6 +253,9 @@ Route::middleware(['auth', 'verified', 'cabang'])->group(function () {
         Route::put('/resep/{resep}', 'resepUpdate')->name('resep.update');
         Route::delete('/resep/{resep}', 'resepDestroy')->name('resep.destroy');
 
+        // BABA Tahap 1b — Buat Parfum
+        Route::get('/parfum-baru', 'parfumCreate')->name('parfum.create');
+        Route::post('/parfum-baru', 'parfumStore')->name('parfum.store');
         // BABA Tahap 1a — konsentrasi parfum & selesai peram
         Route::get('/konsentrasi', 'konsentrasiIndex')->name('konsentrasi.index');
         Route::post('/konsentrasi', 'konsentrasiStore')->name('konsentrasi.store');

@@ -12,6 +12,11 @@
     </li>
     @can('produksi.resep.kelola')
     <li class="nav-item">
+        <a class="nav-link {{ request()->routeIs('produksi.parfum.*') ? 'active' : '' }}" href="{{ route('produksi.parfum.create') }}">
+            <i class="bi bi-magic me-1"></i>Buat Parfum
+        </a>
+    </li>
+    <li class="nav-item">
         <a class="nav-link {{ request()->routeIs('produksi.konsentrasi.*') ? 'active' : '' }}" href="{{ route('produksi.konsentrasi.index') }}">
             <i class="bi bi-droplet-half me-1"></i>Konsentrasi
         </a>

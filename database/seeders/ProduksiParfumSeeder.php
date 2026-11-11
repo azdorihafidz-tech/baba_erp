@@ -53,6 +53,10 @@ class ProduksiParfumSeeder extends Seeder
                 'content' => 'Volume cairan yang benar-benar didapat setelah diperam dan disaring. Selisih dengan yang diracik tercatat sebagai susut (penguapan/ampas). Modal per ml = biaya bahan ÷ hasil akhir.'],
             ['key' => 'produksi.batalkan', 'title' => 'Batalkan produksi',
                 'content' => 'Bahan dikembalikan ke stok. Kalau hasil sudah masuk stok, hasil ditarik dulu — hanya bisa kalau stok hasil di gudang masih cukup (belum terpakai).'],
+            ['key' => 'parfum.nama_aroma', 'title' => 'Nama aroma',
+                'content' => 'Dipakai untuk nama barang yang dibuat, mis. aroma Ocean Breeze + EDP → Cairan Ocean Breeze EDP dan Ocean Breeze EDP 50 ml. Terisi otomatis dari nama bibit, boleh diganti.'],
+            ['key' => 'parfum.ukuran', 'title' => 'Ukuran botol',
+                'content' => 'Setiap ukuran menjadi satu barang parfum botol (pcs) dengan resep isi botol: cairan sebanyak ukurannya + 1 botol + 1 dari setiap kemasan tambahan.'],
             ['key' => 'konsentrasi.persen_bibit', 'title' => '% bibit, fixative, alkohol',
                 'content' => 'Takaran racik dari volume cairan. Contoh EDP 20% bibit + 5% fixative → alkohol 75%. Untuk 1.000 ml: bibit 200 ml, fixative 50 ml, alkohol 750 ml.'],
         ] as $i => $t) {
@@ -71,6 +75,7 @@ Mencatat pembuatan parfum di gudang dalam **dua tingkat**:
 Setiap produksi memotong bahan dari stok gudang (modal FIFO) dan menambah stok hasil dengan **modal per unit otomatis** (biaya bahan ÷ hasil).
 
 ## Langkah-langkah
+0. **Cara cepat — Buat Parfum** (tab Buat Parfum): pilih Konsentrasi, Bibit (aroma), Fixative, Alkohol, ukuran botol beserta barang botolnya, dan kemasan tambahan (sprayer, label, box). Tekan **Buat Parfum** → sistem membuat cairan + resep racik dan parfum botol + resep isi botol untuk setiap ukuran. Langkah 2 tidak perlu dikerjakan manual.
 1. **Konsentrasi** (tab Konsentrasi): atur % bibit, % fixative (sisanya alkohol) dan lama pemeraman untuk EDP, EDT, dan lainnya.
 2. **Resep Produksi** (tab Resep Produksi): satu resep untuk setiap barang hasil.
    - Resep racik: hasil per resep mis. 1.000 ml, bahan bibit/fixative/alkohol sesuai persen, isi **Lama pemeraman** (hari).
@@ -91,5 +96,6 @@ Setiap produksi memotong bahan dari stok gudang (modal FIFO) dan menambah stok h
 - **Stok bahan tidak cukup**: pesan menyebut semua bahan yang kurang. Tambah stok lewat Pembelian (PO) dulu.
 - **Salah racik**: buka produksinya → Batalkan Produksi (isi alasan). Bahan dikembalikan ke stok.
 - **Barang hasil tidak muncul di daftar resep**: daftarkan dulu di Bahan Baku & Kemasan milik gudang ini.
+- **Buat Parfum ditolak "Sudah ada barang dengan nama …"**: aroma + konsentrasi itu sudah pernah dibuat. Pakai resep yang ada, atau ganti nama aroma.
 MARKDOWN;
 }
