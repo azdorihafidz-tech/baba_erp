@@ -4,7 +4,7 @@
 
 @section('content')
 <div class="d-flex justify-content-between align-items-center mb-3">
-    <h5 class="mb-0 fw-bold"><i class="bi bi-fire me-2 text-success"></i>Catat Produksi</h5>
+    <h5 class="mb-0 fw-bold"><i class="bi bi-droplet me-2 text-success"></i>Catat Produksi</h5>
     <x-panduan-button slug="produksi" />
 </div>
 
@@ -61,13 +61,17 @@
                         </div>
                         @error('qty_rencana')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
                     </div>
-                    <div class="col-12 col-md-6">
+                    <div class="col-12 col-md-6" id="boxHasil">
                         <label class="form-label small fw-semibold">Hasil nyata * <x-tooltip key="produksi.qty_hasil" /></label>
                         <div class="input-group">
                             <input type="number" step="0.001" min="0.001" name="qty_hasil" id="qtyHasil" class="form-control @error('qty_hasil') is-invalid @enderror" value="{{ old('qty_hasil') }}" required>
                             <span class="input-group-text satuanHasil"></span>
                         </div>
                         @error('qty_hasil')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
+                    </div>
+                    <div class="col-12 d-none" id="infoPeram">
+                        <div class="alert alert-warning small mb-0"><i class="bi bi-hourglass-split me-1"></i>
+                            Resep ini diperam <strong id="hariPeram"></strong> hari. Bahan dipotong sekarang; hasil masuk stok setelah <strong>Selesai Peram &amp; Saring</strong> (mulai <strong id="tglSiap"></strong>). Hasil akhir dan susut diisi saat itu.</div>
                     </div>
                     <div class="col-12">
                         <label class="form-label small fw-semibold">Catatan</label>
@@ -156,6 +160,7 @@
         hitung();
     });
     el('resepId').addEventListener('change', hitung);
+    document.querySelector('[name=tanggal]').addEventListener('change', hitung);
     // Data barang terpisah per cabang (4.39): hanya resep milik gudang terpilih yang bisa dipilih
     function saringResep() {
         const g = el('cabangId').value;
@@ -177,7 +182,19 @@
         if (!r) return;
         document.querySelectorAll('.satuanHasil').forEach(s => s.textContent = r.satuan || '');
         const rencana = parseFloat(el('qtyRencana').value) || 0;
-        const hasil = parseFloat(el('qtyHasil').value) || 0;
+        // BABA: resep berpemeraman — Hasil nyata diisi saat Selesai peram
+        const peram = parseInt(r.peram || 0, 10);
+        el('boxHasil').classList.toggle('d-none', peram > 0);
+        el('qtyHasil').required = peram === 0;
+        el('qtyHasil').disabled = peram > 0;
+        el('infoPeram').classList.toggle('d-none', peram === 0);
+        if (peram > 0) {
+            el('hariPeram').textContent = peram;
+            const t = new Date((document.querySelector('[name=tanggal]').value || new Date().toISOString().slice(0, 10)) + 'T00:00:00');
+            t.setDate(t.getDate() + peram);
+            el('tglSiap').textContent = t.toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' });
+        }
+        const hasil = peram > 0 ? rencana : (parseFloat(el('qtyHasil').value) || 0);
         const faktor = r.qty_hasil > 0 ? rencana / r.qty_hasil : 0;
         const stokGudang = STOK[el('cabangId').value] || {};
         let biaya = 0, kurang = false, html = '';

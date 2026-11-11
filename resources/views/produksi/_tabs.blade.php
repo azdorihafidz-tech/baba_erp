@@ -10,4 +10,11 @@
             <i class="bi bi-journal-text me-1"></i>Resep Produksi
         </a>
     </li>
+    @can('produksi.resep.kelola')
+    <li class="nav-item">
+        <a class="nav-link {{ request()->routeIs('produksi.konsentrasi.*') ? 'active' : '' }}" href="{{ route('produksi.konsentrasi.index') }}">
+            <i class="bi bi-droplet-half me-1"></i>Konsentrasi
+        </a>
+    </li>
+    @endcan
 </ul>

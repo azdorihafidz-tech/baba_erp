@@ -100,6 +100,7 @@ class ProduksiService
             $resep->fill([
                 'item_id'   => $hasilId,
                 'qty_hasil' => (float) $data['qty_hasil'],
+                'lama_peram_hari' => max(0, (int) ($data['lama_peram_hari'] ?? 0)),
                 'catatan'   => $data['catatan'] ?? null,
                 'is_active' => (bool) ($data['is_active'] ?? true),
             ])->save();
@@ -143,7 +144,9 @@ class ProduksiService
         }
 
         $rencana = (float) $data['qty_rencana'];
-        $hasil = (float) $data['qty_hasil'];
+        // BABA: resep berpemeraman → hasil akhir baru diisi saat Selesai peram (sementara = rencana)
+        $diperam = (int) $resep->lama_peram_hari > 0;
+        $hasil = $diperam ? $rencana : (float) ($data['qty_hasil'] ?? 0);
         if ($rencana <= 0 || $hasil <= 0) {
             throw new \Exception('Jumlah rencana dan hasil nyata harus lebih dari 0.');
         }
@@ -158,7 +161,7 @@ class ProduksiService
             throw new \Exception('Takaran bahan terlalu kecil untuk jumlah rencana ini (dibulatkan menjadi 0).');
         }
 
-        return DB::transaction(function () use ($data, $userId, $cabangId, $resep, $rencana, $hasil, $manual, $kebutuhan) {
+        return DB::transaction(function () use ($data, $userId, $cabangId, $resep, $rencana, $hasil, $manual, $kebutuhan, $diperam) {
             // Cek semua bahan dulu supaya pesan menyebut SEMUA yang kurang, bukan satu per satu
             $kurang = [];
             foreach ($kebutuhan as $itemId => $butuh) {
@@ -180,7 +183,8 @@ class ProduksiService
                 'resep_produksi_id' => $resep->id,
                 'qty_rencana'       => $rencana,
                 'qty_hasil'         => $hasil,
-                'status'            => 'selesai',
+                'status'            => $diperam ? 'diperam' : 'selesai',
+                'tanggal_siap'      => $diperam ? \Illuminate\Support\Carbon::parse($data['tanggal'])->addDays((int) $resep->lama_peram_hari)->toDateString() : null,
                 'catatan'           => $data['catatan'] ?? null,
                 'user_id'           => $userId,
             ]);
@@ -194,6 +198,13 @@ class ProduksiService
                 );
                 $batch->bahan()->create(['item_id' => $itemId, 'qty' => $butuh, 'biaya' => round($hpp, 2)]);
                 $biaya += $hpp;
+            }
+
+            if ($diperam) {
+                // Hasil belum masuk stok: dicatat saat Selesai peram (selesaiPeram)
+                $batch->update(['biaya_bahan' => round($biaya, 2), 'modal_otomatis' => round($biaya / $hasil, 2), 'modal_per_unit' => 0]);
+
+                return $batch->fresh(['item', 'bahan.item', 'cabang']);
             }
 
             $otomatis = round($biaya / $hasil, 2);
@@ -230,11 +241,19 @@ class ProduksiService
         return DB::transaction(function () use ($batch, $alasan, $userId) {
             $batch = ProduksiBatch::with(['item', 'bahan'])->lockForUpdate()->findOrFail($batch->id);
 
-            if ($batch->status !== 'selesai') {
+            if ($batch->status === 'dibatalkan') {
                 throw new \Exception('Produksi ini sudah dibatalkan.');
             }
             if (! self::gudangUntuk()->contains('id', $batch->cabang_id)) {
                 throw new \Exception('Anda tidak mengelola gudang produksi ini.');
+            }
+
+            // BABA: masih diperam → hasil belum masuk stok, cukup kembalikan bahan
+            if ($batch->status === 'diperam') {
+                $this->kembalikanBahan($batch);
+                $batch->update(['status' => 'dibatalkan', 'dibatalkan_by' => $userId, 'dibatalkan_at' => now(), 'alasan_batal' => $alasan]);
+
+                return $batch->fresh();
             }
 
             $stokHasil = $this->stokService->getStok($batch->item_id, $batch->cabang_id);
@@ -251,14 +270,7 @@ class ProduksiService
                 "Batal produksi {$batch->kode_batch} — hasil ditarik", 'produksi_batal', $batch->id
             );
 
-            foreach ($batch->bahan as $b) {
-                $qty = (float) $b->qty;
-                $this->stokService->masuk(
-                    $b->item_id, $batch->cabang_id, $qty,
-                    "Batal produksi {$batch->kode_batch} — bahan dikembalikan", 'produksi_batal', $batch->id,
-                    $qty > 0 ? round((float) $b->biaya / $qty, 2) : 0.0
-                );
-            }
+            $this->kembalikanBahan($batch);
 
             $batch->update([
                 'status'        => 'dibatalkan',
@@ -268,6 +280,74 @@ class ProduksiService
             ]);
 
             return $batch->fresh();
+        });
+    }
+
+    /** Bahan batch dikembalikan ke stok dengan modal yang terpakai saat produksi. */
+    private function kembalikanBahan(ProduksiBatch $batch): void
+    {
+        foreach ($batch->bahan as $b) {
+            $qty = (float) $b->qty;
+            $this->stokService->masuk(
+                $b->item_id, $batch->cabang_id, $qty,
+                "Batal produksi {$batch->kode_batch} — bahan dikembalikan", 'produksi_batal', $batch->id,
+                $qty > 0 ? round((float) $b->biaya / $qty, 2) : 0.0
+            );
+        }
+    }
+
+    /**
+     * BABA Tahap 1a — selesai peram & saring: hasil akhir masuk stok, modal = biaya bahan ÷ hasil akhir.
+     * Susut (rencana − hasil akhir) tercatat. Tidak bisa sebelum tanggal siap.
+     */
+    public function selesaiPeram(ProduksiBatch $batch, float $hasilAkhir, ?float $modalManual, int $userId): ProduksiBatch
+    {
+        return DB::transaction(function () use ($batch, $hasilAkhir, $modalManual, $userId) {
+            $batch = ProduksiBatch::with(['item'])->lockForUpdate()->findOrFail($batch->id);
+
+            if ($batch->status !== 'diperam') {
+                throw new \Exception('Produksi ini tidak sedang diperam.');
+            }
+            if (! self::gudangUntuk()->contains('id', $batch->cabang_id)) {
+                throw new \Exception('Anda tidak mengelola gudang produksi ini.');
+            }
+            if ($batch->tanggal_siap && $batch->tanggal_siap->isFuture()) {
+                throw new \Exception('Belum siap: pemeraman selesai tanggal ' . $batch->tanggal_siap->translatedFormat('d M Y') . '.');
+            }
+            if ($hasilAkhir <= 0) {
+                throw new \Exception('Hasil akhir harus lebih dari 0.');
+            }
+            if ($hasilAkhir > (float) $batch->qty_rencana) {
+                throw new \Exception('Hasil akhir tidak boleh lebih dari jumlah yang diracik (' . self::angka((float) $batch->qty_rencana) . ' ' . $batch->item->satuan . ').');
+            }
+            if ($modalManual !== null && $modalManual < 0) {
+                throw new \Exception('Modal per unit tidak boleh minus.');
+            }
+
+            $biaya = (float) $batch->biaya_bahan;
+            $otomatis = round($biaya / $hasilAkhir, 2);
+            $modal = $modalManual ?? $otomatis;
+
+            $this->stokService->masuk(
+                $batch->item_id, $batch->cabang_id, $hasilAkhir,
+                "Hasil produksi {$batch->kode_batch} (selesai peram)",
+                'produksi', $batch->id, $modal
+            );
+            if ($modal > 0 && ! (float) $batch->item->harga_beli_terakhir) {
+                $batch->item->update(['harga_beli_terakhir' => $modal]);
+            }
+
+            $batch->update([
+                'status'          => 'selesai',
+                'qty_hasil'       => $hasilAkhir,
+                'modal_otomatis'  => $otomatis,
+                'modal_per_unit'  => $modal,
+                'modal_manual'    => $modalManual !== null,
+                'diselesaikan_by' => $userId,
+                'diselesaikan_at' => now(),
+            ]);
+
+            return $batch->fresh(['item', 'bahan.item', 'cabang']);
         });
     }
 

@@ -17,11 +17,11 @@ class ResepProduksi extends Model
 {
     protected $table = 'resep_produksi';
 
-    protected $fillable = ['item_id', 'qty_hasil', 'catatan', 'is_active', 'created_by'];
+    protected $fillable = ['item_id', 'qty_hasil', 'lama_peram_hari', 'catatan', 'is_active', 'created_by'];
 
     protected function casts(): array
     {
-        return ['qty_hasil' => 'decimal:3', 'is_active' => 'boolean'];
+        return ['qty_hasil' => 'decimal:3', 'lama_peram_hari' => 'integer', 'is_active' => 'boolean'];
     }
 
     public function item()  { return $this->belongsTo(Item::class); }

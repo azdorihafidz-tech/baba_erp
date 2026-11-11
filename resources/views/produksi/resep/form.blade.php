@@ -51,7 +51,7 @@
                 @error('item_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
                 <div class="form-text">Belum ada di daftar? Tambahkan dulu di
                     @can('master.bahan_baku.create')<a href="{{ route('master.bahan-baku.create') }}" target="_blank">Bahan Baku &amp; Kemasan</a>@else Bahan Baku &amp; Kemasan @endcan
-                    (mis. "Isian Ayam", satuan kg).</div>
+                    (mis. "Cairan Ocean Breeze EDP", satuan ml).</div>
             </div>
             <div class="col-6 col-md-3">
                 <label class="form-label small fw-semibold">Hasil per resep * <x-tooltip key="produksi.qty_hasil_resep" /></label>
@@ -60,6 +60,15 @@
                     <span class="input-group-text" id="satuanHasil">-</span>
                 </div>
                 @error('qty_hasil')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
+            </div>
+            <div class="col-6 col-md-3">
+                <label class="form-label small fw-semibold">Lama pemeraman <x-tooltip key="produksi.lama_peram" /></label>
+                <div class="input-group">
+                    <input type="number" step="1" min="0" max="365" name="lama_peram_hari" class="form-control @error('lama_peram_hari') is-invalid @enderror" value="{{ old('lama_peram_hari', $resep?->lama_peram_hari ?? 0) }}">
+                    <span class="input-group-text">hari</span>
+                </div>
+                @error('lama_peram_hari')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
+                <div class="form-text">0 = langsung masuk stok.</div>
             </div>
             <div class="col-6 col-md-3 d-flex align-items-end">
                 <div class="form-check form-switch mb-2">
@@ -70,7 +79,7 @@
             </div>
             <div class="col-12">
                 <label class="form-label small fw-semibold">Catatan</label>
-                <textarea name="catatan" rows="2" maxlength="500" class="form-control" placeholder="Mis. cara masak, lama simpan">{{ old('catatan', $resep?->catatan) }}</textarea>
+                <textarea name="catatan" rows="2" maxlength="500" class="form-control" placeholder="Mis. urutan mencampur, suhu simpan">{{ old('catatan', $resep?->catatan) }}</textarea>
             </div>
         </div>
     </div></div>

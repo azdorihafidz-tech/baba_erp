@@ -4,7 +4,7 @@
 
 @section('content')
 <div class="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-2 mb-3">
-    <h5 class="mb-0 fw-bold"><i class="bi bi-fire me-2 text-success"></i>Produksi Bahan Setengah Jadi</h5>
+    <h5 class="mb-0 fw-bold"><i class="bi bi-droplet me-2 text-success"></i>Produksi Parfum</h5>
     <div class="d-flex gap-2 align-items-center">
         <x-panduan-button slug="produksi" />
         @can('produksi.create')
@@ -52,6 +52,7 @@
             <label class="form-label small mb-0">Status</label>
             <select name="status" class="form-select form-select-sm">
                 <option value="">Semua</option>
+                <option value="diperam" @selected(request('status') === 'diperam')>Diperam</option>
                 <option value="selesai" @selected(request('status') === 'selesai')>Selesai</option>
                 <option value="dibatalkan" @selected(request('status') === 'dibatalkan')>Dibatalkan</option>
             </select>
@@ -79,7 +80,7 @@
         <td class="text-end">{{ \App\Services\ProduksiService::angka((float) $b->qty_rencana) }} {{ $b->item?->satuan }}</td>
         <td class="text-end">{{ \App\Services\ProduksiService::angka((float) $b->qty_hasil) }} {{ $b->item?->satuan }}</td>
         <td class="text-end">Rp {{ number_format($b->modal_per_unit, 0, ',', '.') }}@if($b->modal_manual) <span class="badge bg-warning text-dark" title="Modal diubah manual">M</span>@endif</td>
-        <td><span class="badge bg-{{ $b->status === 'selesai' ? 'success' : 'danger' }}">{{ ucfirst($b->status) }}</span></td>
+        <td>@include('produksi._status', ['b' => $b])</td>
         <td class="text-end"><a href="{{ route('produksi.show', $b) }}" class="btn btn-outline-primary btn-sm">Detail</a></td>
     </tr>
     @empty

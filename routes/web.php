@@ -253,11 +253,17 @@ Route::middleware(['auth', 'verified', 'cabang'])->group(function () {
         Route::put('/resep/{resep}', 'resepUpdate')->name('resep.update');
         Route::delete('/resep/{resep}', 'resepDestroy')->name('resep.destroy');
 
+        // BABA Tahap 1a — konsentrasi parfum & selesai peram
+        Route::get('/konsentrasi', 'konsentrasiIndex')->name('konsentrasi.index');
+        Route::post('/konsentrasi', 'konsentrasiStore')->name('konsentrasi.store');
+        Route::put('/konsentrasi/{konsentrasi}', 'konsentrasiUpdate')->name('konsentrasi.update');
+
         Route::get('/', 'index')->name('index');
         Route::get('/create', 'create')->name('create');
         Route::post('/', 'store')->name('store');
         Route::get('/{produksi}', 'show')->name('show');
         Route::post('/{produksi}/batalkan', 'batalkan')->name('batalkan');
+        Route::post('/{produksi}/selesai-peram', 'selesaiPeram')->name('selesai-peram');
     });
 
     // ===== 4.49 Tahap B2 — KIRIMAN CABANG (Gudang Pusat → cabang, Terima/Tolak/Batalkan) =====

@@ -4,7 +4,7 @@
 
 @section('content')
 <div class="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-2 mb-3">
-    <h5 class="mb-0 fw-bold"><i class="bi bi-fire me-2 text-success"></i>Produksi Bahan Setengah Jadi</h5>
+    <h5 class="mb-0 fw-bold"><i class="bi bi-droplet me-2 text-success"></i>Produksi Parfum</h5>
     <div class="d-flex gap-2 align-items-center">
         <x-panduan-button slug="produksi" />
         @can('produksi.resep.kelola')
@@ -18,9 +18,9 @@
 
 <div class="alert alert-light border small">
     <i class="bi bi-info-circle me-1"></i>
-    Resep Produksi = takaran bahan untuk <strong>memasak/membuat</strong> barang setengah jadi (mis. isian ayam, saus, chili oil).
-    Barang hasilnya harus sudah terdaftar di <strong>Bahan Baku &amp; Kemasan</strong>. Ini berbeda dengan komposisi Produk Jual,
-    yang dipotong saat menu terjual.
+    Resep Produksi = takaran bahan untuk <strong>meracik cairan parfum</strong> (bibit + fixative + alkohol, bisa diperam)
+    atau <strong>mengisi botol</strong> (cairan + botol + sprayer + label + box). Barang hasilnya harus sudah terdaftar di
+    <strong>Bahan Baku &amp; Kemasan</strong>. Ini berbeda dengan komposisi Produk Jual, yang dipotong saat produk terjual.
 </div>
 
 <div class="card"><div class="table-responsive">

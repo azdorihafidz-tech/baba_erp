@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Item;
+use App\Models\ParfumKonsentrasi;
 use App\Models\ProduksiBatch;
 use App\Models\ResepProduksi;
 use App\Models\Stock;
@@ -81,6 +82,7 @@ class ProduksiController extends Controller
                 'gudang'    => $r->item->cabang_id,
                 'satuan'    => $r->item->satuan,
                 'qty_hasil' => (float) $r->qty_hasil,
+                'peram'     => (int) $r->lama_peram_hari,
                 'bahan'     => $r->items->map(fn ($b) => [
                     'item_id'     => $b->item_id,
                     'nama'        => $b->bahan?->nama_item,
@@ -104,7 +106,7 @@ class ProduksiController extends Controller
             'resep_produksi_id' => ['required', 'integer', 'exists:resep_produksi,id'],
             'tanggal'           => ['required', 'date', 'before_or_equal:today'],
             'qty_rencana'       => ['required', 'numeric', 'gt:0', 'max:9999999'],
-            'qty_hasil'         => ['required', 'numeric', 'gt:0', 'max:9999999'],
+            'qty_hasil'         => ['nullable', 'numeric', 'gt:0', 'max:9999999'],
             'modal_manual'      => ['nullable', 'numeric', 'min:0', 'max:9999999999'],
             'catatan'           => ['nullable', 'string', 'max:500'],
         ], [
@@ -123,6 +125,11 @@ class ProduksiController extends Controller
             return back()->withInput()->with('error', $e->getMessage());
         }
 
+        if ($batch->status === 'diperam') {
+            return redirect()->route('produksi.show', $batch)
+                ->with('success', "Produksi {$batch->kode_batch} diperam sampai {$batch->tanggal_siap->format('d/m/Y')}. Bahan sudah dipotong; {$batch->item->nama_item} masuk stok setelah Selesai Peram & Saring.");
+        }
+
         return redirect()->route('produksi.show', $batch)
             ->with('success', "Produksi {$batch->kode_batch} tersimpan — stok {$batch->item->nama_item} bertambah " . ProduksiService::angka((float) $batch->qty_hasil) . " {$batch->item->satuan}.");
     }
@@ -132,7 +139,7 @@ class ProduksiController extends Controller
         abort_unless(auth()->user()->can('produksi.view'), 403);
         abort_unless(ProduksiService::gudangUntuk()->contains('id', $produksi->cabang_id), 404);
 
-        $produksi->load(['item', 'cabang', 'user', 'dibatalkanOleh', 'bahan.item']);
+        $produksi->load(['item', 'cabang', 'user', 'dibatalkanOleh', 'diselesaikanOleh', 'bahan.item']);
 
         return view('produksi.show', ['batch' => $produksi]);
     }
@@ -153,6 +160,81 @@ class ProduksiController extends Controller
         }
 
         return back()->with('success', "Produksi {$produksi->kode_batch} dibatalkan — stok bahan dikembalikan.");
+    }
+
+    /** BABA Tahap 1a — Selesai peram & saring: hasil akhir masuk stok, susut tercatat. */
+    public function selesaiPeram(Request $request, ProduksiBatch $produksi)
+    {
+        abort_unless(auth()->user()->can('produksi.create'), 403);
+        abort_unless(ProduksiService::gudangUntuk()->contains('id', $produksi->cabang_id), 404);
+
+        $data = $request->validate([
+            'qty_hasil'    => ['required', 'numeric', 'gt:0', 'max:9999999'],
+            'modal_manual' => ['nullable', 'numeric', 'min:0', 'max:9999999999'],
+        ], [
+            'qty_hasil.required' => 'Isi hasil akhir setelah disaring.',
+            'qty_hasil.gt'       => 'Hasil akhir harus lebih dari 0.',
+        ]);
+        $manual = $request->boolean('pakai_modal_manual') && $request->filled('modal_manual') ? (float) $data['modal_manual'] : null;
+
+        try {
+            $batch = $this->service->selesaiPeram($produksi, (float) $data['qty_hasil'], $manual, auth()->id());
+        } catch (\Exception $e) {
+            return back()->withInput()->with('error', $e->getMessage());
+        }
+
+        return redirect()->route('produksi.show', $batch)->with('success',
+            "Produksi {$batch->kode_batch} selesai — stok {$batch->item->nama_item} bertambah " . ProduksiService::angka((float) $batch->qty_hasil) . " {$batch->item->satuan}"
+            . ($batch->susut > 0 ? ' (susut ' . ProduksiService::angka($batch->susut) . " {$batch->item->satuan})." : '.'));
+    }
+
+    // ===== BABA Tahap 1a — Konsentrasi parfum (resep persen + lama peram) =====
+
+    public function konsentrasiIndex()
+    {
+        abort_unless(auth()->user()->can('produksi.resep.kelola'), 403);
+
+        return view('produksi.konsentrasi', [
+            'konsentrasi' => ParfumKonsentrasi::orderBy('urutan')->orderBy('nama')->get(),
+        ]);
+    }
+
+    public function konsentrasiStore(Request $request)
+    {
+        abort_unless(auth()->user()->can('produksi.resep.kelola'), 403);
+        ParfumKonsentrasi::create($this->validasiKonsentrasi($request, null));
+
+        return back()->with('success', 'Konsentrasi ' . $request->input('nama') . ' ditambahkan.');
+    }
+
+    public function konsentrasiUpdate(Request $request, ParfumKonsentrasi $konsentrasi)
+    {
+        abort_unless(auth()->user()->can('produksi.resep.kelola'), 403);
+        $konsentrasi->update($this->validasiKonsentrasi($request, $konsentrasi));
+
+        return back()->with('success', "Konsentrasi {$konsentrasi->nama} diperbarui. Resep yang sudah dibuat tidak berubah; berlaku untuk parfum yang dibuat berikutnya.");
+    }
+
+    private function validasiKonsentrasi(Request $request, ?ParfumKonsentrasi $k): array
+    {
+        $data = $request->validate([
+            'nama'            => ['required', 'string', 'max:30', Rule::unique('parfum_konsentrasi', 'nama')->ignore($k?->id)],
+            'keterangan'      => ['nullable', 'string', 'max:150'],
+            'persen_bibit'    => ['required', 'numeric', 'gt:0', 'max:100'],
+            'persen_fixative' => ['nullable', 'numeric', 'min:0', 'max:100'],
+            'lama_peram_hari' => ['required', 'integer', 'min:0', 'max:365'],
+            'urutan'          => ['nullable', 'integer', 'min:0', 'max:999'],
+        ], [
+            'nama.unique'          => 'Nama konsentrasi sudah ada.',
+            'persen_bibit.gt'      => '% bibit harus lebih dari 0.',
+            'lama_peram_hari.max'  => 'Lama pemeraman paling lama 365 hari.',
+        ]);
+        $data['persen_fixative'] = (float) ($data['persen_fixative'] ?? 0);
+        if ((float) $data['persen_bibit'] + $data['persen_fixative'] >= 100) {
+            throw \Illuminate\Validation\ValidationException::withMessages(['persen_bibit' => '% bibit + % fixative harus kurang dari 100% (sisanya alkohol).']);
+        }
+
+        return $data + ['urutan' => (int) ($data['urutan'] ?? 0), 'is_active' => $request->boolean('is_active', true)];
     }
 
     // ===== Resep Produksi =====
@@ -239,6 +321,7 @@ class ProduksiController extends Controller
             'cabang_id'        => ['required', 'integer', Rule::in(ProduksiService::gudangUntuk()->pluck('id')->all())],
             'item_id'          => ['required', 'integer'],
             'qty_hasil'        => ['required', 'numeric', 'gt:0', 'max:9999999'],
+            'lama_peram_hari'  => ['nullable', 'integer', 'min:0', 'max:365'],
             'catatan'          => ['nullable', 'string', 'max:500'],
             'is_active'        => ['nullable', 'boolean'],
             'bahan'            => ['required', 'array', 'min:1'],
