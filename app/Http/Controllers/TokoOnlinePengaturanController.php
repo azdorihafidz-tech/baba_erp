@@ -55,7 +55,8 @@ class TokoOnlinePengaturanController extends Controller
         $d = $request->validate([
             'hari_terima_otomatis' => ['required', 'integer', 'min:0', 'max:60'],
             'jam_batas_bayar' => ['required', 'integer', 'min:0', 'max:720'],
-        ], [], ['hari_terima_otomatis' => 'Diterima otomatis', 'jam_batas_bayar' => 'Batas waktu bayar']);
+            'hari_batas_retur' => ['required', 'integer', 'min:0', 'max:90'],
+        ], [], ['hari_terima_otomatis' => 'Diterima otomatis', 'jam_batas_bayar' => 'Batas waktu bayar', 'hari_batas_retur' => 'Batas pengajuan retur']);
         TokoOnlinePengaturan::ambil()->update($d);
 
         return back()->with('success', 'Pengaturan pesanan disimpan.');

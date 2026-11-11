@@ -277,6 +277,14 @@ Route::middleware(['auth', 'verified', 'cabang'])->group(function () {
             Route::post('/pengaturan/sumber', 'simpanSumber')->name('pengaturan.sumber');
             Route::post('/pengaturan/sumber/{sumber}/nonaktif', 'nonaktifSumber')->name('pengaturan.sumber.nonaktif');
         });
+        // Tahap 2d — retur online (gudang memutuskan retur pesanan gudang)
+        Route::controller(\App\Http\Controllers\ReturOnlineController::class)->group(function () {
+            Route::get('/retur', 'index')->name('retur.index');
+            Route::get('/retur/{retur}', 'show')->name('retur.show');
+            Route::post('/retur/{retur}/setujui', 'setujui')->name('retur.setujui');
+            Route::post('/retur/{retur}/tolak', 'tolak')->name('retur.tolak');
+            Route::get('/retur/{retur}/foto', 'foto')->name('retur.foto');
+        });
         // Tahap 2c — stok parfum milik member (pantau saja)
         Route::get('/stok-member', [\App\Http\Controllers\StokMemberController::class, 'index'])->name('stok-member.index');
         Route::get('/stok-member/{memberId}', [\App\Http\Controllers\StokMemberController::class, 'show'])->whereNumber('memberId')->name('stok-member.show');

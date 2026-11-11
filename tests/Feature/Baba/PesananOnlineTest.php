@@ -363,7 +363,7 @@ class PesananOnlineTest extends TestCase
         $this->post(route('toko-online.pengaturan.tagihan'), ['cakupan' => 'jabatan', 'jabatan_id' => self::JAB_DIST, 'batas_nominal' => 700000, 'tempo_hari' => 14])->assertRedirect();
         $this->assertSame(1, AturanTagihan::where('cakupan', 'jabatan')->where('jabatan_id', self::JAB_DIST)->where('aktif', true)->count());
         $this->assertEquals(700000, $this->svc->infoTagihan($this->dist)['batas']);
-        $this->put(route('toko-online.pengaturan.umum'), ['hari_terima_otomatis' => 5, 'jam_batas_bayar' => 24])->assertRedirect();
+        $this->put(route('toko-online.pengaturan.umum'), ['hari_terima_otomatis' => 5, 'jam_batas_bayar' => 24, 'hari_batas_retur' => 7])->assertRedirect();
         $this->assertSame(5, TokoOnlinePengaturan::ambil()->hari_terima_otomatis);
     }
 }

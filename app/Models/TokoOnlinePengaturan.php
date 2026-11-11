@@ -12,11 +12,11 @@ class TokoOnlinePengaturan extends Model
 
     protected $table = 'toko_online_pengaturan';
 
-    protected $fillable = ['hari_terima_otomatis', 'jam_batas_bayar'];
+    protected $fillable = ['hari_terima_otomatis', 'jam_batas_bayar', 'hari_batas_retur'];
 
     protected function casts(): array
     {
-        return ['hari_terima_otomatis' => 'integer', 'jam_batas_bayar' => 'integer'];
+        return ['hari_terima_otomatis' => 'integer', 'jam_batas_bayar' => 'integer', 'hari_batas_retur' => 'integer'];
     }
 
     public static function ambil(): self

@@ -118,7 +118,7 @@ class PesananOnlineService
     public function tagihanTerpakai(int $memberId): float
     {
         return (float) PesananOnline::where('member_id', $memberId)->where('cara_bayar', 'tagihan')
-            ->where('status', '!=', 'batal')->where('status_bayar', '!=', 'lunas')->sum('total');
+            ->where('status', '!=', 'batal')->where('status_bayar', '!=', 'lunas')->sum(DB::raw('total - nilai_retur'));
     }
 
     /** @return array{batas: float, terpakai: float, sisa: float, tempo_hari: int}|null */
@@ -291,9 +291,9 @@ class PesananOnlineService
                     throw new PesananException($p->status_bayar === 'menunggu_cek' ? 'Bukti sebelumnya masih dicek.' : 'Pesanan ini tidak sedang menunggu pembayaran.');
                 }
                 $transfer = $p->cara_bayar === 'transfer';
-                $b = $p->bayar()->create(['file' => $path, 'hash' => $hash, 'nominal' => $p->total, 'status' => 'menunggu']);
+                $b = $p->bayar()->create(['file' => $path, 'hash' => $hash, 'nominal' => $p->sisa_bayar, 'status' => 'menunggu']);
                 $p->update(['status_bayar' => 'menunggu_cek'] + ($transfer ? ['status' => 'menunggu_cek'] : []));
-                $this->catat($p, $p->status, 'Bukti transfer diunggah (Rp ' . number_format((float) $p->total, 0, ',', '.') . ').', 'member', $m->member_id, $m->nama);
+                $this->catat($p, $p->status, 'Bukti transfer diunggah (Rp ' . number_format($p->sisa_bayar, 0, ',', '.') . ').', 'member', $m->member_id, $m->nama);
                 if ($p->sumber === 'gudang') {
                     DB::afterCommit(fn () => $this->kabariStaf($p, 'bukti'));
                 }
@@ -607,7 +607,7 @@ class PesananOnlineService
 
     public function perluBayar(PesananOnline $p): bool
     {
-        return $p->status_bayar === 'belum' && (($p->cara_bayar === 'transfer' && $p->status === 'menunggu_bayar')
+        return $p->status_bayar === 'belum' && $p->sisa_bayar > 0 && (($p->cara_bayar === 'transfer' && $p->status === 'menunggu_bayar')
             || ($p->cara_bayar === 'tagihan' && in_array($p->status, self::PERLU_BAYAR_SETELAH, true)));
     }
 
@@ -632,6 +632,7 @@ class PesananOnlineService
             'cara_bayar' => $p->cara_bayar, 'sumber' => $p->sumber, 'sumber_nama' => $this->namaSumber($p),
             'penjual_id' => $p->sumber === 'upline' ? $p->sumber_member_id : null,
             'subtotal' => (float) $p->subtotal, 'ongkir' => $p->ongkir === null ? null : (float) $p->ongkir, 'total' => (float) $p->total,
+            'nilai_retur' => (float) $p->nilai_retur, 'sisa_bayar' => $p->sisa_bayar,
             'jumlah_botol' => $p->jumlah_botol, 'ringkas' => $p->item->map(fn ($i) => $i->nama . ' ×' . $i->qty)->implode(', '),
             'batas_bayar' => $p->batas_bayar_at?->toIso8601String(), 'jatuh_tempo' => $p->jatuh_tempo?->toDateString(),
             'kurir' => $p->kurir, 'nomor_resi' => $p->nomor_resi, 'batal_alasan' => $p->batal_alasan,
@@ -643,7 +644,7 @@ class PesananOnlineService
         $p->loadMissing(['bayar', 'log']);
 
         return [
-            'item' => $p->item->map(fn ($i) => ['nama' => $i->nama, 'qty' => $i->qty, 'satuan' => $i->satuan, 'harga' => (float) $i->harga,
+            'item' => $p->item->map(fn ($i) => ['id' => $i->id, 'nama' => $i->nama, 'qty' => $i->qty, 'satuan' => $i->satuan, 'harga' => (float) $i->harga,
                 'dasar_harga' => $i->dasar_harga, 'subtotal' => (float) $i->subtotal, 'qty_retur' => $i->qty_retur, 'item_id' => $i->item_id])->values(),
             'kirim' => $p->cara_ambil === 'kirim' ? ['nama' => $p->kirim_nama, 'hp' => $p->kirim_hp, 'alamat' => $p->kirim_alamat] : null,
             'catatan' => $p->catatan, 'diterima_otomatis' => $p->diterima_otomatis,
@@ -678,8 +679,13 @@ class PesananOnlineService
             return $data;
         }
         $perlu = $this->perluBayar($p);
+        $bisaRetur = app(ReturOnlineService::class)->bisaRetur($p);
+        $rinci = $this->rinciBersama($p, 'pembeli');
+        $rinci['item'] = collect($rinci['item'])->map(fn ($i) => $i + ['bisa_retur' => $bisaRetur[$i['id']] ?? 0])->values();
+        $p->loadMissing('retur');
 
-        return $data + $this->rinciBersama($p, 'pembeli') + [
+        return $data + $rinci + [
+            'retur' => $p->retur->map(fn ($r) => ['nomor' => $r->nomor, 'status' => $r->status, 'status_label' => $r->status_label, 'nilai' => (float) $r->nilai])->values(),
             'alamat_ambil' => $p->cara_ambil === 'ambil' ? ($p->sumber === 'gudang'
                 ? trim(($p->cabang?->nama_cabang ?? '') . ' — ' . ($p->cabang?->alamat ?? ''), ' —')
                 : 'Di upline Anda (' . $this->namaSumber($p) . ')') : null,
@@ -688,6 +694,7 @@ class PesananOnlineService
                 'unggah_bukti' => $perlu,
                 'batal' => in_array($p->status, ['menunggu_ongkir', 'menunggu_bayar'], true),
                 'terima' => in_array($p->status, ['dikirim', 'siap_diambil'], true),
+                'retur' => array_sum($bisaRetur) > 0,
             ],
         ];
     }

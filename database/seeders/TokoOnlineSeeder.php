@@ -57,6 +57,9 @@ class TokoOnlineSeeder extends Seeder
         Panduan::updateOrCreate(['slug' => 'pengaturan-toko-online'], [
             'judul' => 'Pengaturan Toko Online', 'konten' => self::PANDUAN_PENGATURAN, 'modul' => 'toko_online', 'urutan' => 62, 'aktif' => true,
         ]);
+        Panduan::updateOrCreate(['slug' => 'retur-online'], [
+            'judul' => 'Retur Online', 'konten' => self::PANDUAN_RETUR, 'modul' => 'toko_online', 'urutan' => 64, 'aktif' => true,
+        ]);
         Panduan::updateOrCreate(['slug' => 'stok-member'], [
             'judul' => 'Stok Member', 'konten' => self::PANDUAN_STOK_MEMBER, 'modul' => 'toko_online', 'urutan' => 63, 'aktif' => true,
         ]);
@@ -68,6 +71,8 @@ class TokoOnlineSeeder extends Seeder
                 'content' => 'Pesanan transfer yang belum diunggah buktinya sampai batas ini dibatalkan otomatis, supaya stok yang dipesan kembali bisa dibeli member lain. 0 = tidak otomatis.'],
             ['key' => 'toko_online.rekening', 'title' => 'Rekening tujuan',
                 'content' => 'Rekening yang ditampilkan ke member saat bayar transfer, per gudang. Tanpa rekening aktif, member tidak bisa memilih transfer untuk gudang itu.'],
+            ['key' => 'toko_online.batas_retur', 'title' => 'Batas pengajuan retur',
+                'content' => 'Member hanya bisa mengajukan retur sampai sekian hari setelah pesanannya diterima. 0 = tanpa batas.'],
             ['key' => 'toko_online.sumber', 'title' => 'Sumber barang',
                 'content' => 'Mengatur member boleh belanja langsung ke gudang, ke upline-nya, atau keduanya. Tanpa aturan = gudang saja. Pesanan ke upline memakai stok upline dan diproses upline di aplikasi member.'],
             ['key' => 'toko_online.tagihan', 'title' => 'Bayar dengan tagihan',
@@ -140,6 +145,27 @@ Mengatur rekening tujuan transfer, siapa yang boleh bayar dengan tagihan, serta 
 - Batas nominal = total tagihan yang belum lunas. Pesanan baru yang membuat total melewati batas ditolak.
 - Menyimpan aturan baru untuk sasaran yang sama menonaktifkan aturan lama.
 - Gudang tanpa rekening aktif tidak bisa menerima pesanan transfer.
+MARKDOWN;
+
+    public const PANDUAN_RETUR = <<<'MARKDOWN'
+## Tujuan
+Memutuskan retur yang diajukan member atas pesanan gudang yang sudah diterima (mis. botol bocor, aroma tidak sesuai).
+
+## Langkah-langkah
+1. Buka **Toko Online › Retur Online**. Tab **Diajukan** berisi retur yang menunggu keputusan (angka merah di menu).
+2. Buka retur: periksa barang, jumlah, alasan, dan foto dari member.
+3. Setelah barang **sudah kembali ke gudang** dan diperiksa, tekan **Setujui retur**. Bila pesanan sudah lunas, pilih cara mengembalikan dana (transfer / tunai).
+4. Bila retur tidak bisa diterima, tulis alasan lalu tekan **Tolak**.
+
+## Yang terjadi saat disetujui
+- Stok gudang bertambah (dengan modal asal barang), stok member berkurang.
+- Pesanan belum lunas: nilai retur **memotong** yang harus dibayar member. Bila sisa menjadi 0, pesanan otomatis lunas.
+- Pesanan sudah lunas: kembalikan dananya sesuai pilihan (dicatat di retur).
+- RO member berkurang sesuai jumlah botol yang diretur.
+
+## Catatan Penting
+- Member hanya bisa mengajukan retur dalam batas hari di **Pengaturan Toko Online** dan selama barangnya masih ada di stoknya.
+- Tab **Antar member** (Owner / admin pusat) memuat retur ke upline — diputuskan upline di aplikasi member.
 MARKDOWN;
 
     public const PANDUAN_STOK_MEMBER = <<<'MARKDOWN'

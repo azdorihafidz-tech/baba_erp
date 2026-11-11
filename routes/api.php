@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\Member\KatalogController;
 use App\Http\Controllers\Api\Member\PesananController;
+use App\Http\Controllers\Api\Member\ReturController;
 use App\Http\Controllers\Api\Member\SehatController;
 use App\Http\Controllers\Api\Member\TokoSayaController;
 use Illuminate\Support\Facades\Route;
@@ -30,4 +31,13 @@ Route::prefix('member')->middleware('aplikasi.member')->name('api.member.')->gro
     Route::get('rekening', [TokoSayaController::class, 'rekening'])->name('rekening');
     Route::post('rekening', [TokoSayaController::class, 'rekeningSimpan'])->name('rekening.simpan');
     Route::post('rekening/{id}/aktif', [TokoSayaController::class, 'rekeningAktif'])->whereNumber('id')->name('rekening.aktif');
+    // Tahap 2d — retur
+    Route::post('pesanan/{nomor}/retur', [ReturController::class, 'ajukan'])->name('retur.ajukan');
+    Route::get('retur', [ReturController::class, 'index'])->name('retur.index');
+    Route::get('retur/{nomor}', [ReturController::class, 'show'])->name('retur.show');
+    Route::post('retur/{nomor}/batal', [ReturController::class, 'batal'])->name('retur.batal');
+    Route::get('retur-masuk', [ReturController::class, 'masukIndex'])->name('retur-masuk.index');
+    Route::get('retur-masuk/{nomor}', [ReturController::class, 'masukShow'])->name('retur-masuk.show');
+    Route::get('retur-masuk/{nomor}/foto', [ReturController::class, 'masukFoto'])->name('retur-masuk.foto');
+    Route::post('retur-masuk/{nomor}/{aksi}', [ReturController::class, 'masukPutus'])->whereIn('aksi', ['setujui', 'tolak'])->name('retur-masuk.putus');
 });

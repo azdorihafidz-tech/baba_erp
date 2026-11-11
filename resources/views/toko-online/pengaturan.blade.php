@@ -22,7 +22,9 @@
             <input type="number" name="hari_terima_otomatis" min="0" max="60" class="form-control form-control-sm mb-2" value="{{ old('hari_terima_otomatis', $set->hari_terima_otomatis) }}" required>
             <label class="form-label small fw-semibold">Batas waktu bayar transfer (jam) <x-tooltip key="toko_online.batas_bayar" /></label>
             <input type="number" name="jam_batas_bayar" min="0" max="720" class="form-control form-control-sm mb-2" value="{{ old('jam_batas_bayar', $set->jam_batas_bayar) }}" required>
-            <div class="form-text mb-2">0 = tidak pernah otomatis.</div>
+            <label class="form-label small fw-semibold">Batas pengajuan retur (hari setelah diterima) <x-tooltip key="toko_online.batas_retur" /></label>
+            <input type="number" name="hari_batas_retur" min="0" max="90" class="form-control form-control-sm mb-2" value="{{ old('hari_batas_retur', $set->hari_batas_retur) }}" required>
+            <div class="form-text mb-2">0 = tidak pernah otomatis / tanpa batas.</div>
             <button class="btn btn-primary btn-sm">Simpan</button>
         </form>
     </div></div>

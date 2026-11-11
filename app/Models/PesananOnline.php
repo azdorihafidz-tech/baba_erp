@@ -32,14 +32,14 @@ class PesananOnline extends Model
 
     protected $fillable = [
         'nomor', 'member_id', 'sumber', 'sumber_cabang_id', 'sumber_member_id', 'cara_ambil', 'kirim_nama', 'kirim_hp', 'kirim_alamat',
-        'catatan', 'cara_bayar', 'subtotal', 'ongkir', 'total', 'status', 'status_bayar', 'batas_bayar_at', 'jatuh_tempo', 'lunas_at',
+        'catatan', 'cara_bayar', 'subtotal', 'ongkir', 'total', 'nilai_retur', 'status', 'status_bayar', 'batas_bayar_at', 'jatuh_tempo', 'lunas_at',
         'kurir', 'nomor_resi', 'stok_keluar', 'dikirim_at', 'diterima_at', 'diterima_otomatis', 'batal_at', 'batal_alasan',
     ];
 
     protected function casts(): array
     {
         return [
-            'member_id' => 'integer', 'sumber_member_id' => 'integer', 'subtotal' => 'decimal:2', 'ongkir' => 'decimal:2', 'total' => 'decimal:2',
+            'member_id' => 'integer', 'sumber_member_id' => 'integer', 'subtotal' => 'decimal:2', 'ongkir' => 'decimal:2', 'total' => 'decimal:2', 'nilai_retur' => 'decimal:2',
             'stok_keluar' => 'boolean', 'diterima_otomatis' => 'boolean', 'batas_bayar_at' => 'datetime', 'jatuh_tempo' => 'date',
             'lunas_at' => 'datetime', 'dikirim_at' => 'datetime', 'diterima_at' => 'datetime', 'batal_at' => 'datetime',
         ];
@@ -50,6 +50,10 @@ class PesananOnline extends Model
     public function log()    { return $this->hasMany(PesananOnlineLog::class)->orderBy('id'); }
     public function cabang() { return $this->belongsTo(Cabang::class, 'sumber_cabang_id'); }
     public function member() { return $this->belongsTo(MemberAkun::class, 'member_id', 'member_id'); }
+    public function retur()  { return $this->hasMany(ReturOnline::class)->orderByDesc('id'); }
+
+    /** Yang masih harus dibayar = total − nilai retur yang disetujui (Tahap 2d). */
+    public function getSisaBayarAttribute(): float { return max(0, (float) $this->total - (float) $this->nilai_retur); }
 
     public function getStatusLabelAttribute(): string { return self::STATUS[$this->status] ?? $this->status; }
     public function getStatusWarnaAttribute(): string { return self::WARNA[$this->status] ?? 'secondary'; }

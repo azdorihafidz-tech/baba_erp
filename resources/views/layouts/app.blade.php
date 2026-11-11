@@ -631,6 +631,18 @@
             <span>Pesanan Online</span>
             @if($jmlPesananPerlu > 0)<span class="badge rounded-pill bg-danger ms-auto" title="Perlu tindakan">{{ $jmlPesananPerlu }}</span>@endif
         </a>
+        @php
+            try {
+                $jmlReturDiajukan = \App\Models\ReturOnline::where('sumber', 'gudang')->where('status', 'diajukan')
+                    ->whereIn('sumber_cabang_id', \App\Services\ProduksiService::gudangUntuk()->pluck('id'))->count();
+            } catch (\Throwable $e) { $jmlReturDiajukan = 0; }
+        @endphp
+        <a href="{{ route('toko-online.retur.index') }}"
+           class="nav-link {{ request()->routeIs('toko-online.retur.*') ? 'active' : '' }}">
+            <i class="bi bi-arrow-return-left"></i>
+            <span>Retur Online</span>
+            @if($jmlReturDiajukan > 0)<span class="badge rounded-pill bg-danger ms-auto" title="Retur diajukan">{{ $jmlReturDiajukan }}</span>@endif
+        </a>
         @endcan
         @can('toko_online.kelola')
         <a href="{{ route('toko-online.produk.index') }}"
