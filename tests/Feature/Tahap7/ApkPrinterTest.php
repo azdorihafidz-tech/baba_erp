@@ -24,7 +24,7 @@ class ApkPrinterTest extends TestCase
     {
         $this->get('/app-info')->assertOk()
             ->assertExactJson(['erp' => true] + app(Branding::class)->untukAplikasi())
-            ->assertJson(['erp' => true, 'nama_singkat' => "D'mentai", 'tagline' => 'Dimsum & Gyoza'])
+            ->assertJson(['erp' => true, 'nama_singkat' => 'BABA PARFUME', 'tagline' => 'Indonesia'])
             ->assertJsonStructure(['erp', 'nama', 'nama_singkat', 'tagline', 'logo_url', 'ikon_url']);
     }
 

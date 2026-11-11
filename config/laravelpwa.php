@@ -1,13 +1,13 @@
 <?php
 
 return [
-    'name' => "ERP D'mentai",
+    'name' => "ERP BABA PARFUME",
     'manifest' => [
-        'name'             => "ERP D'mentai",
-        'short_name'       => "D'mentai",
+        'name'             => "ERP BABA PARFUME",
+        'short_name'       => "BABA PARFUME",
         'start_url'        => '/',
-        'background_color' => '#1A1A1A',
-        'theme_color'      => '#FF6B00',
+        'background_color' => '#141414',
+        'theme_color'      => '#E6B422',
         'display'          => 'standalone',
         'orientation'      => 'portrait',
         'status_bar'       => 'black',

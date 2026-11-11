@@ -46,8 +46,9 @@ class BrandingTest extends TestCase
     {
         $this->assertTrue(Schema::hasColumns('pengaturan_umums', ['nama_singkat', 'tagline', 'telepon']));
         $s = $this->setting();
-        $this->assertSame("D'mentai", $s->nama_singkat);
-        $this->assertSame('Dimsum & Gyoza', $s->tagline);
+        // BABA: identitas awal dari GoLiveSeeder (DB tes diisi sama)
+        $this->assertSame('BABA PARFUME', $s->nama_singkat);
+        $this->assertSame('Indonesia', $s->tagline);
     }
 
     public function test_sidebar_login_dan_judul_memakai_nama_singkat_dan_tagline(): void
@@ -55,12 +56,12 @@ class BrandingTest extends TestCase
         $owner = $this->buatUser('owner', $this->cabangPertama()->id);
 
         $this->actingAs($owner)->followingRedirects()->get(route('dashboard'))->assertOk()
-            ->assertSee('<div class="brand-name">D&#039;mentai</div>', false)
-            ->assertSee('<div class="brand-sub">Dimsum &amp; Gyoza</div>', false)
-            ->assertSee("<title>ERP D&#039;mentai - ", false);
+            ->assertSee('<div class="brand-name">BABA PARFUME</div>', false)
+            ->assertSee('<div class="brand-sub">Indonesia</div>', false)
+            ->assertSee("<title>ERP BABA PARFUME - ", false);
 
         auth()->logout();
-        $this->get('/login')->assertOk()->assertSee("Masuk ke ERP D'mentai");
+        $this->get('/login')->assertOk()->assertSee("Masuk ke ERP BABA PARFUME");
     }
 
     public function test_ganti_identitas_langsung_tampil_tanpa_ubah_program(): void
@@ -166,8 +167,8 @@ class BrandingTest extends TestCase
 
         $this->assertSame(asset('images/logo-icon.png'), $b->faviconUrl());
         $this->assertSame($ikonLama, config('laravelpwa.manifest.icons'));
-        $this->assertSame("D'mentai", config('laravelpwa.manifest.short_name'));
-        $this->assertSame("ERP D'mentai", config('laravelpwa.manifest.name'));
+        $this->assertSame('BABA PARFUME', config('laravelpwa.manifest.short_name'));
+        $this->assertSame('ERP BABA PARFUME', config('laravelpwa.manifest.name'));
     }
 
     public function test_struk_dan_pratinjau_bill_memakai_nama_singkat(): void
@@ -190,8 +191,8 @@ class BrandingTest extends TestCase
             ->assertOk()->assertHeader('content-type', 'application/pdf');
 
         $html = view('laporan.pdf.layout', ['judulLaporan' => 'Uji'])->render();
-        $this->assertStringContainsString('D&#039;mentai', $html);
-        $this->assertStringContainsString('Dimsum &amp; Gyoza', $html);
+        $this->assertStringContainsString('BABA PARFUME', $html);
+        $this->assertStringContainsString('Indonesia', $html);
     }
 
     public function test_tv_antrian_memakai_nama_usaha(): void

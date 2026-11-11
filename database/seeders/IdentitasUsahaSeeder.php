@@ -29,9 +29,9 @@ Program yang sama bisa dipakai usaha lain: cukup ganti isian di halaman ini, tid
 
 1. Buka menu **Pengaturan → Umum** (khusus Owner)
 2. Isi/ubah:
-   - **Nama Usaha** — nama lengkap (contoh: "D'mentai Indonesia"). Tampil di TV Antrian dan aplikasi kasir.
-   - **Nama Singkat** — nama pendek untuk tempat sempit: sidebar, judul tab, struk, header laporan PDF (contoh: "D'mentai"). Kosong = pakai Nama Usaha.
-   - **Tagline** — kalimat pendek di bawah nama (contoh: "Dimsum & Gyoza"). Kosong = tidak ditampilkan.
+   - **Nama Usaha** — nama lengkap (contoh: "BABA PARFUME Indonesia"). Tampil di TV Antrian dan aplikasi kasir.
+   - **Nama Singkat** — nama pendek untuk tempat sempit: sidebar, judul tab, struk, header laporan PDF (contoh: "BABA PARFUME"). Kosong = pakai Nama Usaha.
+   - **Tagline** — kalimat pendek di bawah nama (contoh: "Indonesia"). Kosong = tidak ditampilkan.
    - **Alamat** dan **No. Telepon / WhatsApp** — telepon tampil di header laporan PDF.
    - **Logo** — upload PNG/JPG/WebP maks 2 MB. Paling bagus PNG latar transparan, bentuk persegi atau bulat.
 3. Klik **Simpan Pengaturan**

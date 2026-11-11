@@ -24,7 +24,7 @@ class ErrorPagesAndLogoSyncTest extends TestCase
         $response->assertForbidden();
         $response->assertSee('Akses Ditolak');
         $response->assertSee('images/logo.png', false);
-        $response->assertSee('#FF6B00', false);
+        $response->assertSee('#E6B422', false);
     }
 
     public function test_halaman_404_render_dengan_brand_dan_logo(): void
@@ -46,7 +46,7 @@ class ErrorPagesAndLogoSyncTest extends TestCase
 
         $this->assertStringContainsString('Ada Masalah di Server', $html);
         $this->assertStringContainsString('images/logo.png', $html);
-        $this->assertStringContainsString('#FF6B00', $html);
+        $this->assertStringContainsString('#E6B422', $html);
     }
 
     /**
@@ -86,7 +86,7 @@ class ErrorPagesAndLogoSyncTest extends TestCase
         $response = $this->get('/login');
 
         $response->assertOk();
-        $response->assertSee("D'mentai");
+        $response->assertSee('BABA PARFUME');
     }
 
     public function test_regresi_profile_edit_tetap_bisa_diakses(): void

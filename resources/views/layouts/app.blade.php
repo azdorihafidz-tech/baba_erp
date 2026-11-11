@@ -556,7 +556,7 @@
         </a>
 
         <!-- PENJUALAN -->
-        @canany(['order.view', 'order.create', 'pelanggan.view', 'jenis-olahan.view', 'master.resep_bumbu.view', 'loyalty.view',
+        @canany(['order.view', 'order.create', 'pelanggan.view', 'loyalty.view',
                  'penjualan.laporan_transaksi.view', 'penjualan.laporan_produk.view', 'penjualan.laporan_kategori.view'])
         <div class="nav-section-title">Penjualan</div>
         @can('order.create')
@@ -602,20 +602,7 @@
             <span>Pelanggan</span>
         </a>
         @endcan
-        @can('jenis-olahan.view')
-        <a href="{{ route('master.jenis-olahan.index') }}"
-           class="nav-link {{ request()->routeIs('master.jenis-olahan.*') ? 'active' : '' }}">
-            <i class="bi bi-list-check"></i>
-            <span>Jenis Menu</span>
-        </a>
-        @endcan
-        @can('master.resep_bumbu.view')
-        <a href="{{ route('master.resep-bumbu.index') }}"
-           class="nav-link {{ request()->routeIs('master.resep-bumbu.*') ? 'active' : '' }}">
-            <i class="bi bi-clipboard2-data"></i>
-            <span>Master Bumbu Pusat</span>
-        </a>
-        @endcan
+        {{-- BABA: menu Jenis Menu & Master Bumbu Pusat (khusus dimsum) dihapus — diganti Resep Parfum (Tahap 1) --}}
         @can('loyalty.view')
         <a href="{{ route('loyalty-program.index') }}"
            class="nav-link {{ request()->routeIs('loyalty-program.*') ? 'active' : '' }}">
@@ -625,44 +612,8 @@
         @endcan
         @endcanany
 
-        <!-- ANTRIAN PRODUKSI -->
-        @canany(['antrian.lihat', 'antrian.kelola'])
-        @php
-        $sidebarCabangId = session('active_cabang_id');
-        $sidebarCabang   = $sidebarCabangId ? \App\Models\Cabang::find($sidebarCabangId) : null;
-        @endphp
-        @if(!$sidebarCabang || $sidebarCabang->antrian_produksi_aktif)
-        <div class="nav-section-title">Antrian Produksi</div>
-        @can('antrian.lihat')
-        <a href="{{ route('antrian.cek') }}"
-           class="nav-link {{ request()->routeIs('antrian.cek*') ? 'active' : '' }}">
-            <i class="bi bi-search"></i>
-            <span>Cek Antrian</span>
-        </a>
-        @endcan
-        @can('antrian.kelola')
-        <a href="{{ route('antrian.operator') }}"
-           class="nav-link {{ request()->routeIs('antrian.operator') ? 'active' : '' }}">
-            <i class="bi bi-list-ol"></i>
-            <span>Kelola Antrian</span>
-        </a>
-        <a href="{{ route('antrian.produksi') }}"
-           class="nav-link {{ request()->routeIs('antrian.produksi*') ? 'active' : '' }}">
-            <i class="bi bi-display"></i>
-            <span>Mode Produksi</span>
-        </a>
-        @endcan
-        @can('antrian.display')
-        @if($sidebarCabang)
-        <a href="{{ route('antrian.display', $sidebarCabang) }}" target="_blank"
-           class="nav-link">
-            <i class="bi bi-tv"></i>
-            <span>Display TV</span>
-        </a>
-        @endif
-        @endcan
-        @endif
-        @endcanany
+        {{-- BABA: grup Antrian Produksi (Cek/Kelola Antrian, Mode Produksi, Display TV — khusus dimsum) dihapus;
+             antrian mati sebagai bawaan per cabang (migration 2026_11_11_000001) --}}
 
         <!-- STOK & GUDANG -->
         @canany(['stok.view', 'stok.request', 'stok.transfer', 'master.bahan_baku.view', 'master.produk_jual.view', 'item.view', 'pemakaian_perlengkapan.view', 'produksi.view', 'kiriman.view', 'retur.view'])

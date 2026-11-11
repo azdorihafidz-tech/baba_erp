@@ -60,7 +60,7 @@
                     <div class="col-12 col-md-6">
                         <label class="form-label fw-medium">Email <span class="text-danger">*</span></label>
                         <input type="email" name="email" class="form-control @error('email') is-invalid @enderror"
-                            value="{{ old('email') }}" placeholder="email@dmentai.com">
+                            value="{{ old('email') }}" placeholder="email@babaparfume.id">
                         @error('email')<div class="invalid-feedback">{{ $message }}</div>@enderror
                     </div>
                 </div>

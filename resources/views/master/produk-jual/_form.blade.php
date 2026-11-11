@@ -300,7 +300,7 @@
                             Nama Kategori <span class="text-danger">*</span>
                         </label>
                         <input type="text" name="nama_kategori" class="form-control"
-                            placeholder="cth: Dimsum, Gyoza, Drink..."
+                            placeholder="cth: Pria, Wanita, Unisex..."
                             required autofocus>
                     </div>
                     <div class="mb-0">

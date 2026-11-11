@@ -257,7 +257,7 @@
             <div class="section-title"><i class="bi bi-lightbulb me-1 text-warning"></i>Panduan Tipe Item</div>
             <div class="guide-item">
                 <span class="badge bg-warning-subtle text-warning guide-badge me-2">Bahan Baku</span>
-                <span class="text-muted">Kulit dimsum, isian, saus — bahan produksi. Kelola juga via menu <strong>Bahan Baku &amp; Kemasan</strong></span>
+                <span class="text-muted">Bibit parfum, alkohol, fixative, botol, label — bahan produksi. Kelola juga via menu <strong>Bahan Baku &amp; Kemasan</strong></span>
             </div>
             <div class="guide-item">
                 <span class="badge bg-info-subtle text-info guide-badge me-2">Kemasan</span>
@@ -269,7 +269,7 @@
             </div>
             <div class="guide-item">
                 <span class="badge bg-success-subtle text-success guide-badge me-2">Produk Jual</span>
-                <span class="text-muted">Dimsum, gyoza, minuman — tampil di grid POS. Kelola juga via menu <strong>Produk Jual</strong></span>
+                <span class="text-muted">Parfum botol &amp; isi ulang — tampil di grid POS. Kelola juga via menu <strong>Produk Jual</strong></span>
             </div>
             <div class="guide-item">
                 <span class="badge bg-primary-subtle text-primary guide-badge me-2">Produk Tambahan</span>

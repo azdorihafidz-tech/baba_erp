@@ -152,8 +152,12 @@ class HakAksesMenuRoleTest extends TestCase
         $html = $this->sidebar($u);
         foreach (['master.jenis-olahan.index', 'admin.panduan.index', 'admin.tooltips.index'] as $r) {
             $this->actingAs($u)->get(route($r))->assertOk();
+        }
+        foreach (['admin.panduan.index', 'admin.tooltips.index'] as $r) {
             $this->assertStringContainsString(route($r), $html, $r);
         }
+        // BABA: menu Jenis Menu (khusus dimsum) sengaja dihapus dari sidebar — diganti Resep Parfum (Tahap 1)
+        $this->assertStringNotContainsString(route('master.jenis-olahan.index'), $html);
     }
 
     public function test_pengaturan_umum_dan_role_tetap_khusus_owner(): void

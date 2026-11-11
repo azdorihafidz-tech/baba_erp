@@ -51,14 +51,14 @@ class WarnaAplikasiTest extends TestCase
 
         $this->assertTrue($b->warnaBawaan());
         $css = $b->cssVariabel();
-        $this->assertStringContainsString('--brand-utama:#FF6B00', $css);
-        $this->assertStringContainsString('--brand-sidebar:#1A1A1A', $css);
-        $this->assertStringContainsString('--brand-latar:#FFF8E7', $css);
-        $this->assertStringContainsString('--brand-utama-teks:#FFFFFF', $css);       // menu aktif tetap tulisan putih
+        $this->assertStringContainsString('--brand-utama:#E6B422', $css);
+        $this->assertStringContainsString('--brand-sidebar:#141414', $css);
+        $this->assertStringContainsString('--brand-latar:#F6F4EF', $css);
+        $this->assertStringContainsString('--brand-utama-teks:#1A1A1A', $css);       // BABA: emas terang -> tulisan gelap di menu aktif
         $this->assertStringContainsString('--brand-sidebar-teks-rgb:255, 255, 255', $css);
 
         $this->actingAs($this->buatUser('owner'))->followingRedirects()->get(route('dashboard'))->assertOk()
-            ->assertSee('<style id="brandWarna">:root{--brand-utama:#FF6B00', false)
+            ->assertSee('<style id="brandWarna">:root{--brand-utama:#E6B422', false)
             ->assertSee('--sidebar-bg: var(--brand-sidebar);', false)
             ->assertSee('window.BRAND', false);
         auth()->logout();

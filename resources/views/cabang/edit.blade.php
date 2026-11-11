@@ -239,7 +239,7 @@
                             <input type="hidden" name="antrian_produksi_aktif" value="0">
                             <input class="form-check-input" type="checkbox" role="switch"
                                 id="antrianAktif" name="antrian_produksi_aktif" value="1"
-                                {{ old('antrian_produksi_aktif', $cabang->antrian_produksi_aktif ?? true) ? 'checked' : '' }}>
+                                {{ old('antrian_produksi_aktif', $cabang->antrian_produksi_aktif ?? false) ? 'checked' : '' }}>
                             <label class="form-check-label" for="antrianAktif">
                                 Aktifkan sistem antrian produksi untuk cabang ini
                             </label>

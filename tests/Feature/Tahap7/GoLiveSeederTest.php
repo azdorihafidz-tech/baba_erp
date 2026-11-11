@@ -64,7 +64,7 @@ class GoLiveSeederTest extends TestCase
         $this->jalankan();
 
         $gudang = Cabang::where('kode_cabang', 'HO-01')->firstOrFail();
-        $this->assertEquals("Gudang Pusat D'mentai", $gudang->nama_cabang);
+        $this->assertEquals("Gudang Pusat BABA", $gudang->nama_cabang);
         $this->assertEquals('gudang_pusat', $gudang->tipe->value ?? $gudang->tipe);
 
         $owner = User::where('email', 'owner-real@dmentaiindonesia.com')->firstOrFail();

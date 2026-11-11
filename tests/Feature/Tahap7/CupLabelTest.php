@@ -108,7 +108,7 @@ class CupLabelTest extends TestCase
             ->assertJsonPath('aktif', true)
             ->assertJsonPath('ukuran', ['lebar' => 40, 'tinggi' => 30])
             ->assertJsonCount(2, 'labels')
-            ->assertJsonPath('labels.0.toko', "D'mentai")
+            ->assertJsonPath('labels.0.toko', 'BABA PARFUME')
             ->assertJsonPath('labels.0.nomor', '0042')
             ->assertJsonPath('labels.0.nama', mb_strtoupper($dimsum->nama_item))
             ->assertJsonPath('labels.0.catatan', 'saus dipisah')

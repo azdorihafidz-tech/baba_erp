@@ -4,12 +4,13 @@ namespace Database\Seeders;
 
 use App\Models\Cabang;
 use App\Models\EvaluationAspect;
+use App\Models\PengaturanUmum;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Cache;
 
 /**
- * Seeder Go-Live D'mentai: hanya data referensi wajib + 1 Owner real + 1
+ * Seeder Go-Live ERP BABA PARFUME (asal: erp-dimsum): hanya data referensi wajib + 1 Owner real + 1
  * Gudang Pusat placeholder. SENGAJA tidak memanggil CabangSeeder, UserSeeder,
  * NeracaSettingSeeder, ItemSeeder, ResepBumbuSeeder, StokSeeder, HRSeeder,
  * PembelianPenjualanSeeder, ProgramLoyaltySeeder, CleanupBerkahMulyoDataSeeder,
@@ -72,13 +73,22 @@ class GoLiveSeeder extends Seeder
         $gudang = Cabang::updateOrCreate(
             ['kode_cabang' => 'HO-01'],
             [
-                'nama_cabang' => "Gudang Pusat D'mentai",
+                'nama_cabang' => 'Gudang Pusat BABA',
                 'alamat'      => 'Alamat kantor pusat',
                 'telepon'     => '0000000000',
                 'tipe'        => 'gudang_pusat',
                 'is_active'   => true,
             ]
         );
+
+        // Identitas usaha awal (bisa diubah Owner di Pengaturan Umum). Warna kosong = bawaan hitam-emas.
+        if (! PengaturanUmum::query()->exists()) {
+            PengaturanUmum::create([
+                'nama_perusahaan' => 'BABA PARFUME Indonesia',
+                'nama_singkat'    => 'BABA PARFUME',
+                'tagline'         => 'Indonesia',
+            ]);
+        }
 
         $owner = User::firstOrNew(['email' => $email]);
         $owner->fill([

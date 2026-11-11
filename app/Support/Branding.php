@@ -113,15 +113,16 @@ class Branding
     // ----------------------------------------------------------------- warna
 
     /**
-     * 4.48 — Warna Aplikasi. Kosong = warna bawaan program (tampilan D'mentai).
+     * 4.48 — Warna Aplikasi. Kosong = warna bawaan program (hitam-emas BABA PARFUME, sama dengan aplikasi member).
      * Hanya mengubah sidebar, menu aktif/sorotan, latar halaman, grafik, dan
      * header tabel PDF — warna tombol (hijau/merah/biru) sengaja TIDAK ikut.
      */
-    public const WARNA_BAWAAN = ['utama' => '#FF6B00', 'sidebar' => '#1A1A1A', 'latar' => '#FFF8E7'];
+    public const WARNA_BAWAAN = ['utama' => '#E6B422', 'sidebar' => '#141414', 'latar' => '#F6F4EF'];
 
     /** Tema siap pakai di Pengaturan Umum. */
     public const TEMA = [
-        'bawaan' => ['label' => 'Oranye & Hitam (bawaan)', 'utama' => '#FF6B00', 'sidebar' => '#1A1A1A', 'latar' => '#FFF8E7'],
+        'bawaan' => ['label' => 'Hitam & Emas (bawaan)', 'utama' => '#E6B422', 'sidebar' => '#141414', 'latar' => '#F6F4EF'],
+        'oranye' => ['label' => 'Oranye & Hitam', 'utama' => '#FF6B00', 'sidebar' => '#1A1A1A', 'latar' => '#FFF8E7'],
         'kopi'   => ['label' => 'Kopi',   'utama' => '#A0612B', 'sidebar' => '#3B2A20', 'latar' => '#F6EFE7'],
         'hijau'  => ['label' => 'Hijau',  'utama' => '#2E8B57', 'sidebar' => '#17302A', 'latar' => '#F0F7F2'],
         'biru'   => ['label' => 'Biru',   'utama' => '#1E6FD9', 'sidebar' => '#14213D', 'latar' => '#EEF3FB'],

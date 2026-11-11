@@ -73,7 +73,7 @@
                             <input type="text" id="tagline" name="tagline"
                                 class="form-control @error('tagline') is-invalid @enderror"
                                 value="{{ old('tagline', $setting->tagline) }}"
-                                maxlength="150" placeholder="Contoh: Dimsum & Gyoza">
+                                maxlength="150" placeholder="Contoh: Indonesia">
                             @error('tagline')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
