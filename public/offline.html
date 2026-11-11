@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sedang Offline – BM ERP</title>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #472c1d;
+            color: #fff;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+        }
+        .card {
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 16px;
+            padding: 40px 32px;
+            max-width: 400px;
+            width: 100%;
+            text-align: center;
+        }
+        .icon-wrap {
+            width: 96px;
+            height: 96px;
+            border-radius: 50%;
+            background: #d0371b;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 24px;
+        }
+        .icon-wrap img {
+            width: 64px;
+            height: 64px;
+            border-radius: 8px;
+        }
+        .wifi-icon {
+            font-size: 48px;
+            line-height: 1;
+        }
+        h1 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 12px;
+            color: #fff;
+        }
+        p {
+            font-size: 0.95rem;
+            color: rgba(255,255,255,0.75);
+            line-height: 1.6;
+            margin-bottom: 32px;
+        }
+        .btn-retry {
+            display: inline-block;
+            background: #d0371b;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            padding: 12px 32px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            transition: background 0.2s;
+            min-width: 140px;
+        }
+        .btn-retry:hover { background: #b82e16; }
+        .brand {
+            margin-top: 32px;
+            font-size: 0.78rem;
+            color: rgba(255,255,255,0.35);
+            letter-spacing: 0.05em;
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <div class="icon-wrap">
+            <img src="/images/icons/icon-192x192.png"
+                 onerror="this.parentElement.innerHTML='<span class=\'wifi-icon\'>📶</span>'"
+                 alt="BM ERP">
+        </div>
+        <h1>Sedang Offline</h1>
+        <p>Kamu sedang tidak terhubung ke internet.<br>
+           Silakan cek koneksi dan refresh halaman ini.</p>
+        <button class="btn-retry" onclick="location.reload()">Coba Lagi</button>
+        <div class="brand">ERP Berkah Mulyo</div>
+    </div>
+</body>
+</html>

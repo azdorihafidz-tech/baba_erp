@@ -1,0 +1,4 @@
+/* Tahap 7 D'mentai (2026-09-17) — Tailwind dihapus (dead code, CLAUDE.md 4.5).
+   Seluruh app pakai Bootstrap 5 (CDN, lihat layouts/app.blade.php/guest.blade.php).
+   File ini sengaja dikosongkan (bukan dihapus) supaya vite.config.js tetap
+   valid kalau suatu saat butuh compiled CSS lagi. */
