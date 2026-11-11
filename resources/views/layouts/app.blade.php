@@ -655,6 +655,13 @@
             <i class="bi bi-people"></i>
             <span>Stok Member</span>
         </a>
+        @php try { $jmlRoGagal = \App\Models\RoCatatan::where('status', 'gagal')->count(); } catch (\Throwable $e) { $jmlRoGagal = 0; } @endphp
+        <a href="{{ route('toko-online.ro.index') }}"
+           class="nav-link {{ request()->routeIs('toko-online.ro.*') ? 'active' : '' }}">
+            <i class="bi bi-star"></i>
+            <span>Catatan RO</span>
+            @if($jmlRoGagal > 0)<span class="badge rounded-pill bg-danger ms-auto" title="Gagal terkirim">{{ $jmlRoGagal }}</span>@endif
+        </a>
         <a href="{{ route('toko-online.pengaturan') }}"
            class="nav-link {{ request()->routeIs('toko-online.pengaturan*') ? 'active' : '' }}">
             <i class="bi bi-sliders"></i>

@@ -127,6 +127,27 @@
                 </div>
             </div>
 
+            {{-- BABA Tahap 2e: kapan RO dari belanja online dihitung --}}
+            <div class="card mb-4">
+                <div class="card-header py-3 px-4">
+                    <i class="bi bi-star me-2 text-primary"></i>
+                    <span class="fw-semibold">RO dari Belanja Online</span>
+                    <x-tooltip key="pengaturan_umum.mode_ro" />
+                </div>
+                <div class="card-body px-4">
+                    <p class="small text-muted mb-2">RO = jumlah botol yang dibeli member dari gudang / upline lewat menu Belanja. RO dikirim otomatis ke aplikasi member (ikut Dashboard & ranking); retur yang disetujui mengurangi RO. Perubahan berlaku untuk pesanan berikutnya.</p>
+                    @php $modeRo = old('mode_ro', $setting->mode_ro ?? 'lunas'); @endphp
+                    @foreach(\App\Services\RoService::MODE as $k => $label)
+                    <div class="form-check mb-1">
+                        <input class="form-check-input" type="radio" name="mode_ro" id="mode_ro_{{ $k }}" value="{{ $k }}" @checked($modeRo === $k)>
+                        <label class="form-check-label" for="mode_ro_{{ $k }}">{{ $label }}</label>
+                    </div>
+                    @endforeach
+                    <div class="form-text">“Disetujui” = alur approve dokumen di aplikasi member yang sudah ada (Regional → MVO → persetujuan akhir superadmin).</div>
+                    @error('mode_ro')<div class="text-danger small">{{ $message }}</div>@enderror
+                </div>
+            </div>
+
             <div class="card">
                 <div class="card-header py-3 px-4">
                     <i class="bi bi-image me-2 text-primary"></i>

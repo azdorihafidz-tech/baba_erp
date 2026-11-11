@@ -247,6 +247,11 @@ class ReturOnlineService
             }
             $p->save();
             $this->pesananSvc()->catat($p, $p->status, $teks, $jenis, $id, $nama);
+            // Tahap 2e: −RO (bila +RO pesanan sudah tercatat); pesanan jadi lunas karena retur → +RO bersih sesuai mode
+            app(RoService::class)->retur($r);
+            if ($p->status_bayar === 'lunas' && ! $lunas) {
+                app(RoService::class)->pemicu($p, 'lunas');
+            }
 
             return $r;
         });

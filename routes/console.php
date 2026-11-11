@@ -23,3 +23,6 @@ Schedule::command('loyalty:cek-pencapaian')->dailyAt('03:00');
 
 // BABA Tahap 2b: pesanan online diterima / dibatalkan otomatis (idempotent)
 Schedule::command('pesanan-online:otomatis')->hourly();
+
+// BABA Tahap 2e: catatan RO belanja online ke aplikasi member (yang dipicu dari aplikasi member + yang gagal) — butuh cron schedule:run
+Schedule::command('ro:kirim')->everyMinute()->withoutOverlapping();

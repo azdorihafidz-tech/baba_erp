@@ -60,6 +60,9 @@ class TokoOnlineSeeder extends Seeder
         Panduan::updateOrCreate(['slug' => 'retur-online'], [
             'judul' => 'Retur Online', 'konten' => self::PANDUAN_RETUR, 'modul' => 'toko_online', 'urutan' => 64, 'aktif' => true,
         ]);
+        Panduan::updateOrCreate(['slug' => 'catatan-ro'], [
+            'judul' => 'Catatan RO Belanja Online', 'konten' => self::PANDUAN_RO, 'modul' => 'toko_online', 'urutan' => 65, 'aktif' => true,
+        ]);
         Panduan::updateOrCreate(['slug' => 'stok-member'], [
             'judul' => 'Stok Member', 'konten' => self::PANDUAN_STOK_MEMBER, 'modul' => 'toko_online', 'urutan' => 63, 'aktif' => true,
         ]);
@@ -71,6 +74,8 @@ class TokoOnlineSeeder extends Seeder
                 'content' => 'Pesanan transfer yang belum diunggah buktinya sampai batas ini dibatalkan otomatis, supaya stok yang dipesan kembali bisa dibeli member lain. 0 = tidak otomatis.'],
             ['key' => 'toko_online.rekening', 'title' => 'Rekening tujuan',
                 'content' => 'Rekening yang ditampilkan ke member saat bayar transfer, per gudang. Tanpa rekening aktif, member tidak bisa memilih transfer untuk gudang itu.'],
+            ['key' => 'pengaturan_umum.mode_ro', 'title' => 'Mode RO belanja online',
+                'content' => 'Saat lunas = RO langsung dihitung begitu pesanan lunas. Saat lunas + disetujui = RO dibuat saat lunas lalu menunggu approve dokumen (Regional, MVO, superadmin) di aplikasi member. Hanya disetujui = RO dibuat saat barang diterima tanpa menunggu lunas, lalu menunggu approve.'],
             ['key' => 'toko_online.batas_retur', 'title' => 'Batas pengajuan retur',
                 'content' => 'Member hanya bisa mengajukan retur sampai sekian hari setelah pesanannya diterima. 0 = tanpa batas.'],
             ['key' => 'toko_online.sumber', 'title' => 'Sumber barang',
@@ -166,6 +171,21 @@ Memutuskan retur yang diajukan member atas pesanan gudang yang sudah diterima (m
 ## Catatan Penting
 - Member hanya bisa mengajukan retur dalam batas hari di **Pengaturan Toko Online** dan selama barangnya masih ada di stoknya.
 - Tab **Antar member** (Owner / admin pusat) memuat retur ke upline — diputuskan upline di aplikasi member.
+MARKDOWN;
+
+    public const PANDUAN_RO = <<<'MARKDOWN'
+## Tujuan
+Memantau RO (jumlah botol) dari belanja online yang dikirim otomatis ke aplikasi member.
+
+## Cara kerja
+- Pesanan member (ke gudang atau ke upline) menambah **RO pembeli** sebesar jumlah botolnya. Kapan RO dihitung diatur di **Pengaturan Umum › RO dari Belanja Online** (Mode RO).
+- Setiap catatan menjadi **dokumen RO** di aplikasi member, sehingga ikut Dashboard, ranking, dan Saran RO. Pada mode yang memakai persetujuan, dokumen menunggu approve di menu Document Belum Approve aplikasi member.
+- **Retur disetujui** dan **pesanan dibatalkan setelah RO tercatat** membuat catatan RO negatif (pengurang).
+- Catatan yang dipicu dari aplikasi member (mis. upline mencatat bayar tunai, pembeli menekan Diterima) dan yang gagal dikirim (aplikasi member sedang tidak bisa dihubungi) dikirim otomatis **tiap menit**; bisa juga tekan **Kirim ulang yang tertunda**. Catatan yang sama tidak pernah tercatat dua kali.
+
+## Catatan Penting
+- Mengubah Mode RO hanya berlaku untuk kejadian berikutnya.
+- Penjualan kasir ke pelanggan dan isi ulang per ml tidak menambah RO.
 MARKDOWN;
 
     public const PANDUAN_STOK_MEMBER = <<<'MARKDOWN'

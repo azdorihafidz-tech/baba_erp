@@ -69,6 +69,18 @@ class AplikasiMemberClient
         $this->kirimAman('POST', '/api/erp/notifikasi', [], ['user_id' => $memberId, 'jenis' => 'pesanan', 'judul' => $judul, 'isi' => $isi, 'url' => $url]);
     }
 
+    /**
+     * Catatan RO dari belanja online → dokumen RO di aplikasi member (idempotent per $ref). Mengembalikan id dokumen.
+     * Melempar \RuntimeException bila gagal (dicoba ulang oleh ro:kirim).
+     */
+    public function catatRo(int $memberId, int $qty, string $tanggal, string $ref, bool $perluApprove, string $keterangan): int
+    {
+        $res = $this->kirimAman('POST', '/api/erp/ro', [], ['user_id' => $memberId, 'qty' => $qty, 'tanggal' => $tanggal, 'ref' => $ref,
+            'perlu_approve' => $perluApprove, 'keterangan' => $keterangan]);
+
+        return (int) $res->json('id');
+    }
+
     private function kirimAman(string $method, string $path, array $query = [], ?array $data = null): Response
     {
         if (! $this->siap()) {

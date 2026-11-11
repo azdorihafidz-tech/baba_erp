@@ -32,6 +32,7 @@ class PengaturanUmumController extends Controller
             'alamat_perusahaan' => ['nullable', 'string', 'max:1000'],
             'telepon'           => ['nullable', 'string', 'max:30'],
             'tanggal_mulai_periode' => ['nullable', 'integer', 'min:1', 'max:28'],
+            'mode_ro'           => ['nullable', 'in:' . implode(',', array_keys(\App\Services\RoService::MODE))],
             'logo'              => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
             // 4.48 — Warna Aplikasi (#RRGGBB). Latar wajib warna terang supaya tulisan terbaca.
             'warna_utama'       => ['nullable', 'regex:/^#[0-9a-fA-F]{6}$/'],
@@ -56,6 +57,10 @@ class PengaturanUmumController extends Controller
         $setting->tagline           = $validated['tagline'] ?? null;
         $setting->alamat_perusahaan = $validated['alamat_perusahaan'] ?? null;
         $setting->telepon           = $validated['telepon'] ?? null;
+        if (! empty($validated['mode_ro']) && $validated['mode_ro'] !== $setting->mode_ro) {
+            activity()->performedOn($setting)->log('Mode RO belanja online diubah: ' . ($setting->mode_ro ?? 'lunas') . ' → ' . $validated['mode_ro']);
+            $setting->mode_ro = $validated['mode_ro'];
+        }
         if (isset($validated['tanggal_mulai_periode'])) {
             $setting->tanggal_mulai_periode = (int) $validated['tanggal_mulai_periode'];
         }
