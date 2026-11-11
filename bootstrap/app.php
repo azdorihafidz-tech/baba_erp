@@ -9,6 +9,7 @@ use Illuminate\Foundation\Configuration\Middleware;
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
         web: __DIR__.'/../routes/web.php',
+        api: __DIR__.'/../routes/api.php', // BABA: API untuk server aplikasi member (/api/member/*)
         commands: __DIR__.'/../routes/console.php',
         health: '/up',
     )
@@ -19,6 +20,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'role' => RoleMiddleware::class,
             'cabang' => CabangMiddleware::class,
+            'aplikasi.member' => \App\Http\Middleware\VerifikasiAplikasiMember::class,
         ]);
         // 4.44 — nama & ikon PWA dari Pengaturan Umum
         $middleware->web(append: [\App\Http\Middleware\TerapkanBranding::class]);
