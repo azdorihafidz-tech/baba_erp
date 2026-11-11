@@ -5,6 +5,7 @@
 @section('content')
 @php
     $nama = fn ($i) => $i->nama_item . ' (' . $i->satuan . ')';
+    $kemasanUrut = $barang->sortBy(fn ($i) => [$i->tipe === 'kemasan' ? 0 : 1, $i->nama_item])->values(); // kemasan di atas
     // tebakan awal dari nama barang (bisa diganti)
     $cari = fn (string $pola) => $barang->first(fn ($i) => preg_match($pola, $i->nama_item))?->id;
     $botolUntuk = fn (int $ml) => $barang->first(fn ($i) => preg_match('/botol/i', $i->nama_item) && preg_match('/\b' . $ml . '\s*ml\b/i', $i->nama_item))?->id;
@@ -109,7 +110,7 @@
         <div class="card mt-3">
             <div class="card-header bg-white small fw-semibold">Kemasan tambahan per botol <span class="text-muted fw-normal">(1 buah per botol, mis. sprayer, label, box)</span></div>
             <div class="card-body" style="max-height: 220px; overflow-y: auto;">
-                @forelse($barang as $i)
+                @forelse($kemasanUrut as $i)
                 <div class="form-check">
                     <input class="form-check-input kemasan" type="checkbox" name="kemasan_ids[]" value="{{ $i->id }}" id="km{{ $i->id }}" data-nama="{{ $i->nama_item }}" @checked(in_array($i->id, array_map('intval', (array) $kemasanAwal), true))>
                     <label class="form-check-label small" for="km{{ $i->id }}">{{ $nama($i) }}</label>
