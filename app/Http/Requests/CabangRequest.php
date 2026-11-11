@@ -23,6 +23,9 @@ class CabangRequest extends FormRequest
                 Rule::unique('cabangs', 'kode_cabang')->ignore($cabangId),
             ],
             'tipe'             => ['required', Rule::in(array_column(\App\Enums\TipeCabang::cases(), 'value'))],
+            // BABA Tahap 3: jenis toko (hanya untuk tipe cabang)
+            'jenis_toko'       => ['nullable', Rule::in(array_keys(\App\Models\Cabang::JENIS_TOKO))],
+            'member_id'        => ['nullable', 'integer', 'min:1'],
             'alamat'           => ['nullable', 'string', 'max:500'],
             'telepon'          => ['nullable', 'string', 'max:20'],
             'kepala_cabang_id'    => ['nullable', 'exists:users,id'],

@@ -128,6 +128,15 @@
                             @error('tipe')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
+                            {{-- BABA Tahap 3: jenis toko untuk cabang penjualan --}}
+                            <label for="jenis_toko" class="form-label fw-medium mt-2">Jenis toko <x-tooltip key="cabang.jenis_toko" /></label>
+                            <select id="jenis_toko" name="jenis_toko" class="form-select @error('jenis_toko') is-invalid @enderror">
+                                <option value="">— bukan toko (gudang / kantor) —</option>
+                                @foreach(\App\Models\Cabang::JENIS_TOKO as $k => $v)
+                                    <option value="{{ $k }}" @selected(old('jenis_toko', $cabang->jenis_toko) === $k)>{{ $v }}</option>
+                                @endforeach
+                            </select>
+                            @error('jenis_toko')<div class="invalid-feedback">{{ $message }}</div>@enderror
                         </div>
                         <div class="col-12 col-md-6">
                             <label for="telepon" class="form-label fw-medium">Telepon</label>

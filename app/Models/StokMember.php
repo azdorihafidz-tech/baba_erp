@@ -9,7 +9,7 @@ class StokMember extends Model
 {
     protected $table = 'stok_member';
 
-    protected $fillable = ['member_id', 'item_id', 'qty', 'nilai_rata'];
+    protected $fillable = ['member_id', 'item_id', 'qty', 'nilai_rata', 'harga_jual'];
 
     protected function casts(): array
     {

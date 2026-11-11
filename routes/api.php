@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\Member\KasirController;
 use App\Http\Controllers\Api\Member\KatalogController;
 use App\Http\Controllers\Api\Member\PesananController;
 use App\Http\Controllers\Api\Member\ReturController;
@@ -34,6 +35,13 @@ Route::prefix('member')->middleware('aplikasi.member')->name('api.member.')->gro
     Route::get('rekening', [TokoSayaController::class, 'rekening'])->name('rekening');
     Route::post('rekening', [TokoSayaController::class, 'rekeningSimpan'])->name('rekening.simpan');
     Route::post('rekening/{id}/aktif', [TokoSayaController::class, 'rekeningAktif'])->whereNumber('id')->name('rekening.aktif');
+    // Tahap 3 — kasir & laporan Toko Saya
+    Route::get('kasir/produk', [KasirController::class, 'produk'])->name('kasir.produk');
+    Route::get('kasir', [KasirController::class, 'index'])->name('kasir.index');
+    Route::post('kasir', [KasirController::class, 'store'])->name('kasir.store');
+    Route::get('kasir/{nomor}', [KasirController::class, 'show'])->name('kasir.show');
+    Route::post('kasir/{nomor}/batal', [KasirController::class, 'batal'])->name('kasir.batal');
+    Route::get('laporan', [KasirController::class, 'laporan'])->name('laporan');
     // Tahap 2d — retur
     Route::post('pesanan/{nomor}/retur', [ReturController::class, 'ajukan'])->middleware('toko.buka')->name('retur.ajukan');
     Route::get('retur', [ReturController::class, 'index'])->name('retur.index');

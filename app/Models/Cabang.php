@@ -23,6 +23,9 @@ class Cabang extends Model
         'label_cup_geser_x', 'label_cup_geser_y',
     ];
 
+    /** BABA Tahap 3 — jenis toko (Pemegang Stok). Kemitraan & toko member: hanya laporan transaksi, produk, kategori. */
+    public const JENIS_TOKO = ['baba' => 'Toko BABA', 'kemitraan' => 'Toko Kemitraan', 'toko_member' => 'Toko Refill Member'];
+
     protected $fillable = [
         'nama_cabang',
         'kode_cabang',
@@ -30,6 +33,7 @@ class Cabang extends Model
         'telepon',
         'kepala_cabang_id',
         'tipe',
+        'jenis_toko', 'member_id', // BABA Tahap 3
         'is_active',
         'latitude',
         'longitude',

@@ -13,7 +13,7 @@ class StokMemberMutasi extends Model
 
     public const JENIS = [
         'beli' => 'Beli (pesanan diterima)', 'jual' => 'Jual ke downline', 'retur_masuk' => 'Retur masuk',
-        'retur_keluar' => 'Retur keluar', 'penyesuaian' => 'Penyesuaian', 'kasir' => 'Jual di kasir',
+        'retur_keluar' => 'Retur keluar', 'penyesuaian' => 'Penyesuaian', 'kasir' => 'Jual di kasir', 'kasir_batal' => 'Batal jual kasir',
     ];
 
     protected $fillable = ['member_id', 'item_id', 'qty', 'sisa', 'jenis', 'harga', 'referensi_type', 'referensi_id', 'catatan'];

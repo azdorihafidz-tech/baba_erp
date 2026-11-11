@@ -96,9 +96,19 @@ class CabangController extends Controller
         $salinDari = $data['salin_dari_cabang_id'] ?? null;
         unset($data['salin_dari_cabang_id']);
         $data['kode_cabang'] = strtoupper($data['kode_cabang']);
+        if (($data['tipe'] ?? null) !== 'cabang') { $data['jenis_toko'] = null; } // BABA Tahap 3: jenis toko hanya untuk cabang penjualan
         $data['is_active'] = true;
+        // BABA Tahap 3 — toko parfum: kasir tanpa pilihan Dine-in/Frozen/nomor meja (istilah dimsum)
+        if (! empty($data['jenis_toko'])) {
+            // ditetapkan (bukan hanya ditambah): formulir ikut mengirim nilai bawaan dimsum (dine-in aktif)
+            $data = array_merge($data, ['dine_in_aktif' => false, 'takeaway_aktif' => true, 'frozen_aktif' => false, 'nomor_meja_aktif' => false,
+                'pilih_tipe_transaksi' => false, 'tipe_transaksi_default' => 'takeaway']);
+        }
 
         $cabang = Cabang::create($data);
+        if (! empty($data['jenis_toko'])) {
+            app(\App\Services\KasBawaanService::class)->pastikan($cabang); // kasir toko langsung bisa menerima tunai/transfer/QRIS
+        }
         if ($salinDari) {
             $this->salinPengaturanBarang((int) $salinDari, $cabang);
         }
@@ -200,6 +210,7 @@ class CabangController extends Controller
     {
         $data = $request->validated();
         $data['kode_cabang'] = strtoupper($data['kode_cabang']);
+        if (($data['tipe'] ?? null) !== 'cabang') { $data['jenis_toko'] = null; } // BABA Tahap 3: jenis toko hanya untuk cabang penjualan
         // 4.44 Poin 2 — semua checkbox kategori label kosong = tidak ada kategori berlabel
         if ($request->boolean('label_cup_form')) {
             $data['label_cup_kategori'] = array_values($request->input('label_cup_kategori', []));

@@ -741,6 +741,13 @@
             <span>Produk Jual</span>
         </a>
         @endcan
+        @can('master.produk_jual.create')
+        <a href="{{ route('produk-toko.index') }}"
+           class="nav-link {{ request()->routeIs('produk-toko.*') ? 'active' : '' }}">
+            <i class="bi bi-shop"></i>
+            <span>Produk Parfum Toko</span>
+        </a>
+        @endcan
         @can('item.view')
         <a href="{{ route('item.index') }}"
            class="nav-link {{ request()->routeIs('item.*') ? 'active' : '' }}"

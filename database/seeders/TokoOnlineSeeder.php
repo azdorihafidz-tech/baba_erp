@@ -63,6 +63,9 @@ class TokoOnlineSeeder extends Seeder
         Panduan::updateOrCreate(['slug' => 'catatan-ro'], [
             'judul' => 'Catatan RO Belanja Online', 'konten' => self::PANDUAN_RO, 'modul' => 'toko_online', 'urutan' => 65, 'aktif' => true,
         ]);
+        Panduan::updateOrCreate(['slug' => 'produk-parfum-toko'], [
+            'judul' => 'Produk Parfum Toko', 'konten' => self::PANDUAN_PRODUK_TOKO, 'modul' => 'penjualan', 'urutan' => 66, 'aktif' => true,
+        ]);
         Panduan::updateOrCreate(['slug' => 'stok-member'], [
             'judul' => 'Stok Member', 'konten' => self::PANDUAN_STOK_MEMBER, 'modul' => 'toko_online', 'urutan' => 63, 'aktif' => true,
         ]);
@@ -74,6 +77,12 @@ class TokoOnlineSeeder extends Seeder
                 'content' => 'Pesanan transfer yang belum diunggah buktinya sampai batas ini dibatalkan otomatis, supaya stok yang dipesan kembali bisa dibeli member lain. 0 = tidak otomatis.'],
             ['key' => 'toko_online.rekening', 'title' => 'Rekening tujuan',
                 'content' => 'Rekening yang ditampilkan ke member saat bayar transfer, per gudang. Tanpa rekening aktif, member tidak bisa memilih transfer untuk gudang itu.'],
+            ['key' => 'cabang.jenis_toko', 'title' => 'Jenis toko',
+                'content' => 'Toko BABA = milik BABA (keuangan penuh). Toko Kemitraan & Toko Refill Member = milik mitra / member (cukup laporan transaksi, produk, kategori). Kosongkan untuk gudang / kantor. Toko baru otomatis mendapat Kas Tunai, Transfer, dan QRIS.'],
+            ['key' => 'produk_toko.botol', 'title' => 'Jual botol',
+                'content' => 'Produk kasir per botol. Saat dijual, stok botol di toko berkurang 1 per produk. Stok botol toko diisi lewat Permintaan / Transfer Stok dari gudang.'],
+            ['key' => 'produk_toko.cairan', 'title' => 'Isi ulang per ml',
+                'content' => 'Produk kasir isi ulang dengan harga per ml. Jumlah di kasir = ml; stok cairan toko berkurang sebanyak ml yang dijual.'],
             ['key' => 'toko_online.status_toko', 'title' => 'Status toko online',
                 'content' => 'Tutup = menu Belanja di aplikasi member tampil Segera hadir. Uji coba = hanya akun yang dipilih yang bisa belanja. Buka = semua member. Pesanan yang sudah berjalan tetap bisa diproses walau toko ditutup.'],
             ['key' => 'pengaturan_umum.mode_ro', 'title' => 'Mode RO belanja online',
@@ -176,6 +185,23 @@ Memutuskan retur yang diajukan member atas pesanan gudang yang sudah diterima (m
 ## Catatan Penting
 - Member hanya bisa mengajukan retur dalam batas hari di **Pengaturan Toko Online** dan selama barangnya masih ada di stoknya.
 - Tab **Antar member** (Owner / admin pusat) memuat retur ke upline — diputuskan upline di aplikasi member.
+MARKDOWN;
+
+    public const PANDUAN_PRODUK_TOKO = <<<'MARKDOWN'
+## Tujuan
+Menyiapkan produk kasir parfum di sebuah toko (Toko BABA, Toko Kemitraan, atau Toko Refill Member): jual per botol dan isi ulang per ml.
+
+## Langkah-langkah
+1. Pastikan tokonya sudah ada di menu **Cabang** (tipe **Cabang**, isi **Jenis toko**). Toko baru otomatis mendapat Kas Tunai, Transfer, dan QRIS.
+2. Buka **Produk Parfum Toko**, pilih **Toko**.
+3. Bagian **Botol**: centang **Jual** dan isi **Harga jual per botol**. Bagian **Isi ulang per ml**: centang **Jual** dan isi **Harga per ml**.
+4. Tekan **Simpan**. Produk langsung tampil di **Kasir (POS)** toko itu.
+5. Isi stok toko lewat **Permintaan Stok / Transfer Stok** dari gudang (botol dan cairan).
+
+## Catatan Penting
+- Botol: stok toko berkurang 1 per botol terjual. Isi ulang: jumlah di kasir = ml, stok cairan toko berkurang sebanyak itu.
+- Hapus centang **Jual** untuk menyembunyikan produk dari kasir (data tidak dihapus).
+- Parfum baru dibuat di **Produksi › Buat Parfum**.
 MARKDOWN;
 
     public const PANDUAN_RO = <<<'MARKDOWN'

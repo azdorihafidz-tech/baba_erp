@@ -253,6 +253,9 @@ Route::middleware(['auth', 'verified', 'cabang'])->group(function () {
         Route::put('/produk/{produk}', 'update')->name('produk.update');
         Route::get('/cari-akun', 'cariAkun')->name('cari-akun');
     });
+    // BABA Tahap 3 — produk kasir parfum (botol & isi ulang per ml) untuk toko
+    Route::get('/produk-toko', [\App\Http\Controllers\ProdukTokoController::class, 'index'])->name('produk-toko.index');
+    Route::post('/produk-toko', [\App\Http\Controllers\ProdukTokoController::class, 'simpan'])->name('produk-toko.simpan');
     // BABA Tahap 2b — pesanan online (gudang memproses) & pengaturan toko online
     Route::prefix('toko-online')->name('toko-online.')->group(function () {
         Route::controller(\App\Http\Controllers\PesananOnlineController::class)->group(function () {

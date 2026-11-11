@@ -89,6 +89,12 @@ class ResepBumbuItem extends Model
      */
     public function getQtyPerUnitDalamKgAttribute(): float
     {
+        // BABA Tahap 3 — barang yang stoknya dicatat dalam ml (Cairan Parfum): takaran ml dipakai apa adanya
+        // (isi ulang 1 ml = stok −1 ml, bukan −0,001). Barang "gram" tetap konvensi dimsum (harga & stok per kg).
+        if (strtolower(trim((string) ($this->item?->satuan ?? ''))) === 'ml' && strtolower((string) $this->satuan) === 'ml') {
+            return (float) $this->qty_per_unit;
+        }
+
         return match (strtolower((string) $this->satuan)) {
             'g', 'gram', 'ml' => (float) $this->qty_per_unit / 1000,
             'ons'             => (float) $this->qty_per_unit / 10,
