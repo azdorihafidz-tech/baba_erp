@@ -25,7 +25,11 @@
             <div class="col-6 col-md-4"><div class="text-muted">Pembeli</div><div class="fw-semibold">{{ $p->member?->nama ?? '#' . $p->member_id }}</div><div>{{ $p->member?->no_id }} · {{ $p->member?->no_member }}</div></div>
             <div class="col-6 col-md-4"><div class="text-muted">Jabatan · Cabang</div><div>{{ $p->member?->jabatan ?? '—' }} · {{ $p->member?->cabang ?? '—' }}</div></div>
             <div class="col-6 col-md-4"><div class="text-muted">Tanggal</div><div>{{ $p->created_at->format('d/m/Y H:i') }}</div></div>
+            @if($p->sumber === 'upline')
+            <div class="col-6 col-md-4"><div class="text-muted">Penjual (upline)</div><div>{{ $upline?->label ?? '#' . $p->sumber_member_id }}</div></div>
+            @else
             <div class="col-6 col-md-4"><div class="text-muted">Gudang</div><div>{{ $p->cabang?->nama_cabang }}</div></div>
+            @endif
             <div class="col-6 col-md-4"><div class="text-muted">Cara bayar</div><div>{{ $p->cara_bayar === 'tagihan' ? 'Tagihan' : 'Transfer' }} · <span class="{{ $p->status_bayar === 'lunas' ? 'text-success fw-semibold' : '' }}">{{ $p->status_bayar_label }}</span></div>
                 @if($p->jatuh_tempo)<div class="{{ $p->status_bayar !== 'lunas' && $p->jatuh_tempo->isPast() ? 'text-danger fw-semibold' : 'text-muted' }}">Jatuh tempo {{ $p->jatuh_tempo->format('d/m/Y') }}</div>@endif
                 @if($p->status === 'menunggu_bayar' && $p->batas_bayar_at)<div class="text-muted">Batas bayar {{ $p->batas_bayar_at->format('d/m/Y H:i') }}</div>@endif
@@ -42,7 +46,7 @@
 
     <div class="card mb-3"><div class="table-responsive">
     <table class="table table-sm align-middle mb-0">
-        <thead><tr><th>Barang</th><th class="text-end">Jumlah</th><th class="text-end">Harga</th><th class="text-end">Subtotal</th>@if(! $p->stok_keluar && $p->status !== 'batal')<th class="text-end">Stok gudang</th>@endif</tr></thead>
+        <thead><tr><th>Barang</th><th class="text-end">Jumlah</th><th class="text-end">Harga</th><th class="text-end">Subtotal</th>@if(! $p->stok_keluar && $p->status !== 'batal')<th class="text-end">{{ $p->sumber === 'upline' ? 'Stok upline' : 'Stok gudang' }}</th>@endif</tr></thead>
         <tbody>
         @foreach($p->item as $i)
         <tr>
@@ -71,6 +75,9 @@
 </div>
 
 <div class="col-12 col-lg-5">
+    @if($p->sumber === 'upline')
+    <div class="alert alert-info small"><i class="bi bi-people me-1"></i>Pesanan ke <strong>upline</strong> — diproses upline di menu Toko Saya aplikasi member (isi ongkir, cek bukti / tunai, kirim). Di sini hanya dipantau; admin bisa membatalkan bila macet.</div>
+    @else
     {{-- Isi ongkir --}}
     @if($p->status === 'menunggu_ongkir')
     <div class="card mb-3 border-warning"><div class="card-body">
@@ -144,6 +151,7 @@
     @if($p->status === 'menunggu_bayar')
     <div class="alert alert-warning small">Menunggu member transfer {{ $rp($p->total) }} dan mengunggah bukti{{ $p->batas_bayar_at ? ' (batas ' . $p->batas_bayar_at->format('d/m/Y H:i') . ', lewat itu batal otomatis)' : '' }}.</div>
     @endif
+    @endif {{-- akhir tindakan gudang --}}
 
     {{-- Bukti sebelumnya --}}
     @if($p->bayar->where('status', '!=', 'menunggu')->isNotEmpty())

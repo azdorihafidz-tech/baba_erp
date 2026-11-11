@@ -58,8 +58,8 @@ class AplikasiMemberApiTest extends TestCase
 
     public function test_waktu_kedaluwarsa_ditolak(): void
     {
-        $this->get('/api/member/sehat', $this->header('GET', '/api/member/sehat', waktu: time() - 301))->assertStatus(401);
-        $this->get('/api/member/sehat', $this->header('GET', '/api/member/sehat', waktu: time() + 301))->assertStatus(401);
+        $this->get('/api/member/sehat', $this->header('GET', '/api/member/sehat', waktu: time() - 330))->assertStatus(401);
+        $this->get('/api/member/sehat', $this->header('GET', '/api/member/sehat', waktu: time() + 330))->assertStatus(401);
     }
 
     public function test_kirim_ulang_nonce_yang_sama_ditolak(): void

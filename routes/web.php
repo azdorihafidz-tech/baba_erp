@@ -274,7 +274,12 @@ Route::middleware(['auth', 'verified', 'cabang'])->group(function () {
             Route::post('/pengaturan/rekening/{rekening}/aktif', 'aktifRekening')->name('pengaturan.rekening.aktif');
             Route::post('/pengaturan/tagihan', 'simpanAturan')->name('pengaturan.tagihan');
             Route::post('/pengaturan/tagihan/{aturan}/nonaktif', 'nonaktifAturan')->name('pengaturan.tagihan.nonaktif');
+            Route::post('/pengaturan/sumber', 'simpanSumber')->name('pengaturan.sumber');
+            Route::post('/pengaturan/sumber/{sumber}/nonaktif', 'nonaktifSumber')->name('pengaturan.sumber.nonaktif');
         });
+        // Tahap 2c — stok parfum milik member (pantau saja)
+        Route::get('/stok-member', [\App\Http\Controllers\StokMemberController::class, 'index'])->name('stok-member.index');
+        Route::get('/stok-member/{memberId}', [\App\Http\Controllers\StokMemberController::class, 'show'])->whereNumber('memberId')->name('stok-member.show');
     });
 
     // ===== 4.49 Tahap B1 — PRODUKSI bahan setengah jadi di gudang (porting erp-coffeeshop) =====

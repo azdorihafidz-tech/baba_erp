@@ -11,7 +11,7 @@ class PesananOnlineBayar extends Model
 
     public const STATUS = ['menunggu' => 'Menunggu dicek', 'diterima' => 'Diterima', 'ditolak' => 'Ditolak'];
 
-    protected $fillable = ['pesanan_online_id', 'file', 'hash', 'nominal', 'status', 'alasan', 'dicek_by', 'dicek_at'];
+    protected $fillable = ['pesanan_online_id', 'file', 'hash', 'nominal', 'status', 'alasan', 'dicek_by', 'dicek_member_id', 'dicek_at'];
 
     protected function casts(): array
     {

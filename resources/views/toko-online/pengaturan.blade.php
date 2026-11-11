@@ -55,6 +55,54 @@
 </div>
 
 <div class="col-12 col-xl-7">
+    <div class="card mb-3"><div class="card-header fw-semibold small">Sumber barang (belanja ke gudang / upline) <x-tooltip key="toko_online.sumber" /></div>
+        <div class="card-body small pb-0">
+            <p class="text-muted mb-2">Yang berlaku: <strong>aturan akun</strong> → <strong>aturan jabatan</strong> → <strong>semua member</strong>. Tanpa aturan = belanja ke <strong>gudang saja</strong>. Belanja ke upline memakai stok upline (bertambah saat pesanan upline diterima).</p>
+        </div>
+        <div class="table-responsive"><table class="table table-sm align-middle mb-0 small">
+            <thead><tr><th>Untuk</th><th class="text-center">Gudang</th><th class="text-center">Upline</th><th>Status</th><th></th></tr></thead>
+            <tbody>
+            @forelse($aturanSumber as $a)
+            <tr class="{{ $a->aktif ? '' : 'text-muted' }}">
+                <td>@if($a->cakupan === 'semua')Semua member@elseif($a->cakupan === 'jabatan')Jabatan {{ $jabatan[$a->jabatan_id]['nama'] ?? '#' . $a->jabatan_id }}@else{{ $a->akun?->label ?? 'Akun #' . $a->member_id }}@endif
+                    @if($a->catatan)<div class="text-muted">{{ $a->catatan }}</div>@endif</td>
+                <td class="text-center">{!! $a->boleh_gudang ? '<i class="bi bi-check-lg text-success"></i>' : '<i class="bi bi-x-lg text-danger"></i>' !!}</td>
+                <td class="text-center">{!! $a->boleh_upline ? '<i class="bi bi-check-lg text-success"></i>' : '<i class="bi bi-x-lg text-danger"></i>' !!}</td>
+                <td><span class="badge bg-{{ $a->aktif ? 'success' : 'secondary' }}">{{ $a->aktif ? 'Aktif' : 'Nonaktif' }}</span></td>
+                <td class="text-end">@if($a->aktif)<form method="POST" action="{{ route('toko-online.pengaturan.sumber.nonaktif', $a) }}" onsubmit="return confirm('Nonaktifkan aturan ini?')">@csrf<button class="btn btn-outline-secondary btn-sm">Nonaktifkan</button></form>@endif</td>
+            </tr>
+            @empty
+            <tr><td colspan="5" class="text-center text-muted py-3">Belum ada aturan — semua member belanja ke gudang saja.</td></tr>
+            @endforelse
+            </tbody>
+        </table></div>
+        <div class="card-body border-top">
+            <form method="POST" action="{{ route('toko-online.pengaturan.sumber') }}" class="row g-2 form-sasaran" data-awalan="S">
+                @csrf
+                <div class="col-12 col-md-4"><label class="form-label small fw-semibold">Untuk</label>
+                    <select name="cakupan" class="form-select form-select-sm pilih-cakupan">
+                        @foreach(\App\Models\AturanTagihan::CAKUPAN as $k => $v)<option value="{{ $k }}">{{ $v }}</option>@endforeach
+                    </select></div>
+                <div class="col-12 col-md-8 d-none kotak-jabatan"><label class="form-label small fw-semibold">Jabatan</label>
+                    <select name="jabatan_id" class="form-select form-select-sm">
+                        <option value="">— pilih jabatan —</option>
+                        @foreach($jabatan as $j)<option value="{{ $j['id'] }}">{{ $j['nama'] }}</option>@endforeach
+                    </select></div>
+                <div class="col-12 col-md-8 d-none position-relative kotak-akun"><label class="form-label small fw-semibold">Akun</label>
+                    <input type="hidden" name="member_id" class="isi-member">
+                    <input type="text" class="form-control form-control-sm cari-akun" placeholder="Cari nama / No ID / BP-xxxxx" autocomplete="off">
+                    <div class="list-group position-absolute w-100 shadow-sm hasil-akun" style="z-index:5"></div>
+                    <div class="form-text akun-terpilih"></div></div>
+                <div class="col-12 d-flex flex-wrap gap-3">
+                    <div class="form-check"><input class="form-check-input" type="checkbox" name="boleh_gudang" value="1" id="bolehGudang" checked><label class="form-check-label small" for="bolehGudang">Boleh ke gudang</label></div>
+                    <div class="form-check"><input class="form-check-input" type="checkbox" name="boleh_upline" value="1" id="bolehUpline" checked><label class="form-check-label small" for="bolehUpline">Boleh ke upline</label></div>
+                </div>
+                <div class="col-12 col-md-8"><input type="text" name="catatan" maxlength="255" class="form-control form-control-sm" placeholder="Catatan (opsional)"></div>
+                <div class="col-12 col-md-4"><button class="btn btn-primary btn-sm w-100">Simpan aturan</button></div>
+            </form>
+        </div>
+    </div>
+
     <div class="card mb-3"><div class="card-header fw-semibold small">Bayar dengan tagihan (tempo) <x-tooltip key="toko_online.tagihan" /></div>
         <div class="card-body small pb-0">
             <p class="text-muted mb-2">Yang berlaku untuk seorang member: <strong>aturan akun</strong> → <strong>aturan jabatan</strong> → <strong>semua member</strong>. Tanpa aturan = hanya bisa transfer. Batas = total tagihan belum lunas maksimal.</p>
@@ -79,22 +127,22 @@
             </tbody>
         </table></div>
         <div class="card-body border-top">
-            <form method="POST" action="{{ route('toko-online.pengaturan.tagihan') }}" class="row g-2" id="formTagihan">
+            <form method="POST" action="{{ route('toko-online.pengaturan.tagihan') }}" class="row g-2 form-sasaran" id="formTagihan">
                 @csrf
                 <div class="col-12 col-md-4"><label class="form-label small fw-semibold">Untuk</label>
-                    <select name="cakupan" id="cakupan" class="form-select form-select-sm">
+                    <select name="cakupan" class="form-select form-select-sm pilih-cakupan">
                         @foreach(\App\Models\AturanTagihan::CAKUPAN as $k => $v)<option value="{{ $k }}" @selected(old('cakupan') === $k)>{{ $v }}</option>@endforeach
                     </select></div>
-                <div class="col-12 col-md-8 d-none" id="pilihJabatan"><label class="form-label small fw-semibold">Jabatan</label>
+                <div class="col-12 col-md-8 d-none kotak-jabatan"><label class="form-label small fw-semibold">Jabatan</label>
                     <select name="jabatan_id" class="form-select form-select-sm">
                         <option value="">— pilih jabatan —</option>
                         @foreach($jabatan as $j)<option value="{{ $j['id'] }}" @selected(old('jabatan_id') == $j['id'])>{{ $j['nama'] }}</option>@endforeach
                     </select></div>
-                <div class="col-12 col-md-8 d-none position-relative" id="pilihAkun"><label class="form-label small fw-semibold">Akun</label>
-                    <input type="hidden" name="member_id" id="memberId" value="{{ old('member_id') }}">
-                    <input type="text" id="cariAkunTagihan" class="form-control form-control-sm" placeholder="Cari nama / No ID / BP-xxxxx" autocomplete="off">
-                    <div id="hasilAkunTagihan" class="list-group position-absolute w-100 shadow-sm" style="z-index:5"></div>
-                    <div class="form-text" id="akunTerpilih"></div></div>
+                <div class="col-12 col-md-8 d-none position-relative kotak-akun"><label class="form-label small fw-semibold">Akun</label>
+                    <input type="hidden" name="member_id" class="isi-member" value="{{ old('member_id') }}">
+                    <input type="text" class="form-control form-control-sm cari-akun" placeholder="Cari nama / No ID / BP-xxxxx" autocomplete="off">
+                    <div class="list-group position-absolute w-100 shadow-sm hasil-akun" style="z-index:5"></div>
+                    <div class="form-text akun-terpilih"></div></div>
                 <div class="col-6 col-md-4"><label class="form-label small fw-semibold">Batas nominal (Rp)</label>
                     <input type="number" name="batas_nominal" min="1" step="1" class="form-control form-control-sm" value="{{ old('batas_nominal') }}" required></div>
                 <div class="col-6 col-md-3"><label class="form-label small fw-semibold">Tempo (hari)</label>
@@ -112,38 +160,43 @@
 
 @push('scripts')
 <script>
+// Formulir bersasaran (aturan sumber & aturan tagihan): Untuk = semua / jabatan / akun (akun dicari lewat aplikasi member)
 (() => {
-    const el = (id) => document.getElementById(id);
     const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-    const tampil = () => {
-        const c = el('cakupan').value;
-        el('pilihJabatan').classList.toggle('d-none', c !== 'jabatan');
-        el('pilihAkun').classList.toggle('d-none', c !== 'akun');
-    };
-    el('cakupan').addEventListener('change', tampil);
-    tampil();
-    let t = null;
-    el('cariAkunTagihan').addEventListener('input', (e) => {
-        clearTimeout(t);
-        const q = e.target.value.trim();
-        if (q.length < 2) { el('hasilAkunTagihan').innerHTML = ''; return; }
-        t = setTimeout(async () => {
-            try {
-                const r = await fetch(`{{ route('toko-online.cari-akun') }}?q=${encodeURIComponent(q)}`, { headers: { Accept: 'application/json' } });
-                const j = await r.json();
-                if (!j.ok) { el('hasilAkunTagihan').innerHTML = `<div class="list-group-item small text-danger">${esc(j.pesan || 'Gagal mencari akun.')}</div>`; return; }
-                el('hasilAkunTagihan').innerHTML = j.data.length ? j.data.map((a) => `<button type="button" class="list-group-item list-group-item-action small pilih-akun-tagihan" data-id="${a.id}" data-label="${esc((a.no_id ? a.no_id + ' · ' : '') + a.nama + ' (' + a.no_member + ')')}">
-                    <strong>${esc(a.no_id || '')}</strong> ${esc(a.nama)} <span class="text-muted">${esc(a.jabatan || '')} · ${esc(a.no_member)}</span></button>`).join('')
-                    : '<div class="list-group-item small text-muted">Tidak ada akun aktif yang cocok.</div>';
-            } catch (err) { el('hasilAkunTagihan').innerHTML = '<div class="list-group-item small text-danger">Gagal mencari akun.</div>'; }
-        }, 350);
-    });
-    el('hasilAkunTagihan').addEventListener('click', (e) => {
-        const b = e.target.closest('.pilih-akun-tagihan');
-        if (!b) return;
-        el('memberId').value = b.dataset.id;
-        el('akunTerpilih').textContent = 'Dipilih: ' + b.dataset.label;
-        el('hasilAkunTagihan').innerHTML = ''; el('cariAkunTagihan').value = '';
+    const urlCari = @json(route('toko-online.cari-akun'));
+    document.querySelectorAll('.form-sasaran').forEach((f) => {
+        const q = (sel) => f.querySelector(sel);
+        const tampil = () => {
+            const c = q('.pilih-cakupan').value;
+            q('.kotak-jabatan').classList.toggle('d-none', c !== 'jabatan');
+            q('.kotak-akun').classList.toggle('d-none', c !== 'akun');
+        };
+        q('.pilih-cakupan').addEventListener('change', tampil);
+        tampil();
+        let t = null;
+        q('.cari-akun').addEventListener('input', (e) => {
+            clearTimeout(t);
+            const kata = e.target.value.trim();
+            if (kata.length < 2) { q('.hasil-akun').innerHTML = ''; return; }
+            t = setTimeout(async () => {
+                try {
+                    const r = await fetch(urlCari + '?q=' + encodeURIComponent(kata), { headers: { Accept: 'application/json' } });
+                    const j = await r.json();
+                    if (!j.ok) { q('.hasil-akun').innerHTML = '<div class="list-group-item small text-danger">' + esc(j.pesan || 'Gagal mencari akun.') + '</div>'; return; }
+                    q('.hasil-akun').innerHTML = j.data.length ? j.data.map((a) => '<button type="button" class="list-group-item list-group-item-action small pilih-akun" data-id="' + a.id + '" data-label="'
+                        + esc((a.no_id ? a.no_id + ' · ' : '') + a.nama + ' (' + a.no_member + ')') + '"><strong>' + esc(a.no_id || '') + '</strong> ' + esc(a.nama)
+                        + ' <span class="text-muted">' + esc(a.jabatan || '') + ' · ' + esc(a.no_member) + '</span></button>').join('')
+                        : '<div class="list-group-item small text-muted">Tidak ada akun aktif yang cocok.</div>';
+                } catch (err) { q('.hasil-akun').innerHTML = '<div class="list-group-item small text-danger">Gagal mencari akun.</div>'; }
+            }, 350);
+        });
+        q('.hasil-akun').addEventListener('click', (e) => {
+            const b = e.target.closest('.pilih-akun');
+            if (!b) return;
+            q('.isi-member').value = b.dataset.id;
+            q('.akun-terpilih').textContent = 'Dipilih: ' + b.dataset.label;
+            q('.hasil-akun').innerHTML = ''; q('.cari-akun').value = '';
+        });
     });
 })();
 </script>

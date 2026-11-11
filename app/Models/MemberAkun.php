@@ -9,11 +9,11 @@ class MemberAkun extends Model
 {
     protected $table = 'member_akun';
 
-    protected $fillable = ['member_id', 'nama', 'no_id', 'no_member', 'jabatan_id', 'jabatan', 'parent_member_id', 'cabang', 'aktif', 'diperbarui_at'];
+    protected $fillable = ['member_id', 'nama', 'no_id', 'no_member', 'jabatan_id', 'jabatan', 'parent_member_id', 'upline_member_id', 'cabang', 'aktif', 'diperbarui_at'];
 
     protected function casts(): array
     {
-        return ['member_id' => 'integer', 'jabatan_id' => 'integer', 'parent_member_id' => 'integer', 'aktif' => 'boolean', 'diperbarui_at' => 'datetime'];
+        return ['member_id' => 'integer', 'jabatan_id' => 'integer', 'parent_member_id' => 'integer', 'upline_member_id' => 'integer', 'aktif' => 'boolean', 'diperbarui_at' => 'datetime'];
     }
 
     /** "No ID · Nama" untuk tampilan. */

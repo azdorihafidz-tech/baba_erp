@@ -23,6 +23,8 @@ class PesananOnlineController extends Controller
         'selesai'  => ['Diterima', ['diterima']],
         'batal'    => ['Batal', ['batal']],
         'semua'    => ['Semua', null],
+        // Tahap 2c: pesanan member ke upline (diproses upline di aplikasi member) — hanya dilihat Owner/admin pusat
+        'antar'    => ['Antar member', null],
     ];
 
     public function __construct(private PesananOnlineService $svc)
@@ -39,19 +41,28 @@ class PesananOnlineController extends Controller
         return ProduksiService::gudangUntuk()->pluck('id');
     }
 
+    private function lihatSemua(): bool
+    {
+        return (bool) auth()->user()->canAccessAllBranches();
+    }
+
     private function pastikanBoleh(PesananOnline $p): void
     {
-        abort_unless($this->gudangIds()->contains($p->sumber_cabang_id), 404);
+        abort_unless($p->sumber === 'upline' ? $this->lihatSemua() : $this->gudangIds()->contains($p->sumber_cabang_id), 404);
     }
 
     public function index(Request $request)
     {
         $this->izin();
         $tab = array_key_exists($request->query('tab'), self::TAB) ? $request->query('tab') : 'perlu';
+        if ($tab === 'antar' && ! $this->lihatSemua()) {
+            $tab = 'perlu';
+        }
         $cari = trim((string) $request->query('cari', ''));
-        $dasar = PesananOnline::whereIn('sumber_cabang_id', $this->gudangIds());
+        $dasar = PesananOnline::where('sumber', 'gudang')->whereIn('sumber_cabang_id', $this->gudangIds());
+        $antar = PesananOnline::where('sumber', 'upline');
 
-        $pesanan = $this->saringTab((clone $dasar)->with(['item', 'member']), $tab)
+        $pesanan = ($tab === 'antar' ? (clone $antar)->with(['item', 'member']) : $this->saringTab((clone $dasar)->with(['item', 'member']), $tab))
             ->when($cari !== '', fn ($q) => $q->where(fn ($w) => $w->where('nomor', 'like', "%{$cari}%")
                 ->orWhereIn('member_id', \App\Models\MemberAkun::where('nama', 'like', "%{$cari}%")->orWhere('no_id', 'like', "%{$cari}%")->orWhere('no_member', 'like', "%{$cari}%")->pluck('member_id'))))
             ->orderByRaw("FIELD(status,'menunggu_cek','menunggu_ongkir','disiapkan') DESC")->orderByDesc('id')
@@ -59,6 +70,12 @@ class PesananOnlineController extends Controller
 
         $jumlah = [];
         foreach (array_keys(self::TAB) as $k) {
+            if ($k === 'antar') {
+                if ($this->lihatSemua()) {
+                    $jumlah[$k] = (clone $antar)->whereIn('status', PesananOnline::BERJALAN)->count();
+                }
+                continue;
+            }
             $jumlah[$k] = $this->saringTab(clone $dasar, $k)->count();
         }
 
@@ -81,9 +98,14 @@ class PesananOnlineController extends Controller
         $this->izin();
         $this->pastikanBoleh($pesanan);
         $pesanan->load(['item.barang', 'bayar.pengecek', 'log', 'cabang', 'member']);
-        $stok = $pesanan->item->mapWithKeys(fn ($i) => [$i->id => app(\App\Services\StokService::class)->getStok($i->item_id, (int) $pesanan->sumber_cabang_id)]);
+        $stok = $pesanan->item->mapWithKeys(fn ($i) => [$i->id => $pesanan->sumber === 'upline'
+            ? app(\App\Services\StokMemberService::class)->qty((int) $pesanan->sumber_member_id, $i->item_id)
+            : app(\App\Services\StokService::class)->getStok($i->item_id, (int) $pesanan->sumber_cabang_id)]);
 
-        return view('toko-online.pesanan.show', ['p' => $pesanan, 'stok' => $stok, 'rekening' => $this->svc->rekening((int) $pesanan->sumber_cabang_id)]);
+        $upline = $pesanan->sumber === 'upline' ? \App\Models\MemberAkun::where('member_id', $pesanan->sumber_member_id)->first() : null;
+
+        return view('toko-online.pesanan.show', ['p' => $pesanan, 'stok' => $stok, 'upline' => $upline,
+            'rekening' => $upline ? $this->svc->rekeningMember($upline->member_id) : $this->svc->rekening((int) $pesanan->sumber_cabang_id)]);
     }
 
     private function aksi(PesananOnline $p, callable $fn, string $berhasil)

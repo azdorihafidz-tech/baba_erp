@@ -133,5 +133,10 @@ class ContohParfumSeeder extends Seeder
             \App\Models\AturanTagihan::firstOrCreate(['cakupan' => 'jabatan', 'jabatan_id' => 21, 'aktif' => true],
                 ['batas_nominal' => 1000000, 'tempo_hari' => 14, 'catatan' => 'Data contoh']);
         }
+        // Tahap 2c — contoh: semua member boleh belanja ke gudang & ke upline
+        if (\Illuminate\Support\Facades\Schema::hasTable('toko_online_aturan_sumber')) {
+            \App\Models\AturanSumber::firstOrCreate(['cakupan' => 'semua', 'aktif' => true],
+                ['boleh_gudang' => true, 'boleh_upline' => true, 'catatan' => 'Data contoh']);
+        }
     }
 }

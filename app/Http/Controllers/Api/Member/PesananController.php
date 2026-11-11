@@ -63,7 +63,12 @@ class PesananController extends Controller
                 'id' => $c->id, 'nama' => $c->nama_cabang, 'alamat' => $c->alamat, 'telepon' => $c->telepon, 'rekening' => $this->svc->rekening($c->id),
             ])->values();
 
+            $up = $this->svc->upline($m);
+            $boleh = $this->svc->sumberBoleh($m);
+
             return response()->json(['ok' => true, 'gudang' => $gudang, 'tagihan' => $this->svc->infoTagihan($m),
+                'sumber' => $boleh,
+                'upline' => $boleh['upline'] && $up ? ['id' => $up->member_id, 'label' => $up->label, 'jabatan' => $up->jabatan, 'rekening' => $this->svc->rekeningMember($up->member_id)] : null,
                 'jam_batas_bayar' => TokoOnlinePengaturan::ambil()->jam_batas_bayar]);
         });
     }
@@ -101,7 +106,7 @@ class PesananController extends Controller
     public function store(Request $request): JsonResponse
     {
         return $this->jalankan(function () use ($request) {
-            $p = $this->svc->buat($this->member($request), $request->only(['cara_ambil', 'cara_bayar', 'kirim_nama', 'kirim_hp', 'kirim_alamat', 'catatan', 'item']));
+            $p = $this->svc->buat($this->member($request), $request->only(['sumber', 'cara_ambil', 'cara_bayar', 'kirim_nama', 'kirim_hp', 'kirim_alamat', 'catatan', 'item']));
 
             return response()->json(['ok' => true, 'pesan' => "Pesanan {$p->nomor} dibuat.", 'data' => $this->svc->untukMember($p->fresh(), true)], 201);
         });

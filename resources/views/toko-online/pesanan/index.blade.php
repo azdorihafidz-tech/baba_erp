@@ -13,6 +13,7 @@
 
 <div class="d-flex flex-wrap gap-1 mb-2">
     @foreach(\App\Http\Controllers\PesananOnlineController::TAB as $k => [$label])
+    @continue(! isset($jumlah[$k]))
     <a href="{{ route('toko-online.pesanan.index', ['tab' => $k] + ($cari !== '' ? ['cari' => $cari] : [])) }}"
        class="btn btn-sm {{ $tab === $k ? 'btn-dark' : 'btn-outline-secondary' }}">
         {{ $label }} <span class="badge {{ $k === 'perlu' && $jumlah[$k] ? 'bg-danger' : 'bg-secondary' }} ms-1">{{ $jumlah[$k] }}</span>
@@ -27,6 +28,10 @@
         <button class="btn btn-outline-secondary"><i class="bi bi-search"></i></button>
     </div>
 </form>
+
+@if($tab === 'antar')
+<div class="alert alert-light border small"><i class="bi bi-info-circle me-1"></i>Pesanan member ke <strong>upline</strong>. Diproses upline di menu Toko Saya aplikasi member; di sini hanya dipantau (admin bisa membatalkan pesanan yang macet). Angka = pesanan yang masih berjalan.</div>
+@endif
 
 {{-- Desktop: tabel --}}
 <div class="card d-none d-md-block"><div class="table-responsive">

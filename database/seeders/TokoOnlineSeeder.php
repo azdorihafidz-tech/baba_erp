@@ -57,6 +57,9 @@ class TokoOnlineSeeder extends Seeder
         Panduan::updateOrCreate(['slug' => 'pengaturan-toko-online'], [
             'judul' => 'Pengaturan Toko Online', 'konten' => self::PANDUAN_PENGATURAN, 'modul' => 'toko_online', 'urutan' => 62, 'aktif' => true,
         ]);
+        Panduan::updateOrCreate(['slug' => 'stok-member'], [
+            'judul' => 'Stok Member', 'konten' => self::PANDUAN_STOK_MEMBER, 'modul' => 'toko_online', 'urutan' => 63, 'aktif' => true,
+        ]);
 
         foreach ([
             ['key' => 'toko_online.terima_otomatis', 'title' => 'Diterima otomatis',
@@ -65,6 +68,8 @@ class TokoOnlineSeeder extends Seeder
                 'content' => 'Pesanan transfer yang belum diunggah buktinya sampai batas ini dibatalkan otomatis, supaya stok yang dipesan kembali bisa dibeli member lain. 0 = tidak otomatis.'],
             ['key' => 'toko_online.rekening', 'title' => 'Rekening tujuan',
                 'content' => 'Rekening yang ditampilkan ke member saat bayar transfer, per gudang. Tanpa rekening aktif, member tidak bisa memilih transfer untuk gudang itu.'],
+            ['key' => 'toko_online.sumber', 'title' => 'Sumber barang',
+                'content' => 'Mengatur member boleh belanja langsung ke gudang, ke upline-nya, atau keduanya. Tanpa aturan = gudang saja. Pesanan ke upline memakai stok upline dan diproses upline di aplikasi member.'],
             ['key' => 'toko_online.tagihan', 'title' => 'Bayar dengan tagihan',
                 'content' => 'Member boleh mengambil barang dulu dan membayar sebelum jatuh tempo. Pesanan baru ditolak bila total tagihan yang belum lunas melewati batas.'],
         ] as $i => $t) {
@@ -106,6 +111,9 @@ Memproses pesanan member dari menu **Belanja** aplikasi member: isi ongkir, cek 
 - Pesanan **tagihan** langsung masuk **Disiapkan** (setelah ongkir diisi bila dikirim). Member membayar belakangan dengan mengunggah bukti; bukti itu muncul di tab **Perlu tindakan**.
 - Jatuh tempo tampil di rincian pesanan, merah bila sudah lewat.
 
+## Pesanan antar member
+- Tab **Antar member** (Owner / admin pusat) memuat pesanan member ke **upline**-nya. Pesanan ini diproses upline di menu **Toko Saya** aplikasi member, memakai stok upline. Di ERP hanya dipantau; **Batalkan pesanan…** bisa dipakai bila pesanan macet.
+
 ## Catatan Penting
 - Tab **Perlu tindakan** = isi ongkir, cek bukti, siapkan barang. Angka merah di menu = jumlahnya.
 - Stok yang sudah dipesan tetapi belum dikirim tidak bisa dibeli member lain.
@@ -122,6 +130,7 @@ MARKDOWN;
 Mengatur rekening tujuan transfer, siapa yang boleh bayar dengan tagihan, serta waktu otomatis pesanan online.
 
 ## Langkah-langkah
+1. **Sumber barang**: pilih **Untuk** (Semua member / Satu jabatan / Satu akun), centang **Boleh ke gudang** dan/atau **Boleh ke upline**, tekan **Simpan aturan**. Tanpa aturan = member hanya belanja ke gudang.
 1. **Rekening tujuan transfer**: pilih gudang, isi bank, nomor rekening, atas nama, tekan **Tambah rekening**. Rekening yang tidak dipakai bisa **Sembunyikan**.
 2. **Bayar dengan tagihan**: pilih **Untuk** (Semua member / Satu jabatan / Satu akun), isi **Batas nominal** dan **Tempo (hari)**, tekan **Simpan aturan**.
 3. **Waktu otomatis**: isi **Diterima otomatis setelah (hari)** dan **Batas waktu bayar transfer (jam)**, tekan **Simpan**.
@@ -131,6 +140,20 @@ Mengatur rekening tujuan transfer, siapa yang boleh bayar dengan tagihan, serta 
 - Batas nominal = total tagihan yang belum lunas. Pesanan baru yang membuat total melewati batas ditolak.
 - Menyimpan aturan baru untuk sasaran yang sama menonaktifkan aturan lama.
 - Gudang tanpa rekening aktif tidak bisa menerima pesanan transfer.
+MARKDOWN;
+
+    public const PANDUAN_STOK_MEMBER = <<<'MARKDOWN'
+## Tujuan
+Memantau stok parfum yang dipegang member (hasil belanja di aplikasi member).
+
+## Cara kerja stok member
+- Stok member **bertambah otomatis** saat pesanannya **diterima** (dari gudang atau dari upline), dengan modal = harga belinya.
+- Stok **berkurang** saat member (sebagai upline) mengirim / menyiapkan pesanan downline-nya.
+- Halaman ini hanya untuk dilihat: buka **Rinci** untuk melihat stok per parfum dan riwayat keluar-masuknya.
+
+## Catatan Penting
+- Nilai (modal) = jumlah botol × modal rata-rata.
+- Member juga melihat stoknya sendiri di menu **Toko Saya › Stok Saya** aplikasi member.
 MARKDOWN;
 
     public const PANDUAN = <<<'MARKDOWN'

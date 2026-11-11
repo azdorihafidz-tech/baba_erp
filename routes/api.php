@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\Member\KatalogController;
 use App\Http\Controllers\Api\Member\PesananController;
 use App\Http\Controllers\Api\Member\SehatController;
+use App\Http\Controllers\Api\Member\TokoSayaController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -19,4 +20,14 @@ Route::prefix('member')->middleware('aplikasi.member')->name('api.member.')->gro
     Route::post('pesanan/{nomor}/bukti', [PesananController::class, 'bukti'])->name('pesanan.bukti');
     Route::post('pesanan/{nomor}/batal', [PesananController::class, 'batal'])->name('pesanan.batal');
     Route::post('pesanan/{nomor}/terima', [PesananController::class, 'terima'])->name('pesanan.terima');
+    // Tahap 2c — Toko Saya: pesanan masuk dari downline (upline = penjual), stok saya, rekening saya
+    Route::get('masuk', [TokoSayaController::class, 'masukIndex'])->name('masuk.index');
+    Route::get('masuk/{nomor}', [TokoSayaController::class, 'masukRinci'])->name('masuk.show');
+    Route::post('masuk/{nomor}/bayar/{id}/{aksi}', [TokoSayaController::class, 'masukBukti'])->whereNumber('id')->whereIn('aksi', ['terima', 'tolak'])->name('masuk.bukti');
+    Route::get('masuk/{nomor}/bayar/{id}/file', [TokoSayaController::class, 'masukBuktiFile'])->whereNumber('id')->name('masuk.bukti.file');
+    Route::post('masuk/{nomor}/{aksi}', [TokoSayaController::class, 'masukAksi'])->whereIn('aksi', ['ongkir', 'keluarkan', 'sudah-diambil', 'tunai', 'batal'])->name('masuk.aksi');
+    Route::get('stok', [TokoSayaController::class, 'stok'])->name('stok');
+    Route::get('rekening', [TokoSayaController::class, 'rekening'])->name('rekening');
+    Route::post('rekening', [TokoSayaController::class, 'rekeningSimpan'])->name('rekening.simpan');
+    Route::post('rekening/{id}/aktif', [TokoSayaController::class, 'rekeningAktif'])->whereNumber('id')->name('rekening.aktif');
 });

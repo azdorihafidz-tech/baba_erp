@@ -638,6 +638,11 @@
             <i class="bi bi-bag-heart"></i>
             <span>Produk Online</span>
         </a>
+        <a href="{{ route('toko-online.stok-member.index') }}"
+           class="nav-link {{ request()->routeIs('toko-online.stok-member.*') ? 'active' : '' }}">
+            <i class="bi bi-people"></i>
+            <span>Stok Member</span>
+        </a>
         <a href="{{ route('toko-online.pengaturan') }}"
            class="nav-link {{ request()->routeIs('toko-online.pengaturan*') ? 'active' : '' }}">
             <i class="bi bi-sliders"></i>

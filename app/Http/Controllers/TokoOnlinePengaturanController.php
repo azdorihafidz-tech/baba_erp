@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\AturanSumber;
 use App\Models\AturanTagihan;
 use App\Models\MemberAkun;
 use App\Models\TokoOnlinePengaturan;
@@ -41,6 +42,7 @@ class TokoOnlinePengaturanController extends Controller
             'gudang' => $gudang,
             'rekening' => TokoOnlineRekening::with('cabang')->whereIn('cabang_id', $gudang->pluck('id'))->orderBy('cabang_id')->orderBy('id')->get(),
             'aturan' => $aturan,
+            'aturanSumber' => AturanSumber::with('akun')->orderByDesc('aktif')->orderByRaw("FIELD(cakupan,'akun','jabatan','semua')")->get(),
             'terpakai' => $aturan->where('cakupan', 'akun')->mapWithKeys(fn ($a) => [$a->id => $svc->tagihanTerpakai((int) $a->member_id)]),
             'jabatan' => collect($jabatan)->keyBy('id'),
             'galatJabatan' => $galatJabatan,
@@ -120,5 +122,42 @@ class TokoOnlinePengaturanController extends Controller
         $aturan->update(['aktif' => false]);
 
         return back()->with('success', 'Aturan tagihan dinonaktifkan. Tagihan yang sudah berjalan tetap harus dilunasi.');
+    }
+
+    /** Tahap 2c — boleh belanja ke gudang / ke upline (semua / jabatan / akun). */
+    public function simpanSumber(Request $request)
+    {
+        $this->izin();
+        $d = $request->validate([
+            'cakupan' => ['required', Rule::in(array_keys(AturanTagihan::CAKUPAN))],
+            'jabatan_id' => ['nullable', 'required_if:cakupan,jabatan', 'integer'],
+            'member_id' => ['nullable', 'required_if:cakupan,akun', 'integer'],
+            'catatan' => ['nullable', 'string', 'max:255'],
+        ], ['jabatan_id.required_if' => 'Pilih jabatan.', 'member_id.required_if' => 'Pilih akun.']);
+        $d['boleh_gudang'] = $request->boolean('boleh_gudang');
+        $d['boleh_upline'] = $request->boolean('boleh_upline');
+        if (! $d['boleh_gudang'] && ! $d['boleh_upline']) {
+            return back()->withInput()->with('error', 'Centang minimal satu: Boleh ke gudang atau Boleh ke upline.');
+        }
+        $d['jabatan_id'] = $d['cakupan'] === 'jabatan' ? (int) $d['jabatan_id'] : null;
+        $d['member_id'] = $d['cakupan'] === 'akun' ? (int) $d['member_id'] : null;
+        if ($d['cakupan'] === 'akun' && ! MemberAkun::where('member_id', $d['member_id'])->exists()) {
+            return back()->withInput()->with('error', 'Akun belum dikenal ERP. Cari akun lewat kotak pencarian lalu pilih.');
+        }
+        AturanSumber::where('cakupan', $d['cakupan'])->where('aktif', true)
+            ->when($d['cakupan'] === 'jabatan', fn ($q) => $q->where('jabatan_id', $d['jabatan_id']))
+            ->when($d['cakupan'] === 'akun', fn ($q) => $q->where('member_id', $d['member_id']))
+            ->get()->each->update(['aktif' => false]);
+        AturanSumber::create($d + ['aktif' => true, 'created_by' => auth()->id()]);
+
+        return back()->with('success', 'Aturan sumber barang disimpan.');
+    }
+
+    public function nonaktifSumber(AturanSumber $sumber)
+    {
+        $this->izin();
+        $sumber->update(['aktif' => false]);
+
+        return back()->with('success', 'Aturan sumber barang dinonaktifkan.');
     }
 }
