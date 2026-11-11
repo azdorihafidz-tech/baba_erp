@@ -13,6 +13,35 @@
 <div class="alert alert-danger small">{{ $errors->first() }}</div>
 @endif
 
+{{-- Tahap 2f: saklar toko online untuk member --}}
+<div class="card mb-3 border-{{ $set->status_toko === 'buka' ? 'success' : ($set->status_toko === 'uji' ? 'warning' : 'secondary') }}">
+    <div class="card-header fw-semibold small d-flex align-items-center gap-2">Status toko online untuk member <x-tooltip key="toko_online.status_toko" />
+        <span class="badge bg-{{ $set->status_toko === 'buka' ? 'success' : ($set->status_toko === 'uji' ? 'warning' : 'secondary') }} ms-auto" data-uji="status-toko">{{ \App\Models\TokoOnlinePengaturan::STATUS_TOKO[$set->status_toko] ?? $set->status_toko }}</span></div>
+    <div class="card-body">
+        <form method="POST" action="{{ route('toko-online.pengaturan.status') }}" id="formStatusToko">
+            @csrf @method('PUT')
+            <div class="d-flex flex-wrap gap-3 mb-2">
+                @foreach(\App\Models\TokoOnlinePengaturan::STATUS_TOKO as $k => $label)
+                <div class="form-check"><input class="form-check-input" type="radio" name="status_toko" id="st_{{ $k }}" value="{{ $k }}" @checked(old('status_toko', $set->status_toko) === $k)>
+                    <label class="form-check-label small" for="st_{{ $k }}">{{ $label }}</label></div>
+                @endforeach
+            </div>
+            <div id="kotakUji" class="position-relative mb-2" style="max-width:560px">
+                <div class="small fw-semibold mb-1">Akun uji coba</div>
+                <div id="daftarUji" class="d-flex flex-wrap gap-1 mb-1">
+                    @foreach($akunUji as $a)
+                    <span class="badge bg-light text-dark border akun-uji">{{ $a->label }} <input type="hidden" name="akun_uji[]" value="{{ $a->member_id }}"><button type="button" class="btn-close btn-close-sm ms-1 hapus-uji" aria-label="Hapus" style="font-size:.6rem"></button></span>
+                    @endforeach
+                </div>
+                <input type="text" id="cariUji" class="form-control form-control-sm" placeholder="Tambah akun: cari nama / No ID / BP-xxxxx" autocomplete="off">
+                <div id="hasilUji" class="list-group position-absolute w-100 shadow-sm" style="z-index:5"></div>
+            </div>
+            <div class="form-text mb-2">Tutup = menu Belanja / Pesanan Saya / Toko Saya di aplikasi member tampil “Segera hadir” (pesanan yang sudah berjalan tetap bisa diproses). Uji coba = hanya akun di atas yang bisa belanja.</div>
+            <button class="btn btn-primary btn-sm" data-uji="simpan-status">Simpan status</button>
+        </form>
+    </div>
+</div>
+
 <div class="row g-3">
 <div class="col-12 col-xl-5">
     <div class="card mb-3"><div class="card-header fw-semibold small">Waktu otomatis</div><div class="card-body">
@@ -199,6 +228,42 @@
             q('.akun-terpilih').textContent = 'Dipilih: ' + b.dataset.label;
             q('.hasil-akun').innerHTML = ''; q('.cari-akun').value = '';
         });
+    });
+})();
+
+// Tahap 2f: akun uji coba status toko
+(() => {
+    const el = (id) => document.getElementById(id);
+    if (!el('formStatusToko')) return;
+    const esc = (x) => String(x ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    const urlCari = @json(route('toko-online.cari-akun'));
+    const tampil = () => el('kotakUji').classList.toggle('d-none', document.querySelector('input[name=status_toko]:checked')?.value !== 'uji');
+    document.querySelectorAll('input[name=status_toko]').forEach((r) => r.addEventListener('change', tampil));
+    tampil();
+    el('daftarUji').addEventListener('click', (e) => { if (e.target.closest('.hapus-uji')) e.target.closest('.akun-uji').remove(); });
+    let t = null;
+    el('cariUji').addEventListener('input', (e) => {
+        clearTimeout(t);
+        const kata = e.target.value.trim();
+        if (kata.length < 2) { el('hasilUji').innerHTML = ''; return; }
+        t = setTimeout(async () => {
+            try {
+                const j = await (await fetch(urlCari + '?q=' + encodeURIComponent(kata), { headers: { Accept: 'application/json' } })).json();
+                el('hasilUji').innerHTML = !j.ok ? '<div class="list-group-item small text-danger">' + esc(j.pesan || 'Gagal mencari akun.') + '</div>'
+                    : (j.data.length ? j.data.map((a) => '<button type="button" class="list-group-item list-group-item-action small pilih-uji" data-id="' + a.id + '" data-label="'
+                        + esc((a.no_id ? a.no_id + ' · ' : '') + a.nama + ' (' + a.no_member + ')') + '"><strong>' + esc(a.no_id || '') + '</strong> ' + esc(a.nama) + ' <span class="text-muted">' + esc(a.jabatan || '') + '</span></button>').join('')
+                        : '<div class="list-group-item small text-muted">Tidak ada akun aktif yang cocok.</div>');
+            } catch (err) { el('hasilUji').innerHTML = '<div class="list-group-item small text-danger">Gagal mencari akun.</div>'; }
+        }, 350);
+    });
+    el('hasilUji').addEventListener('click', (e) => {
+        const b = e.target.closest('.pilih-uji');
+        if (!b) return;
+        if (!el('daftarUji').querySelector('input[value="' + b.dataset.id + '"]')) {
+            el('daftarUji').insertAdjacentHTML('beforeend', '<span class="badge bg-light text-dark border akun-uji">' + b.dataset.label
+                + ' <input type="hidden" name="akun_uji[]" value="' + b.dataset.id + '"><button type="button" class="btn-close btn-close-sm ms-1 hapus-uji" aria-label="Hapus" style="font-size:.6rem"></button></span>');
+        }
+        el('hasilUji').innerHTML = ''; el('cariUji').value = '';
     });
 })();
 </script>

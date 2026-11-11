@@ -53,7 +53,7 @@ class PesananUplineTest extends TestCase
         Cache::flush();
         Storage::fake('local');
         Http::fake(['member.uji/*' => Http::response(['ok' => true])]);
-        TokoOnlinePengaturan::ambil()->update(['hari_terima_otomatis' => 7, 'jam_batas_bayar' => 48]);
+        TokoOnlinePengaturan::ambil()->update(['status_toko' => 'buka', 'hari_terima_otomatis' => 7, 'jam_batas_bayar' => 48]);
         AturanTagihan::query()->update(['aktif' => false]);
         AturanSumber::query()->update(['aktif' => false]);
 

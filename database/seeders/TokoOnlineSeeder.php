@@ -74,6 +74,8 @@ class TokoOnlineSeeder extends Seeder
                 'content' => 'Pesanan transfer yang belum diunggah buktinya sampai batas ini dibatalkan otomatis, supaya stok yang dipesan kembali bisa dibeli member lain. 0 = tidak otomatis.'],
             ['key' => 'toko_online.rekening', 'title' => 'Rekening tujuan',
                 'content' => 'Rekening yang ditampilkan ke member saat bayar transfer, per gudang. Tanpa rekening aktif, member tidak bisa memilih transfer untuk gudang itu.'],
+            ['key' => 'toko_online.status_toko', 'title' => 'Status toko online',
+                'content' => 'Tutup = menu Belanja di aplikasi member tampil Segera hadir. Uji coba = hanya akun yang dipilih yang bisa belanja. Buka = semua member. Pesanan yang sudah berjalan tetap bisa diproses walau toko ditutup.'],
             ['key' => 'pengaturan_umum.mode_ro', 'title' => 'Mode RO belanja online',
                 'content' => 'Saat lunas = RO langsung dihitung begitu pesanan lunas. Saat lunas + disetujui = RO dibuat saat lunas lalu menunggu approve dokumen (Regional, MVO, superadmin) di aplikasi member. Hanya disetujui = RO dibuat saat barang diterima tanpa menunggu lunas, lalu menunggu approve.'],
             ['key' => 'toko_online.batas_retur', 'title' => 'Batas pengajuan retur',
@@ -140,6 +142,7 @@ MARKDOWN;
 Mengatur rekening tujuan transfer, siapa yang boleh bayar dengan tagihan, serta waktu otomatis pesanan online.
 
 ## Langkah-langkah
+1. **Status toko online untuk member**: **Tutup** (menu Belanja di aplikasi member tampil “Segera hadir”), **Uji coba** (hanya akun yang dipilih — tambahkan lewat kotak cari), atau **Buka** (semua member). Tekan **Simpan status**.
 1. **Sumber barang**: pilih **Untuk** (Semua member / Satu jabatan / Satu akun), centang **Boleh ke gudang** dan/atau **Boleh ke upline**, tekan **Simpan aturan**. Tanpa aturan = member hanya belanja ke gudang.
 1. **Rekening tujuan transfer**: pilih gudang, isi bank, nomor rekening, atas nama, tekan **Tambah rekening**. Rekening yang tidak dipakai bisa **Sembunyikan**.
 2. **Bayar dengan tagihan**: pilih **Untuk** (Semua member / Satu jabatan / Satu akun), isi **Batas nominal** dan **Tempo (hari)**, tekan **Simpan aturan**.
@@ -150,6 +153,8 @@ Mengatur rekening tujuan transfer, siapa yang boleh bayar dengan tagihan, serta 
 - Batas nominal = total tagihan yang belum lunas. Pesanan baru yang membuat total melewati batas ditolak.
 - Menyimpan aturan baru untuk sasaran yang sama menonaktifkan aturan lama.
 - Gudang tanpa rekening aktif tidak bisa menerima pesanan transfer.
+- Status **Tutup** hanya menghentikan belanja & retur baru. Pesanan yang sudah berjalan tetap bisa dibayar, dikirim, dan diterima; menu Pesanan Saya & Toko Saya tetap terbuka bagi member yang sudah punya pesanan.
+- Pakai **Uji coba** untuk mencoba toko dengan beberapa akun sebelum dibuka untuk semua member.
 MARKDOWN;
 
     public const PANDUAN_RETUR = <<<'MARKDOWN'

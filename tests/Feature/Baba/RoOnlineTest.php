@@ -55,7 +55,7 @@ class RoOnlineTest extends TestCase
 
             return Http::response(['ok' => true]);
         });
-        TokoOnlinePengaturan::ambil()->update(['hari_terima_otomatis' => 7, 'jam_batas_bayar' => 48, 'hari_batas_retur' => 7]);
+        TokoOnlinePengaturan::ambil()->update(['status_toko' => 'buka', 'hari_terima_otomatis' => 7, 'jam_batas_bayar' => 48, 'hari_batas_retur' => 7]);
         AturanTagihan::query()->update(['aktif' => false]);
         AturanSumber::query()->update(['aktif' => false]);
         AturanSumber::create(['cakupan' => 'semua', 'boleh_gudang' => true, 'boleh_upline' => true, 'aktif' => true]);

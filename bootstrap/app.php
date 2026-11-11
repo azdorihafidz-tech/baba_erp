@@ -21,6 +21,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'role' => RoleMiddleware::class,
             'cabang' => CabangMiddleware::class,
             'aplikasi.member' => \App\Http\Middleware\VerifikasiAplikasiMember::class,
+            'toko.buka' => \App\Http\Middleware\TokoOnlineBuka::class, // BABA Tahap 2f: saklar toko online
         ]);
         // 4.44 — nama & ikon PWA dari Pengaturan Umum
         $middleware->web(append: [\App\Http\Middleware\TerapkanBranding::class]);

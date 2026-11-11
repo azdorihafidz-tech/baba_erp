@@ -42,6 +42,7 @@ class TokoOnlinePengaturanController extends Controller
             'gudang' => $gudang,
             'rekening' => TokoOnlineRekening::with('cabang')->whereIn('cabang_id', $gudang->pluck('id'))->orderBy('cabang_id')->orderBy('id')->get(),
             'aturan' => $aturan,
+            'akunUji' => MemberAkun::whereIn('member_id', (array) TokoOnlinePengaturan::ambil()->akun_uji)->get(),
             'aturanSumber' => AturanSumber::with('akun')->orderByDesc('aktif')->orderByRaw("FIELD(cakupan,'akun','jabatan','semua')")->get(),
             'terpakai' => $aturan->where('cakupan', 'akun')->mapWithKeys(fn ($a) => [$a->id => $svc->tagihanTerpakai((int) $a->member_id)]),
             'jabatan' => collect($jabatan)->keyBy('id'),
@@ -123,6 +124,30 @@ class TokoOnlinePengaturanController extends Controller
         $aturan->update(['aktif' => false]);
 
         return back()->with('success', 'Aturan tagihan dinonaktifkan. Tagihan yang sudah berjalan tetap harus dilunasi.');
+    }
+
+    /** Tahap 2f — saklar toko online untuk member: tutup / uji (akun tertentu) / buka. */
+    public function simpanStatus(Request $request)
+    {
+        $this->izin();
+        $d = $request->validate([
+            'status_toko' => ['required', Rule::in(array_keys(TokoOnlinePengaturan::STATUS_TOKO))],
+            'akun_uji' => ['nullable', 'array', 'max:50'],
+            'akun_uji.*' => ['integer'],
+        ], [], ['status_toko' => 'Status toko']);
+        $akun = array_values(array_unique(array_map('intval', $d['akun_uji'] ?? [])));
+        $akun = MemberAkun::whereIn('member_id', $akun)->pluck('member_id')->map(fn ($v) => (int) $v)->values()->all();
+        if ($d['status_toko'] === 'uji' && ! $akun) {
+            return back()->withInput()->with('error', 'Pilih minimal satu akun untuk uji coba.');
+        }
+        $set = TokoOnlinePengaturan::ambil();
+        $lama = $set->status_toko;
+        $set->update(['status_toko' => $d['status_toko'], 'akun_uji' => $akun]);
+        if ($lama !== $d['status_toko']) {
+            activity()->performedOn($set)->log("Status toko online: {$lama} → {$d['status_toko']}");
+        }
+
+        return back()->with('success', 'Status toko online disimpan: ' . TokoOnlinePengaturan::STATUS_TOKO[$d['status_toko']] . '.');
     }
 
     /** Tahap 2c — boleh belanja ke gudang / ke upline (semua / jabatan / akun). */

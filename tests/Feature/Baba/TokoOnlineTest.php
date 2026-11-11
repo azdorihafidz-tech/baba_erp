@@ -37,6 +37,7 @@ class TokoOnlineTest extends TestCase
         parent::setUp();
         config(['baba.member_api.secret' => self::KUNCI, 'baba.member_app.url' => 'http://member.uji']);
         Cache::flush();
+        \App\Models\TokoOnlinePengaturan::ambil()->update(['status_toko' => 'buka']); // Tahap 2f: saklar toko
         $this->gudang = Cabang::create(['nama_cabang' => 'Gudang TO Uji ' . uniqid(), 'kode_cabang' => 'TO' . rand(10000, 99999), 'tipe' => 'gudang_pusat', 'is_active' => true]);
         $this->botol = $this->barang('Ocean Uji EDP 50 ml');
         $this->botol2 = $this->barang('Rose Uji EDP 30 ml');

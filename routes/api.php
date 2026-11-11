@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\Member\KatalogController;
 use App\Http\Controllers\Api\Member\PesananController;
 use App\Http\Controllers\Api\Member\ReturController;
 use App\Http\Controllers\Api\Member\SehatController;
+use App\Http\Controllers\Api\Member\StatusTokoController;
 use App\Http\Controllers\Api\Member\TokoSayaController;
 use Illuminate\Support\Facades\Route;
 
@@ -13,10 +14,12 @@ use Illuminate\Support\Facades\Route;
 */
 Route::prefix('member')->middleware('aplikasi.member')->name('api.member.')->group(function () {
     Route::get('sehat', SehatController::class)->name('sehat');
-    Route::get('katalog', KatalogController::class)->name('katalog');
-    Route::get('checkout-opsi', [PesananController::class, 'opsi'])->name('checkout-opsi');
+    // Tahap 2f: status toko untuk akun ini + angka ringkas menu (tanpa saklar, supaya menu tahu harus Segera hadir)
+    Route::get('status-toko', StatusTokoController::class)->name('status-toko');
+    Route::get('katalog', KatalogController::class)->middleware('toko.buka')->name('katalog');
+    Route::get('checkout-opsi', [PesananController::class, 'opsi'])->middleware('toko.buka')->name('checkout-opsi');
     Route::get('pesanan', [PesananController::class, 'index'])->name('pesanan.index');
-    Route::post('pesanan', [PesananController::class, 'store'])->name('pesanan.store');
+    Route::post('pesanan', [PesananController::class, 'store'])->middleware('toko.buka')->name('pesanan.store');
     Route::get('pesanan/{nomor}', [PesananController::class, 'show'])->name('pesanan.show');
     Route::post('pesanan/{nomor}/bukti', [PesananController::class, 'bukti'])->name('pesanan.bukti');
     Route::post('pesanan/{nomor}/batal', [PesananController::class, 'batal'])->name('pesanan.batal');
@@ -32,7 +35,7 @@ Route::prefix('member')->middleware('aplikasi.member')->name('api.member.')->gro
     Route::post('rekening', [TokoSayaController::class, 'rekeningSimpan'])->name('rekening.simpan');
     Route::post('rekening/{id}/aktif', [TokoSayaController::class, 'rekeningAktif'])->whereNumber('id')->name('rekening.aktif');
     // Tahap 2d — retur
-    Route::post('pesanan/{nomor}/retur', [ReturController::class, 'ajukan'])->name('retur.ajukan');
+    Route::post('pesanan/{nomor}/retur', [ReturController::class, 'ajukan'])->middleware('toko.buka')->name('retur.ajukan');
     Route::get('retur', [ReturController::class, 'index'])->name('retur.index');
     Route::get('retur/{nomor}', [ReturController::class, 'show'])->name('retur.show');
     Route::post('retur/{nomor}/batal', [ReturController::class, 'batal'])->name('retur.batal');

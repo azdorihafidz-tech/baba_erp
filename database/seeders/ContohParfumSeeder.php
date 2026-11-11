@@ -138,5 +138,9 @@ class ContohParfumSeeder extends Seeder
             \App\Models\AturanSumber::firstOrCreate(['cakupan' => 'semua', 'aktif' => true],
                 ['boleh_gudang' => true, 'boleh_upline' => true, 'catatan' => 'Data contoh']);
         }
+        // Tahap 2f — lokal: toko dibuka untuk semua member (go-live: bawaan "tutup", dibuka Owner)
+        if (\Illuminate\Support\Facades\Schema::hasColumn('toko_online_pengaturan', 'status_toko')) {
+            \App\Models\TokoOnlinePengaturan::ambil()->update(['status_toko' => 'buka']);
+        }
     }
 }

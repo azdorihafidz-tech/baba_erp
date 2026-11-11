@@ -274,6 +274,7 @@ Route::middleware(['auth', 'verified', 'cabang'])->group(function () {
             Route::post('/pengaturan/rekening/{rekening}/aktif', 'aktifRekening')->name('pengaturan.rekening.aktif');
             Route::post('/pengaturan/tagihan', 'simpanAturan')->name('pengaturan.tagihan');
             Route::post('/pengaturan/tagihan/{aturan}/nonaktif', 'nonaktifAturan')->name('pengaturan.tagihan.nonaktif');
+            Route::put('/pengaturan/status', 'simpanStatus')->name('pengaturan.status');
             Route::post('/pengaturan/sumber', 'simpanSumber')->name('pengaturan.sumber');
             Route::post('/pengaturan/sumber/{sumber}/nonaktif', 'nonaktifSumber')->name('pengaturan.sumber.nonaktif');
         });

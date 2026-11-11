@@ -50,7 +50,7 @@ class PesananOnlineTest extends TestCase
         Cache::flush();
         Storage::fake('local');
         Http::fake(['member.uji/*' => Http::response(['ok' => true])]);
-        TokoOnlinePengaturan::ambil()->update(['hari_terima_otomatis' => 7, 'jam_batas_bayar' => 48]);
+        TokoOnlinePengaturan::ambil()->update(['status_toko' => 'buka', 'hari_terima_otomatis' => 7, 'jam_batas_bayar' => 48]);
         AturanTagihan::query()->update(['aktif' => false]); // aturan contoh di DB tes tidak ikut mempengaruhi
 
         $this->gudang = Cabang::create(['nama_cabang' => 'Gudang PO Uji ' . uniqid(), 'kode_cabang' => 'PO' . rand(10000, 99999), 'tipe' => 'gudang_pusat', 'is_active' => true, 'alamat' => 'Jl. Uji No. 1']);
