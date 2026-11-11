@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Services\MemberAkunService;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
@@ -10,17 +11,19 @@ use Symfony\Component\HttpFoundation\Response;
 /**
  * Hanya server aplikasi member yang boleh memanggil /api/member/*.
  *
- * Header wajib:
+ * Header:
  *   X-Baba-Waktu  : unix time (detik) saat dikirim
  *   X-Baba-Nonce  : teks acak 16–64 karakter, sekali pakai
  *   X-Baba-Member : id akun member (tbl_user.id di aplikasi member) atas nama siapa permintaan dibuat, kosong = sistem
+ *   X-Baba-Profil : (opsional) base64 JSON identitas member {id,nama,no_id,no_member,jabatan_id,jabatan,parent_id,cabang,aktif}
  *   X-Baba-Tanda  : hex HMAC-SHA256(secret, kanonik)
- * kanonik = METHOD \n PATH \n QUERY \n WAKTU \n NONCE \n MEMBER \n sha256(body)
+ * kanonik = METHOD \n PATH \n QUERY \n WAKTU \n NONCE \n MEMBER \n PROFIL \n sha256(body)
  *   PATH  = path tanpa domain, diawali "/" (mis. /api/member/sehat)
  *   QUERY = query string apa adanya (tanpa "?"), kosong bila tidak ada
  *
  * Ditolak 401 bila tanda salah / waktu lewat toleransi / nonce dipakai ulang; 503 bila kunci belum diatur.
  * Pesan galat sengaja umum (tidak menyebut bagian mana yang salah).
+ * Profil yang sah disimpan ke member_akun → $request->attributes 'member_akun'.
  */
 class VerifikasiAplikasiMember
 {
@@ -34,13 +37,16 @@ class VerifikasiAplikasiMember
         $waktu = (string) $request->header('X-Baba-Waktu', '');
         $nonce = (string) $request->header('X-Baba-Nonce', '');
         $member = (string) $request->header('X-Baba-Member', '');
+        $profil = (string) $request->header('X-Baba-Profil', '');
         $tanda = strtolower((string) $request->header('X-Baba-Tanda', ''));
         $toleransi = max(30, (int) config('baba.member_api.toleransi_detik', 300));
 
         $formatOk = ctype_digit($waktu)
             && preg_match('/^[A-Za-z0-9_-]{16,64}$/', $nonce)
             && ($member === '' || ctype_digit($member))
-            && preg_match('/^[0-9a-f]{64}$/', $tanda);
+            && preg_match('/^[0-9a-f]{64}$/', $tanda)
+            && strlen($profil) <= 4096
+            && ($profil === '' || preg_match('/^[A-Za-z0-9+\/=]+$/', $profil));
         if (! $formatOk || abs(time() - (int) $waktu) > $toleransi) {
             return $this->tolak();
         }
@@ -52,6 +58,7 @@ class VerifikasiAplikasiMember
             $waktu,
             $nonce,
             $member,
+            $profil,
             $request->getContent()
         ), $secret);
 
@@ -66,12 +73,20 @@ class VerifikasiAplikasiMember
 
         $request->attributes->set('member_id', $member === '' ? null : (int) $member);
 
+        // Identitas member (jabatan, upline, cabang) — dipakai harga, sumber barang, RO
+        if ($member !== '' && $profil !== '') {
+            $data = json_decode((string) base64_decode($profil, true), true);
+            if (is_array($data) && (int) ($data['id'] ?? 0) === (int) $member) {
+                $request->attributes->set('member_akun', app(MemberAkunService::class)->simpan((int) $member, $data));
+            }
+        }
+
         return $next($request);
     }
 
-    public static function kanonik(string $method, string $path, string $query, string $waktu, string $nonce, string $member, string $body): string
+    public static function kanonik(string $method, string $path, string $query, string $waktu, string $nonce, string $member, string $profil, string $body): string
     {
-        return implode("\n", [strtoupper($method), $path, $query, $waktu, $nonce, $member, hash('sha256', $body)]);
+        return implode("\n", [strtoupper($method), $path, $query, $waktu, $nonce, $member, $profil, hash('sha256', $body)]);
     }
 
     private function tolak(): Response

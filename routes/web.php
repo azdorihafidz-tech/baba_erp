@@ -244,6 +244,16 @@ Route::middleware(['auth', 'verified', 'cabang'])->group(function () {
     Route::post('/stock-transfer/{stockTransfer}/terima', [StockTransferController::class, 'terima'])->name('stock-transfer.terima');
     Route::post('/stock-transfer/{stockTransfer}/batalkan', [StockTransferController::class, 'batalkan'])->name('stock-transfer.batalkan');
 
+    // ===== BABA Tahap 2a — TOKO ONLINE (produk & harga untuk menu Belanja aplikasi member) =====
+    Route::prefix('toko-online')->name('toko-online.')->controller(\App\Http\Controllers\ProdukOnlineController::class)->group(function () {
+        Route::get('/produk', 'index')->name('produk.index');
+        Route::get('/produk/create', 'create')->name('produk.create');
+        Route::post('/produk', 'store')->name('produk.store');
+        Route::get('/produk/{produk}/edit', 'edit')->name('produk.edit');
+        Route::put('/produk/{produk}', 'update')->name('produk.update');
+        Route::get('/cari-akun', 'cariAkun')->name('cari-akun');
+    });
+
     // ===== 4.49 Tahap B1 — PRODUKSI bahan setengah jadi di gudang (porting erp-coffeeshop) =====
     Route::prefix('produksi')->name('produksi.')->controller(\App\Http\Controllers\ProduksiController::class)->group(function () {
         Route::get('/resep', 'resepIndex')->name('resep.index');

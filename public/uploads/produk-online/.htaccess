@@ -1,0 +1,6 @@
+# Folder foto produk online: hanya gambar, tidak boleh menjalankan skrip
+<FilesMatch "\.(php|phtml|php\d|phar|pl|py|cgi|sh|asp|aspx|jsp)$">
+    Require all denied
+</FilesMatch>
+Options -ExecCGI -Indexes
+RemoveHandler .php .phtml .php3 .php4 .php5 .php7 .php8 .phar

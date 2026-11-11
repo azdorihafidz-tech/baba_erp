@@ -6,6 +6,8 @@ use App\Models\Cabang;
 use App\Models\Item;
 use App\Models\ItemCategory;
 use App\Models\ParfumKonsentrasi;
+use App\Models\ProdukOnline;
+use App\Models\ProdukOnlineHarga;
 use App\Models\ResepProduksi;
 use App\Models\User;
 use App\Services\ParfumBaruService;
@@ -36,6 +38,7 @@ class ContohParfumSeeder extends Seeder
         }
         if (Item::where('cabang_id', $gudang->id)->where('nama_item', 'Bibit Ocean Breeze')->exists()) {
             $this->command?->info('Data contoh parfum sudah ada — dilewati.');
+            $this->produkOnline($gudang);
 
             return;
         }
@@ -103,6 +106,25 @@ class ContohParfumSeeder extends Seeder
             'tanggal' => now()->toDateString(), 'qty_rencana' => 3000, 'catatan' => 'Data contoh',
         ], $owner->id);
 
+        $this->produkOnline($gudang);
         $this->command?->info('Data contoh parfum dibuat di ' . $gudang->nama_cabang . '.');
+    }
+
+    /** Tahap 2a — produk online contoh (botol 50 ml) dengan harga contoh: tetap, gudang, Distributor (21), Reseller (24). */
+    private function produkOnline(Cabang $gudang): void
+    {
+        foreach (['Ocean Breeze' => 'Unisex', 'Vanilla Oud' => 'Pria', 'Rose Musk' => 'Wanita'] as $aroma => $kategori) {
+            $item = Item::where('cabang_id', $gudang->id)->where('nama_item', "{$aroma} EDP 50 ml")->first();
+            if (! $item || ProdukOnline::where('item_id', $item->id)->exists()) {
+                continue;
+            }
+            $p = ProdukOnline::create([
+                'item_id' => $item->id, 'nama_tampil' => "{$aroma} EDP 50 ml", 'kategori' => $kategori, 'aktif' => true,
+                'deskripsi' => 'Data contoh — Eau de Parfum 50 ml.',
+            ]);
+            foreach ([['tetap', null, 150000], ['gudang', null, 135000], ['jabatan', 21, 110000], ['jabatan', 24, 125000]] as [$jenis, $jab, $harga]) {
+                ProdukOnlineHarga::create(['produk_online_id' => $p->id, 'jenis' => $jenis, 'jabatan_id' => $jab, 'harga' => $harga]);
+            }
+        }
     }
 }

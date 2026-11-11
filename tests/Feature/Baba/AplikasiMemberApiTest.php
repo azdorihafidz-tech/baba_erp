@@ -20,13 +20,13 @@ class AplikasiMemberApiTest extends TestCase
     }
 
     /** Header bertanda tangan seperti yang dikirim aplikasi member. (Pakai get(), bukan getJson(): getJson mengirim body "[]" pada GET.) */
-    private function header(string $method, string $path, string $query = '', string $member = '', ?int $waktu = null, ?string $nonce = null, string $body = '', string $kunci = self::KUNCI): array
+    private function header(string $method, string $path, string $query = '', string $member = '', ?int $waktu = null, ?string $nonce = null, string $body = '', string $kunci = self::KUNCI, string $profil = ''): array
     {
         $waktu = (string) ($waktu ?? time());
         $nonce ??= Str::random(32);
-        $tanda = hash_hmac('sha256', VerifikasiAplikasiMember::kanonik($method, $path, $query, $waktu, $nonce, $member, $body), $kunci);
+        $tanda = hash_hmac('sha256', VerifikasiAplikasiMember::kanonik($method, $path, $query, $waktu, $nonce, $member, $profil, $body), $kunci);
 
-        return ['X-Baba-Waktu' => $waktu, 'X-Baba-Nonce' => $nonce, 'X-Baba-Member' => $member, 'X-Baba-Tanda' => $tanda, 'Accept' => 'application/json'];
+        return ['X-Baba-Waktu' => $waktu, 'X-Baba-Nonce' => $nonce, 'X-Baba-Member' => $member, 'X-Baba-Profil' => $profil, 'X-Baba-Tanda' => $tanda, 'Accept' => 'application/json'];
     }
 
     public function test_tanda_benar_diterima_dan_member_dikenali(): void
@@ -67,6 +67,20 @@ class AplikasiMemberApiTest extends TestCase
         $h = $this->header('GET', '/api/member/sehat', nonce: 'nonce-sekali-pakai-1234');
         $this->get('/api/member/sehat', $h)->assertOk();
         $this->get('/api/member/sehat', $h)->assertStatus(401);
+    }
+
+    public function test_profil_member_disimpan_dan_ikut_ditandatangani(): void
+    {
+        $profil = base64_encode(json_encode(['id' => 9284, 'nama' => 'Uji Profil', 'no_id' => 'B51-01', 'no_member' => 'BP-09284', 'jabatan_id' => 27, 'jabatan' => 'SUPPLIER', 'parent_id' => 9001, 'cabang' => 'MDN', 'aktif' => true]));
+        $this->get('/api/member/sehat', $this->header('GET', '/api/member/sehat', '', '9284', profil: $profil))->assertOk();
+        $akun = \App\Models\MemberAkun::where('member_id', 9284)->firstOrFail();
+        $this->assertSame([27, 'SUPPLIER', 9001, 'MDN', 'B51-01'], [$akun->jabatan_id, $akun->jabatan, $akun->parent_member_id, $akun->cabang, $akun->no_id]);
+
+        // profil diganti setelah ditandatangani (mis. menaikkan jabatan sendiri) → ditolak
+        $h = $this->header('GET', '/api/member/sehat', '', '9284', profil: $profil);
+        $h['X-Baba-Profil'] = base64_encode(json_encode(['id' => 9284, 'nama' => 'Uji Profil', 'jabatan_id' => 19]));
+        $this->get('/api/member/sehat', $h)->assertStatus(401);
+        $akun->delete();
     }
 
     public function test_kunci_belum_diatur_503(): void

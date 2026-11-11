@@ -615,6 +615,16 @@
         {{-- BABA: grup Antrian Produksi (Cek/Kelola Antrian, Mode Produksi, Display TV — khusus dimsum) dihapus;
              antrian mati sebagai bawaan per cabang (migration 2026_11_11_000001) --}}
 
+        <!-- TOKO ONLINE (BABA Tahap 2a: produk & harga menu Belanja aplikasi member) -->
+        @can('toko_online.kelola')
+        <div class="nav-section-title">Toko Online</div>
+        <a href="{{ route('toko-online.produk.index') }}"
+           class="nav-link {{ request()->routeIs('toko-online.produk.*') ? 'active' : '' }}">
+            <i class="bi bi-bag-heart"></i>
+            <span>Produk Online</span>
+        </a>
+        @endcan
+
         <!-- STOK & GUDANG -->
         @canany(['stok.view', 'stok.request', 'stok.transfer', 'master.bahan_baku.view', 'master.produk_jual.view', 'item.view', 'pemakaian_perlengkapan.view', 'produksi.view', 'kiriman.view', 'retur.view'])
         <div class="nav-section-title">Stok & Gudang</div>

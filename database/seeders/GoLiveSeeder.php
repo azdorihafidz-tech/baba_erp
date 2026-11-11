@@ -69,6 +69,7 @@ class GoLiveSeeder extends Seeder
             WarnaAplikasiSeeder::class,         // 4.48 — panduan & tooltip Warna Aplikasi (setelah IdentitasUsahaSeeder)
             Porting449Seeder::class,           // 4.49 — porting coffeeshop: label gambar, POS HP, produksi, kiriman, retur (setelah LabelProdukSeeder)
             ProduksiParfumSeeder::class,         // BABA Tahap 1 — konsentrasi parfum, panduan Produksi Parfum (setelah Porting449Seeder)
+            TokoOnlineSeeder::class,             // BABA Tahap 2 — izin, panduan, tooltip Toko Online
         ]);
 
         $gudang = Cabang::updateOrCreate(

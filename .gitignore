@@ -30,3 +30,7 @@ Thumbs.db
 .env.testing
 # Logo & ikon usaha hasil upload (Pengaturan Umum) — milik tiap instalasi (4.44)
 /public/uploads/branding
+
+# Foto produk online (unggahan; .htaccess penolak skrip tetap di git)
+/public/uploads/produk-online/*
+!/public/uploads/produk-online/.htaccess

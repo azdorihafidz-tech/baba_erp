@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\Member\KatalogController;
 use App\Http\Controllers\Api\Member\SehatController;
 use Illuminate\Support\Facades\Route;
 
@@ -9,4 +10,5 @@ use Illuminate\Support\Facades\Route;
 */
 Route::prefix('member')->middleware('aplikasi.member')->name('api.member.')->group(function () {
     Route::get('sehat', SehatController::class)->name('sehat');
+    Route::get('katalog', KatalogController::class)->name('katalog');
 });
