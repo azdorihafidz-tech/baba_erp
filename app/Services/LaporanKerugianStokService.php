@@ -77,13 +77,26 @@ class LaporanKerugianStokService
             ->selectRaw('c.nama_cabang as lokasi, k.kode, k.nama, COUNT(*) as jumlah, SUM(t.jumlah) as nilai')->get()
             ->map(fn ($x) => ['lokasi' => $x->lokasi, 'kode' => $x->kode, 'nama' => $x->nama, 'jumlah' => (int) $x->jumlah, 'nilai' => round((float) $x->nilai, 2)])->all();
 
+        // Tahap 7c: stok rusak — masih ditahan (sekarang) & tindak lanjut dalam periode
+        $ditahan = \App\Models\StokRusak::with(['barang', 'cabang', 'opname'])->where('status', 'ditahan')->whereIn('cabang_id', $lokasi ?: [0])->orderBy('created_at')->get();
+        $tindakan = \App\Models\StokRusakTindakan::with(['stokRusak.barang', 'stokRusak.cabang'])
+            ->whereHas('stokRusak', fn ($q) => $q->whereIn('cabang_id', $lokasi ?: [0]))->whereBetween('created_at', [$mulai, $akhir])->orderBy('id')->get();
+        $rusak = [
+            'ditahan' => $ditahan->map(fn ($r) => ['nama' => $r->barang?->nama_item, 'lokasi' => $r->cabang?->nama_cabang, 'qty' => $r->qty_sisa, 'satuan' => $r->satuan,
+                'nilai' => $r->nilai_sisa, 'umur' => $r->umur_hari, 'opname' => $r->opname?->nomor])->all(),
+            'per_jenis' => collect(\App\Models\StokRusakTindakan::JENIS)->map(fn ($label, $k) => ['label' => $label, 'kali' => $tindakan->where('jenis', $k)->count(),
+                'nilai_pokok' => round((float) $tindakan->where('jenis', $k)->sum('nilai_pokok'), 2), 'nilai_pulih' => round((float) $tindakan->where('jenis', $k)->sum('nilai_pulih'), 2)])->all(),
+            'nilai_ditahan' => round((float) $ditahan->sum(fn ($r) => $r->nilai_sisa), 2),
+            'dipulihkan' => round((float) $tindakan->sum('nilai_pulih'), 2),
+        ];
+
         $nilaiKurang = round((float) $rincian->where('penyebab', '!=', 'lebih')->sum('nilai'), 2);
         $nilaiLebih = round((float) $rincian->where('penyebab', 'lebih')->sum('nilai'), 2);
         $manualRugi = round(collect($manual)->whereIn('kode', ['BEBAN-STOK', 'SO-SALAH'])->sum('nilai'), 2);
 
         return [
-            'per_penyebab' => $perPenyebab, 'per_lokasi' => $perLokasi, 'per_barang' => $perBarang, 'riwayat' => $riwayat, 'manual' => $manual,
-            'total' => ['opname' => $opname->count(), 'akurasi' => round((float) $opname->avg(fn ($o) => (float) ($o->ringkasan['akurasi'] ?? 0)), 1),
+            'per_penyebab' => $perPenyebab, 'per_lokasi' => $perLokasi, 'per_barang' => $perBarang, 'riwayat' => $riwayat, 'manual' => $manual, 'rusak' => $rusak,
+            'total' => ['opname' => $opname->count(), 'dipulihkan' => $rusak['dipulihkan'], 'akurasi' => round((float) $opname->avg(fn ($o) => (float) ($o->ringkasan['akurasi'] ?? 0)), 1),
                 'nilai_kurang' => $nilaiKurang, 'nilai_lebih' => $nilaiLebih, 'bersih' => round($nilaiLebih - $nilaiKurang, 2), 'manual_rugi' => $manualRugi],
         ];
     }

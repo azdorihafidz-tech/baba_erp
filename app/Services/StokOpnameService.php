@@ -539,6 +539,8 @@ class StokOpnameService
             $ring['nilai_bersih'] = round($ring['nilai_lebih'] - $ring['nilai_kurang'], 2);
             $ring['akurasi'] = $ring['dihitung'] ? round($ring['cocok'] / $ring['dihitung'] * 100, 1) : 0;
             $ring['per_penyebab'] = $perPenyebab;
+            // Tahap 7c: barang rusak ditahan (dikelola di Stok Rusak); kerugiannya sudah tercatat di atas
+            $ring['stok_rusak'] = app(StokRusakService::class)->dariOpname($o);
             $o->update(['status' => 'selesai', 'disetujui_oleh' => $u->id, 'disetujui_at' => now(), 'ringkasan' => $ring]);
             $this->log($o, 'setujui', $u, 'Nilai kurang ' . $this->rupiah($ring['nilai_kurang']) . ', lebih ' . $this->rupiah($ring['nilai_lebih']) . ", akurasi {$ring['akurasi']}%");
             DB::afterCommit(fn () => $this->kabari($o, 'disetujui', $u));

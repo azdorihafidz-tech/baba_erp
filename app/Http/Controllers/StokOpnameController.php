@@ -245,7 +245,7 @@ class StokOpnameController extends Controller
         return \Maatwebsite\Excel\Facades\Excel::download(new \App\Exports\StokOpnameExport($this->svc->beritaAcara($opname), auth()->user()->name), "berita-acara-{$opname->nomor}.xlsx");
     }
 
-    public const TAB_LAPORAN = ['ringkasan' => 'Ringkasan', 'barang' => 'Per barang', 'riwayat' => 'Riwayat opname', 'manual' => 'Penyesuaian manual'];
+    public const TAB_LAPORAN = ['ringkasan' => 'Ringkasan', 'barang' => 'Per barang', 'riwayat' => 'Riwayat opname', 'rusak' => 'Stok rusak', 'manual' => 'Penyesuaian manual'];
 
     /**
      * Laporan Kerugian Stok. Lokasi: kosong = semua lokasi milik BABA yang boleh dilihat (tanpa toko mitra),
@@ -299,6 +299,10 @@ class StokOpnameController extends Controller
                 $d['riwayat']->map(fn ($o) => [$o->nomor, $o->cabang?->nama_cabang, $o->status_label, $o->created_at?->format('d/m/Y H:i'), $o->disetujui_at?->format('d/m/Y H:i'),
                     $o->item_count, $o->ringkasan['akurasi'] ?? null, $o->ringkasan['nilai_kurang'] ?? null, $o->ringkasan['nilai_lebih'] ?? null])->all()],
             'manual' => [['Lokasi', 'Pos', 'Jumlah transaksi', 'Nilai (Rp)'], array_map(fn ($m) => [$m['lokasi'], $m['nama'], $m['jumlah'], $m['nilai']], $d['manual'])],
+            'rusak' => [['Barang', 'Lokasi', 'Sisa ditahan', 'Satuan', 'Nilai pokok (Rp)', 'Ditahan (hari)', 'Asal opname'],
+                array_merge(array_map(fn ($r) => [$r['nama'], $r['lokasi'], $r['qty'], $r['satuan'], $r['nilai'], $r['umur'], $r['opname']], $d['rusak']['ditahan']),
+                    [[], ['Tindak lanjut dalam periode', 'Kali', 'Nilai pokok (Rp)', 'Dipulihkan (Rp)']],
+                    array_values(array_map(fn ($j) => [$j['label'], $j['kali'], $j['nilai_pokok'], $j['nilai_pulih']], $d['rusak']['per_jenis'])))],
             default => [['Penyebab', 'Pos keuangan', 'Barang', 'Nilai (Rp)'],
                 array_merge(array_values(array_map(fn ($p) => [$p['label'], $p['akun'], $p['barang'], $p['nilai']], $d['per_penyebab'])),
                     [[], ['Lokasi', 'Opname', 'Akurasi rata-rata (%)', 'Nilai kurang (Rp)', 'Nilai lebih (Rp)', 'Selisih bersih (Rp)']],

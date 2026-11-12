@@ -183,7 +183,8 @@
                 <div class="small mt-1">
                     @forelse($r->rincian as $x)
                     <span class="badge bg-light text-dark border me-1">{{ $x->penyebab_label }} {{ $ang($x->qty) }}@if($x->nilai !== null) · {{ $rp($x->nilai) }}@endif
-                        @if($x->foto)<a href="{{ route('stok-opname.foto', [$o, $x->id]) }}" target="_blank" class="ms-1" data-uji="foto-link"><i class="bi bi-image"></i></a>@endif</span>
+                        @if($x->foto)<a href="{{ route('stok-opname.foto', [$o, $x->id]) }}" target="_blank" class="ms-1" data-uji="foto-link"><i class="bi bi-image"></i></a>@endif
+                        @if($x->penyebab === 'rusak' && $o->status === 'selesai')@can('stok_opname.stok_rusak')<a href="{{ route('stok-opname.rusak', ['lokasi' => $o->cabang_id]) }}" class="ms-1" data-uji="ke-rusak">→ Stok Rusak</a>@endcan @endif</span>
                     @if($x->catatan)<span class="small text-muted me-2">{{ $x->catatan }}</span>@endif
                     @empty
                     <span class="text-danger"><i class="bi bi-exclamation-circle"></i> Penyebab belum diisi</span>

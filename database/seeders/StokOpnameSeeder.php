@@ -23,15 +23,16 @@ class StokOpnameSeeder extends Seeder
         ['name' => 'stok_opname.setujui', 'display_name' => 'Setujui / tolak opname (stok & keuangan disesuaikan)', 'group' => 'stok_opname'],
         ['name' => 'stok_opname.batal', 'display_name' => 'Batalkan opname yang belum disetujui', 'group' => 'stok_opname'],
         ['name' => 'stok_opname.laporan', 'display_name' => 'Lihat Laporan Kerugian Stok', 'group' => 'stok_opname'],
+        ['name' => 'stok_opname.stok_rusak', 'display_name' => 'Kelola stok rusak (pakai lagi, kembali ke pemasok, musnahkan)', 'group' => 'stok_opname'],
     ];
 
     public const ROLE_DEFAULTS = [
-        'admin_pusat'    => ['stok_opname.lihat', 'stok_opname.hitung', 'stok_opname.ajukan', 'stok_opname.setujui', 'stok_opname.batal', 'stok_opname.laporan'],
-        'admin_gudang'   => ['stok_opname.lihat', 'stok_opname.hitung', 'stok_opname.ajukan'],
+        'admin_pusat'    => ['stok_opname.lihat', 'stok_opname.hitung', 'stok_opname.ajukan', 'stok_opname.setujui', 'stok_opname.batal', 'stok_opname.laporan', 'stok_opname.stok_rusak'],
+        'admin_gudang'   => ['stok_opname.lihat', 'stok_opname.hitung', 'stok_opname.ajukan', 'stok_opname.stok_rusak'],
         'manajer_cabang' => ['stok_opname.lihat', 'stok_opname.hitung', 'stok_opname.ajukan'],
         'kasir'          => ['stok_opname.lihat', 'stok_opname.hitung'],
         'helper'         => ['stok_opname.lihat', 'stok_opname.hitung'],
-        'pemilik_toko'   => ['stok_opname.lihat', 'stok_opname.hitung', 'stok_opname.ajukan', 'stok_opname.setujui', 'stok_opname.batal', 'stok_opname.laporan'],
+        'pemilik_toko'   => ['stok_opname.lihat', 'stok_opname.hitung', 'stok_opname.ajukan', 'stok_opname.setujui', 'stok_opname.batal', 'stok_opname.laporan', 'stok_opname.stok_rusak'],
     ];
 
     /** Akun beban per penyebab (di bawah 6-0000 BEBAN OPERASIONAL). */
@@ -72,6 +73,15 @@ class StokOpnameSeeder extends Seeder
         foreach (array_keys(StokOpnameService::PENYEBAB) as $penyebab) {
             StokOpnameService::kategori($penyebab);
         }
+        // Tahap 7c: uang pengganti barang rusak dari pemasok = pendapatan lain-lain
+        if (! DB::table('chart_of_accounts')->where('kode', '7-1103')->exists()) {
+            DB::table('chart_of_accounts')->insert(['kode' => '7-1103', 'nama' => 'Pemulihan Kerugian Stok', 'tipe' => 'pendapatan_lain', 'parent_kode' => '7-0000',
+                'saldo_normal' => 'kredit', 'level' => 2, 'is_leaf' => true, 'urutan' => 565, 'created_at' => now(), 'updated_at' => now()]);
+        }
+        \App\Services\StokRusakService::kategoriPulih();
+        Panduan::updateOrCreate(['slug' => 'stok-rusak'], ['judul' => 'Stok Rusak', 'konten' => self::PANDUAN_RUSAK, 'modul' => 'stok', 'urutan' => 6, 'aktif' => true]);
+        Cache::forget('panduan:stok-rusak');
+
         Panduan::updateOrCreate(['slug' => 'stok-opname'], [
             'judul' => 'Stok Opname', 'konten' => self::PANDUAN, 'modul' => 'stok', 'urutan' => 4, 'aktif' => true,
         ]);
@@ -106,6 +116,7 @@ Melihat berapa nilai barang yang **rusak, hilang, susut, dipakai tester, kedaluw
    - **Ringkasan** — nilai per penyebab (dengan pos keuangannya) dan per lokasi (jumlah opname, akurasi rata-rata, kurang, lebih, bersih).
    - **Per barang** — barang yang paling banyak kurang, penyebabnya, dan berapa kali kurang.
    - **Riwayat opname** — semua opname di periode itu beserta status & akurasinya (klik nomor untuk membuka).
+   - **Stok rusak** — barang rusak yang masih ditahan (berapa hari, merah bila > 30 hari) dan tindak lanjut dalam periode beserta nilai yang dipulihkan.
    - **Penyesuaian manual** — kerugian dari menu Penyesuaian Stok (per barang, di luar opname).
 4. Tekan **Excel** untuk mengunduh tab yang sedang dibuka.
 
@@ -113,6 +124,25 @@ Melihat berapa nilai barang yang **rusak, hilang, susut, dipakai tester, kedaluw
 - Nilai = harga pokok (harga beli), sama dengan yang dicatat di Laba Rugi.
 - Kerugian **tidak memotong kas**; yang turun adalah laba.
 - Toko mitra hanya tampil bila dipilih (lokasinya sendiri atau "Semua lokasi + toko mitra").
+MD;
+
+    public const PANDUAN_RUSAK = <<<'MD'
+## Untuk apa?
+Barang yang dicatat **rusak / pecah / bocor** saat stok opname disetujui keluar dari stok jual dan **ditahan** di menu ini sampai diputuskan nasibnya. Kerugiannya **sudah tercatat** saat opname disetujui; tindak lanjut di sini hanya memulihkan kerugian bila ada yang kembali.
+
+## Langkah
+1. Buka **Stok & Gudang › Stok Rusak**. Tab **Ditahan** berisi barang yang belum ditindaklanjuti, lengkap dengan sisa, nilai pokok, dan berapa hari sudah ditahan.
+2. Tekan **Tindak lanjut** pada barangnya, pilih salah satu, isi **Jumlah** (boleh sebagian), lalu **Simpan**:
+   - **Dipakai lagi** — barang ternyata masih layak (mis. hanya kemasan tergores): kembali ke stok jual dan kerugiannya dibatalkan.
+   - **Kembali ke pemasok — diganti barang baru**: barang pengganti masuk stok jual, kerugian dibatalkan.
+   - **Kembali ke pemasok — uang dikembalikan**: isi jumlah uang dan **kas** yang menerima → saldo kas naik, tercatat sebagai **Pemulihan Kerugian Stok**.
+   - **Kembali ke pemasok — dipotong dari tagihan**: tulis nomor PO / faktur di **Catatan**. Tidak ada jurnal; penghematannya terlihat saat membayar tagihan pemasok yang sudah dipotong.
+   - **Dimusnahkan**: **foto wajib**. Setelah disimpan, tekan **berita acara** untuk mencetak Berita Acara Pemusnahan.
+3. Bila semua jumlahnya sudah ditindaklanjuti, barang pindah ke tab **Selesai**.
+
+## Catatan
+- Toko mitra: stok rusaknya dikelola pemilik toko itu sendiri.
+- Izin **Kelola stok rusak** diatur di Role & Hak Akses (bawaan: Admin Pusat, Admin Gudang, Pemilik Toko Mitra).
 MD;
 
     public const TOOLTIP = [
@@ -134,6 +164,7 @@ Mencocokkan **stok fisik** di rak dengan **stok sistem** ERP, menyesuaikan stok 
 5. Untuk barang yang **kurang**, tekan **Isi penyebab**: pecah jumlahnya ke Rusak / Hilang / Susut / Tester / Kedaluwarsa / Salah catat, lampirkan **foto** (wajib untuk rusak; untuk hilang bila nilainya di atas batas). Barang yang **lebih** tercatat otomatis.
 6. Tekan **Ajukan**. Opname terkunci (tidak bisa dihitung) sambil menunggu persetujuan.
 7. Penyetuju memeriksa lalu **Setujui** — stok & keuangan langsung disesuaikan dan opname dikunci — atau **Tolak** dengan alasan (opname kembali ke tahap hitung).
+8. Barang yang dicatat **rusak** tidak langsung dibuang: barang itu **ditahan** di menu **Stok Rusak** untuk dipakai lagi, dikembalikan ke pemasok, atau dimusnahkan.
 
 ## Pencatatan keuangan
 | Penyebab | Pos di Laba Rugi |

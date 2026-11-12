@@ -702,10 +702,25 @@
         @can('stok_opname.lihat')
         @php try { $jmlOpnameMenunggu = app(\App\Services\StokOpnameService::class)->jumlahMenunggu(auth()->user()); } catch (\Throwable $e) { $jmlOpnameMenunggu = 0; } @endphp
         <a href="{{ route('stok-opname.index') }}"
-           class="nav-link {{ request()->routeIs('stok-opname.*') && ! request()->routeIs('stok-opname.laporan') ? 'active' : '' }}">
+           class="nav-link {{ request()->routeIs('stok-opname.*') && ! request()->routeIs('stok-opname.laporan', 'stok-opname.rusak*') ? 'active' : '' }}">
             <i class="bi bi-clipboard-check"></i>
             <span>Stok Opname</span>
             @if($jmlOpnameMenunggu > 0)<span class="badge rounded-pill bg-danger ms-auto" title="Menunggu persetujuan Anda">{{ $jmlOpnameMenunggu }}</span>@endif
+        </a>
+        @endcan
+        @can('stok_opname.stok_rusak')
+        @php
+            try {
+                $uRusak = auth()->user();
+                $jmlRusak = \App\Models\StokRusak::where('status', 'ditahan')
+                    ->when(! $uRusak->canAccessAllBranches(), fn ($q) => $q->whereIn('cabang_id', $uRusak->cabangs()->pluck('cabangs.id')))->count();
+            } catch (\Throwable $e) { $jmlRusak = 0; }
+        @endphp
+        <a href="{{ route('stok-opname.rusak') }}"
+           class="nav-link {{ request()->routeIs('stok-opname.rusak*') ? 'active' : '' }}">
+            <i class="bi bi-heartbreak"></i>
+            <span>Stok Rusak</span>
+            @if($jmlRusak > 0)<span class="badge rounded-pill bg-warning text-dark ms-auto" title="Barang rusak masih ditahan">{{ $jmlRusak }}</span>@endif
         </a>
         @endcan
         @can('stok_opname.laporan')

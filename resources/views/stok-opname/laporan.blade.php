@@ -37,7 +37,7 @@
 
 <div class="row g-2 mb-3">
     @foreach([['Opname disetujui', $t['opname'], ''], ['Akurasi rata-rata', $t['akurasi'] . '%', 'fw-bold'], ['Nilai kurang', $rp($t['nilai_kurang']), 'text-danger'], ['Nilai lebih', $rp($t['nilai_lebih']), 'text-primary'],
-        ['Selisih bersih opname', $rp($t['bersih']), $t['bersih'] < 0 ? 'text-danger' : ''], ['Kerugian penyesuaian manual', $rp($t['manual_rugi']), 'text-danger']] as [$l, $v, $c])
+        ['Selisih bersih opname', $rp($t['bersih']), $t['bersih'] < 0 ? 'text-danger' : ''], ['Kerugian penyesuaian manual', $rp($t['manual_rugi']), 'text-danger'], ['Dipulihkan dari stok rusak', $rp($t['dipulihkan']), 'text-success']] as [$l, $v, $c])
     <div class="col-6 col-md-4 col-xl-2"><div class="card h-100"><div class="card-body p-2"><div class="small text-muted">{{ $l }}</div><div class="fw-semibold {{ $c }}" data-uji="total-{{ \Illuminate\Support\Str::slug($l) }}">{{ $v }}</div></div></div></div>
     @endforeach
 </div>
@@ -97,6 +97,28 @@
         @empty
             <tr><td colspan="8" class="text-center text-muted py-3">Tidak ada opname pada periode ini.</td></tr>
         @endforelse
+        </tbody>
+    </table>
+@elseif($tab === 'rusak')
+    <div class="small mb-1"><span class="fw-semibold">Masih ditahan sekarang</span> · nilai pokok <span class="text-danger" data-uji="rusak-ditahan">{{ $rp($data['rusak']['nilai_ditahan']) }}</span></div>
+    <table class="table table-sm small mb-3" data-uji="rusak">
+        <thead><tr><th>Barang</th><th>Lokasi</th><th class="text-end">Sisa</th><th class="text-end">Nilai</th><th class="text-end">Hari</th><th>Asal</th></tr></thead>
+        <tbody>
+        @forelse($data['rusak']['ditahan'] as $r)
+            <tr><td>{{ $r['nama'] }}</td><td>{{ $r['lokasi'] }}</td><td class="text-end">{{ $ang($r['qty']) }} {{ $r['satuan'] }}</td><td class="text-end">{{ $rp($r['nilai']) }}</td>
+                <td class="text-end {{ $r['umur'] > 30 ? 'text-danger fw-semibold' : '' }}">{{ $r['umur'] }}</td><td>{{ $r['opname'] }}</td></tr>
+        @empty
+            <tr><td colspan="6" class="text-center text-muted py-3">Tidak ada stok rusak yang masih ditahan.</td></tr>
+        @endforelse
+        </tbody>
+    </table>
+    <div class="fw-semibold small mb-1">Tindak lanjut dalam periode</div>
+    <table class="table table-sm small mb-0" data-uji="rusak-jenis">
+        <thead><tr><th>Tindak lanjut</th><th class="text-end">Kali</th><th class="text-end">Nilai pokok</th><th class="text-end">Dipulihkan</th></tr></thead>
+        <tbody>
+        @foreach($data['rusak']['per_jenis'] as $j)
+            <tr class="{{ $j['kali'] ? '' : 'text-muted' }}"><td>{{ $j['label'] }}</td><td class="text-end">{{ $j['kali'] }}</td><td class="text-end">{{ $rp($j['nilai_pokok']) }}</td><td class="text-end text-success">{{ $rp($j['nilai_pulih']) }}</td></tr>
+        @endforeach
         </tbody>
     </table>
 @else

@@ -262,6 +262,11 @@ Route::middleware(['auth', 'verified', 'cabang'])->group(function () {
         Route::post('/mulai', 'mulai')->name('mulai.store');
         Route::get('/barang', 'barang')->name('barang');
         Route::get('/laporan', 'laporan')->name('laporan');
+        // Tahap 7c — stok rusak ditahan
+        Route::get('/rusak', [\App\Http\Controllers\StokRusakController::class, 'index'])->name('rusak');
+        Route::post('/rusak/{rusak}/tindak', [\App\Http\Controllers\StokRusakController::class, 'tindak'])->whereNumber('rusak')->name('rusak.tindak');
+        Route::get('/rusak/tindakan/{tindakan}/foto', [\App\Http\Controllers\StokRusakController::class, 'foto'])->whereNumber('tindakan')->name('rusak.foto');
+        Route::get('/rusak/tindakan/{tindakan}/berita-acara', [\App\Http\Controllers\StokRusakController::class, 'beritaAcaraMusnah'])->whereNumber('tindakan')->name('rusak.musnah');
         Route::get('/{opname}/berita-acara', 'beritaAcara')->whereNumber('opname')->name('berita-acara');
         Route::get('/{opname}/berita-acara/excel', 'beritaAcaraExcel')->whereNumber('opname')->name('berita-acara.excel');
         Route::get('/{opname}', 'show')->whereNumber('opname')->name('show');
