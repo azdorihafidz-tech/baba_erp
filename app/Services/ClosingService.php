@@ -269,12 +269,13 @@ class ClosingService
         return DB::table('transaksi_keuangans')
             ->whereNull('deleted_at')
             ->whereBetween('tanggal_transaksi', [$start->toDateString(), $end->toDateString()])
-            ->when($cabangId, fn ($q) => $q->where('cabang_id', $cabangId))
+            ->tap(fn ($q) => \App\Support\KeuanganBaba::saring($q, 'cabang_id', $cabangId))
             ->selectRaw("kategori_id, kategori, tipe, kas_id, cabang_id,
                 CASE WHEN referensi_type = 'order' THEN 1 ELSE 0 END as is_order,
+                CASE WHEN referensi_type IN ('pesanan_online_bayar', 'pesanan_online_batal', 'retur_online') THEN 1 ELSE 0 END as is_online,
                 CASE WHEN status_setoran = 'menunggu_diterima' THEN 1 ELSE 0 END as is_pending,
                 SUM(jumlah) as total, COUNT(*) as jumlah_trx")
-            ->groupByRaw('kategori_id, kategori, tipe, kas_id, cabang_id, is_order, is_pending')
+            ->groupByRaw('kategori_id, kategori, tipe, kas_id, cabang_id, is_order, is_online, is_pending')
             ->get()
             ->map(function ($r) use ($pemasukan) {
                 $kode = $this->kodeEfektif($r->kategori_id ? (int) $r->kategori_id : null, $r->kategori);
@@ -284,6 +285,7 @@ class ClosingService
                 $r->masuk = $r->tipe === $pemasukan;
                 $r->total = (float) $r->total;
                 $r->is_order = (bool) $r->is_order;
+                $r->is_online = (bool) $r->is_online; // ERP BABA Tahap 4: Pesanan Online gudang = omzet
                 $r->is_pending = (bool) $r->is_pending;
                 // SETOR-IN yang belum diterima belum menambah saldo kas tujuan.
                 $r->efek_kas = $r->kas_id && ! ($r->masuk && $r->is_pending);
@@ -302,7 +304,7 @@ class ClosingService
             ->whereNull('orders.deleted_at')
             ->whereBetween('orders.tanggal_order', [$start->toDateString(), $end->toDateString()])
             ->whereNotIn('orders.status', StatusOrder::bukanPenjualan())
-            ->when($cabangId, fn ($q) => $q->where('orders.cabang_id', $cabangId));
+            ->tap(fn ($q) => \App\Support\KeuanganBaba::saring($q, 'orders.cabang_id', $cabangId));
     }
 
     private function hitungPenjualan(Carbon $start, Carbon $end, ?int $cabangId): array
@@ -355,6 +357,10 @@ class ClosingService
         $internalOmzet = $internalHpp = 0.0;
         if (\App\Models\Order::adaKolomKiriman()) {
             $internal = $this->baseOrder($start, $end, $cabangId)->where('orders.customer_type', 'internal');
+            // ERP BABA Tahap 4: kiriman ke Toko Kemitraan / Refill Member = penjualan sungguhan, bukan internal.
+            if ($bukan = \App\Support\KeuanganBaba::idBukanBaba()) {
+                $internal->where(fn ($w) => $w->whereNull('orders.outlet_tujuan_id')->orWhereNotIn('orders.outlet_tujuan_id', $bukan));
+            }
             $internalOmzet = (float) (clone $internal)->sum('orders.total_bayar');
             $internalHpp = (float) DB::table('order_items')
                 ->joinSub((clone $internal)->select('orders.id'), 'o', 'o.id', '=', 'order_items.order_id')
@@ -379,6 +385,8 @@ class ClosingService
             'take_away_fee'  => (float) ($r->takeaway ?? 0),
             'omzet_bersih'   => (float) ($r->bersih ?? 0),
             'hpp'            => $hpp,
+            // ERP BABA Tahap 4: HPP Pesanan Online gudang (pendapatannya ada di transaksi keuangan).
+            'hpp_online'     => app(\App\Services\JurnalOnlineService::class)->hpp($start, $end, $cabangId),
             'per_metode'     => $metodeLabel,
             'per_tipe'       => $perTipe,
             'internal'       => ['omzet' => $internalOmzet, 'hpp' => $internalHpp],
@@ -393,8 +401,14 @@ class ClosingService
     {
         $pendapatanLain = [];
         $beban = [];
+        $omzetOnline = 0.0;
 
         foreach ($trxAgg as $r) {
+            if (! empty($r->is_online)) {
+                $omzetOnline += $r->total;
+
+                continue;
+            }
             if ($r->mutasi || $r->is_order || in_array($r->kode, self::KODE_NON_LABA_RUGI, true)) {
                 continue;
             }
@@ -411,8 +425,8 @@ class ClosingService
         // supaya tidak terhitung dobel dengan penjualan cabang (aturan sama dengan coffeeshop).
         $eliminasiOmzet = $konsolidasi ? (float) ($penjualan['internal']['omzet'] ?? 0) : 0.0;
         $eliminasiHpp = $konsolidasi ? (float) ($penjualan['internal']['hpp'] ?? 0) : 0.0;
-        $omzet = $penjualan['omzet_bersih'] - $eliminasiOmzet;
-        $hpp = $penjualan['hpp'] - $eliminasiHpp;
+        $omzet = $penjualan['omzet_bersih'] + $omzetOnline - $eliminasiOmzet;
+        $hpp = $penjualan['hpp'] + (float) ($penjualan['hpp_online'] ?? 0) - $eliminasiHpp;
         $labaKotor = $omzet - $hpp;
         $totalPendapatanLain = array_sum($pendapatanLain);
         $totalBeban = array_sum($beban);
@@ -475,7 +489,7 @@ class ClosingService
     private function hitungSaldoKas(Carbon $end, ?int $cabangId, Collection $trxAgg): array
     {
         $kasList = Kas::with('cabang:id,nama_cabang')
-            ->when($cabangId, fn ($q) => $q->where('cabang_id', $cabangId))
+            ->tap(fn ($q) => \App\Support\KeuanganBaba::saring($q, 'cabang_id', $cabangId))
             ->orderBy('cabang_id')->orderBy('tipe_kas')->orderBy('nama_kas')
             ->get();
 
@@ -484,7 +498,7 @@ class ClosingService
             ->whereNull('deleted_at')
             ->whereNotNull('kas_id')
             ->where('tanggal_transaksi', '>', $end->toDateString())
-            ->when($cabangId, fn ($q) => $q->where('cabang_id', $cabangId))
+            ->tap(fn ($q) => \App\Support\KeuanganBaba::saring($q, 'cabang_id', $cabangId))
             ->whereRaw("NOT (tipe = ? AND COALESCE(status_setoran, '') = 'menunggu_diterima')", [$pemasukan])
             ->selectRaw('kas_id, SUM(CASE WHEN tipe = ? THEN jumlah ELSE -jumlah END) as net', [$pemasukan])
             ->groupBy('kas_id')
@@ -602,7 +616,7 @@ class ClosingService
         $rows = TransaksiKeuangan::with('kas:id,nama_kas,cabang_id', 'cabang:id,nama_cabang')
             ->whereIn('kategori_id', $kategoriIds)
             ->whereBetween('tanggal_transaksi', [$start->toDateString(), $end->toDateString()])
-            ->when($cabangId, fn ($q) => $q->where('cabang_id', $cabangId))
+            ->tap(fn ($q) => \App\Support\KeuanganBaba::saring($q, 'cabang_id', $cabangId))
             ->orderBy('tanggal_transaksi')->orderBy('id')
             ->limit($limit)
             ->get();
@@ -682,7 +696,7 @@ class ClosingService
             ->join('items', 'items.id', '=', 'stock_batches.item_id')
             ->where('stock_batches.qty_sisa', '>', 0)
             ->whereNull('stock_batches.deleted_at')
-            ->when($cabangId, fn ($q) => $q->where('stock_batches.lokasi_id', $cabangId))
+            ->tap(fn ($q) => \App\Support\KeuanganBaba::saring($q, 'stock_batches.lokasi_id', $cabangId))
             ->selectRaw('items.tipe, SUM(stock_batches.qty_sisa * stock_batches.harga_beli_per_unit) as nilai')
             ->groupBy('items.tipe')
             ->pluck('nilai', 'tipe');
@@ -709,7 +723,7 @@ class ClosingService
         $perStatus = DB::table('setorans')
             ->whereNull('deleted_at')
             ->whereBetween('tanggal', [$start->toDateString(), $end->toDateString()])
-            ->when($cabangId, fn ($q) => $q->where('cabang_id', $cabangId))
+            ->tap(fn ($q) => \App\Support\KeuanganBaba::saring($q, 'cabang_id', $cabangId))
             ->selectRaw('status, COUNT(*) as n, SUM(total_disetor) as total, SUM(selisih) as selisih')
             ->groupBy('status')
             ->get()
@@ -735,7 +749,7 @@ class ClosingService
                 ->whereNull('orders.deleted_at')
                 ->whereBetween('orders.tanggal_order', [$start->toDateString(), $end->toDateString()])
                 ->whereNotIn('orders.status', StatusOrder::bukanPenjualan())
-                ->when($cabangId, fn ($q) => $q->where('orders.cabang_id', $cabangId))
+                ->tap(fn ($q) => \App\Support\KeuanganBaba::saring($q, 'orders.cabang_id', $cabangId))
                 ->join('cabangs', 'cabangs.id', '=', 'orders.cabang_id')
                 ->where('cabangs.tipe', '!=', 'gudang_pusat')
                 ->whereNotExists(fn ($q) => $q->select(DB::raw(1))->from('setorans')
@@ -772,6 +786,13 @@ class ClosingService
 
         $lain = [];
         foreach ($trxAgg as $r) {
+            if (! empty($r->is_online)) {
+                $c = $lain[$r->cabang_id] ??= ['pendapatan_lain' => 0.0, 'beban' => 0.0];
+                $c['online'] = ($c['online'] ?? 0.0) + $r->total;
+                $lain[$r->cabang_id] = $c;
+
+                continue;
+            }
             if ($r->mutasi || $r->is_order || in_array($r->kode, self::KODE_NON_LABA_RUGI, true)) {
                 continue;
             }
@@ -781,10 +802,13 @@ class ClosingService
         }
 
         $rows = [];
-        foreach (Cabang::orderBy('id')->get(['id', 'nama_cabang', 'tipe', 'is_active']) as $cabang) {
+        foreach (Cabang::orderBy('id')->get(['id', 'nama_cabang', 'tipe', 'is_active', 'jenis_toko']) as $cabang) {
+            if (! \App\Support\KeuanganBaba::milikBaba($cabang)) {
+                continue; // ERP BABA Tahap 4: toko mitra di luar Tutup Buku Keseluruhan
+            }
             $o = $orders->get($cabang->id);
-            $omzet = (float) ($o->omzet ?? 0);
-            $h = (float) ($hpp[$cabang->id] ?? 0);
+            $omzet = (float) ($o->omzet ?? 0) + (float) ($lain[$cabang->id]['online'] ?? 0);
+            $h = (float) ($hpp[$cabang->id] ?? 0) + app(\App\Services\JurnalOnlineService::class)->hpp($start, $end, $cabang->id);
             $pl = $lain[$cabang->id]['pendapatan_lain'] ?? 0.0;
             $bb = $lain[$cabang->id]['beban'] ?? 0.0;
             if (! $cabang->is_active && $omzet == 0 && $pl == 0 && $bb == 0) {

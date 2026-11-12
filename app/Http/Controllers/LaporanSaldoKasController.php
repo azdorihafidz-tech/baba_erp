@@ -33,7 +33,7 @@ class LaporanSaldoKasController extends Controller
             ->leftJoin('cabangs', 'cabangs.id', '=', 'kas.cabang_id')
             ->whereNull('kas.deleted_at')
             ->where('kas.is_active', true)
-            ->when($cabangId, fn($q) => $q->where('kas.cabang_id', $cabangId))
+            ->tap(fn ($q) => \App\Support\KeuanganBaba::saring($q, 'kas.cabang_id', $cabangId))
             ->select('kas.id', 'kas.nama_kas', 'cabangs.nama_cabang')
             ->orderBy('cabangs.nama_cabang')
             ->orderBy('kas.nama_kas')
@@ -44,7 +44,7 @@ class LaporanSaldoKasController extends Controller
         // Pilih kas yang akan ditampilkan
         $kasQuery = Kas::withoutGlobalScope(\App\Models\Scopes\CabangScope::class)
             ->whereNull('deleted_at')
-            ->when($cabangId, fn($q) => $q->where('cabang_id', $cabangId))
+            ->tap(fn ($q) => \App\Support\KeuanganBaba::saring($q, 'cabang_id', $cabangId))
             ->when($kasId, fn($q) => $q->where('id', $kasId))
             ->with('cabang:id,nama_cabang')
             ->orderBy('id')

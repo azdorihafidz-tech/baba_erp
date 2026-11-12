@@ -402,6 +402,7 @@ class PesananOnlineService
             $p->update(['status_bayar' => 'lunas', 'lunas_at' => now()] + ($p->status === 'menunggu_cek' ? ['status' => 'disiapkan', 'batas_bayar_at' => null] : []));
             $this->catat($p, $p->status, 'Pembayaran diterima (lunas).', ...$this->pelaku($oleh));
             app(RoService::class)->pemicu($p, 'lunas'); // Tahap 2e: RO otomatis sesuai Mode RO
+            app(JurnalOnlineService::class)->bayarDiterima($p, $b, $oleh instanceof User ? $oleh->id : null); // Tahap 4: kas + penjualan (gudang)
 
             return $p;
         });
@@ -537,6 +538,7 @@ class PesananOnlineService
             $p->update(['status' => 'batal', 'batal_at' => now(), 'batal_alasan' => mb_substr($alasan, 0, 255), 'status_bayar' => $sudahBayar ? 'lunas' : 'belum']);
             $this->catat($p, 'batal', $alasan . ($sudahBayar ? ' — sudah dibayar: kembalikan dana ke pembeli.' : ''), ...$this->pelaku($oleh));
             app(RoService::class)->batal($p); // RO yang sudah tercatat dikurangi lagi
+            app(JurnalOnlineService::class)->batalLunas($p, $oleh instanceof User ? $oleh->id : null); // Tahap 4: dana dikembalikan
 
             return $p;
         });

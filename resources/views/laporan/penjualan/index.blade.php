@@ -7,7 +7,7 @@
 <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
     <div>
         <h4 class="fw-bold mb-0" style="color:#1e293b">Laporan Penjualan</h4>
-        <p class="text-muted mb-0" style="font-size:0.875rem">Rekap transaksi penjualan & jasa giling</p>
+        <p class="text-muted mb-0" style="font-size:0.875rem">Rekap transaksi penjualan kasir</p>
     </div>
     <div class="d-flex gap-2">
         <a href="{{ request()->fullUrlWithQuery(['export' => 'excel']) }}" class="btn btn-success btn-sm">

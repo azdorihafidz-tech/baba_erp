@@ -66,18 +66,14 @@ class NeracaService
     {
         // Aset Lancar — Kas & Setara Kas
         $kasQuery = Kas::where('is_active', true);
-        if ($cabangId) {
-            $kasQuery->where('cabang_id', $cabangId);
-        }
+        \App\Support\KeuanganBaba::saring($kasQuery, 'cabang_id', $cabangId); // Tahap 4: tanpa toko mitra
         $kasSetara = (float) $kasQuery->sum('saldo_sekarang');
 
         // Aset Lancar — Persediaan (FIFO stock_batches, qty_sisa masih ada)
         $persediaanQuery = StockBatch::join('items', 'items.id', '=', 'stock_batches.item_id')
             ->where('stock_batches.qty_sisa', '>', 0)
             ->whereNull('stock_batches.deleted_at');
-        if ($cabangId) {
-            $persediaanQuery->where('stock_batches.lokasi_id', $cabangId);
-        }
+        \App\Support\KeuanganBaba::saring($persediaanQuery, 'stock_batches.lokasi_id', $cabangId);
         $persediaanPerTipe = (clone $persediaanQuery)
             ->selectRaw('items.tipe, SUM(stock_batches.qty_sisa * stock_batches.harga_beli_per_unit) as nilai')
             ->groupBy('items.tipe')
@@ -103,9 +99,7 @@ class NeracaService
 
         // Aset Tetap
         $assetQuery = Asset::where('status', StatusAset::Aktif);
-        if ($cabangId) {
-            $assetQuery->where('lokasi_id', $cabangId);
-        }
+        \App\Support\KeuanganBaba::saring($assetQuery, 'lokasi_id', $cabangId);
         $assetList = $assetQuery->get(['id', 'nama_aset', 'harga_perolehan', 'nilai_buku']);
 
         $asetBruto = (float) $assetList->sum('harga_perolehan');
@@ -123,6 +117,9 @@ class NeracaService
             'lancar' => [
                 'kas_setara' => $kasSetara,
                 'piutang' => $piutang,
+                // Tahap 4: tagihan Pesanan Online gudang yang belum dibayar — INFORMASI, tidak dijumlahkan
+                // (pendapatan online dicatat saat uang diterima, sama dengan kasir).
+                'tagihan_member' => app(\App\Services\JurnalOnlineService::class)->piutang($cabangId),
                 'persediaan_bahan_baku' => $persediaanBahanBaku,
                 'persediaan_barang_jadi' => $persediaanBarangJadi,
                 'persediaan_kemasan' => $persediaanKemasan,
@@ -149,9 +146,7 @@ class NeracaService
                     ->where('transaksi_keuangans.referensi_type', 'purchase_order')
                     ->whereNull('transaksi_keuangans.deleted_at');
             });
-        if ($cabangId) {
-            $hutangQuery->where('cabang_id', $cabangId);
-        }
+        \App\Support\KeuanganBaba::saring($hutangQuery, 'cabang_id', $cabangId);
         $hutangUsaha = (float) $hutangQuery->sum('total_harga');
 
         return [

@@ -262,9 +262,7 @@ class LaporanLabaRugiService
             ->whereBetween('orders.tanggal_order', [$start->toDateString(), $end->toDateString()])
             ->whereNotIn('orders.status', \App\Enums\StatusOrder::bukanPenjualan())->whereNull('orders.deleted_at');
 
-        if ($cabangId) {
-            $query->where('orders.cabang_id', $cabangId);
-        }
+        \App\Support\KeuanganBaba::saring($query, 'orders.cabang_id', $cabangId); // Tahap 4: tanpa toko mitra
 
         return $query;
     }

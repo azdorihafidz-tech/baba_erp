@@ -70,6 +70,7 @@ class GoLiveSeeder extends Seeder
             Porting449Seeder::class,           // 4.49 — porting coffeeshop: label gambar, POS HP, produksi, kiriman, retur (setelah LabelProdukSeeder)
             ProduksiParfumSeeder::class,         // BABA Tahap 1 — konsentrasi parfum, panduan Produksi Parfum (setelah Porting449Seeder)
             TokoOnlineSeeder::class,             // BABA Tahap 2 — izin, panduan, tooltip Toko Online
+            KeuanganBabaSeeder::class,           // BABA Tahap 4 — izin laporan, peran Pemilik Toko Mitra, panduan
         ]);
 
         $gudang = Cabang::updateOrCreate(

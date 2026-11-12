@@ -43,7 +43,7 @@ class LaporanKeuanganController extends Controller
         $pemasukanQuery = TransaksiKeuangan::withoutGlobalScope(CabangScope::class)
             ->where('tipe', TipeTransaksiKeuangan::Pemasukan)
             ->whereBetween('tanggal_transaksi', [$dari->toDateString(), $sampai->toDateString()]);
-        if ($cabangId) $pemasukanQuery->where('cabang_id', $cabangId);
+        \App\Support\KeuanganBaba::saring($pemasukanQuery, 'cabang_id', $cabangId); // Tahap 4: tanpa toko mitra
 
         $pemasukan = $pemasukanQuery->selectRaw('kategori, SUM(jumlah) as total')
             ->groupBy('kategori')
@@ -54,7 +54,7 @@ class LaporanKeuanganController extends Controller
         $pengeluaranQuery = TransaksiKeuangan::withoutGlobalScope(CabangScope::class)
             ->where('tipe', TipeTransaksiKeuangan::Pengeluaran)
             ->whereBetween('tanggal_transaksi', [$dari->toDateString(), $sampai->toDateString()]);
-        if ($cabangId) $pengeluaranQuery->where('cabang_id', $cabangId);
+        \App\Support\KeuanganBaba::saring($pengeluaranQuery, 'cabang_id', $cabangId);
 
         $pengeluaran = $pengeluaranQuery->selectRaw('kategori, SUM(jumlah) as total')
             ->groupBy('kategori')
@@ -73,13 +73,13 @@ class LaporanKeuanganController extends Controller
             $qMasuk = TransaksiKeuangan::withoutGlobalScope(CabangScope::class)
                 ->where('tipe', TipeTransaksiKeuangan::Pemasukan)
                 ->where('tanggal_transaksi', 'like', $bln . '%');
-            if ($cabangId) $qMasuk->where('cabang_id', $cabangId);
+            \App\Support\KeuanganBaba::saring($qMasuk, 'cabang_id', $cabangId);
             $grafikPemasukan[] = (float) $qMasuk->sum('jumlah');
 
             $qKeluar = TransaksiKeuangan::withoutGlobalScope(CabangScope::class)
                 ->where('tipe', TipeTransaksiKeuangan::Pengeluaran)
                 ->where('tanggal_transaksi', 'like', $bln . '%');
-            if ($cabangId) $qKeluar->where('cabang_id', $cabangId);
+            \App\Support\KeuanganBaba::saring($qKeluar, 'cabang_id', $cabangId);
             $grafikPengeluaran[] = (float) $qKeluar->sum('jumlah');
         }
 
@@ -117,7 +117,7 @@ class LaporanKeuanganController extends Controller
         $query = TransaksiKeuangan::withoutGlobalScope(CabangScope::class)
             ->with(['cabang', 'kategoriDinamis'])
             ->whereBetween('tanggal_transaksi', [$dari->toDateString(), $sampai->toDateString()]);
-        if ($cabangId) $query->where('cabang_id', $cabangId);
+        \App\Support\KeuanganBaba::saring($query, 'cabang_id', $cabangId);
 
         $totalMasuk = (clone $query)->where('tipe', TipeTransaksiKeuangan::Pemasukan)->sum('jumlah');
         $totalKeluar = (clone $query)->where('tipe', TipeTransaksiKeuangan::Pengeluaran)->sum('jumlah');

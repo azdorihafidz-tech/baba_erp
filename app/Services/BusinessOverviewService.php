@@ -94,9 +94,7 @@ class BusinessOverviewService
         $query = TransaksiKeuangan::withoutGlobalScope(\App\Models\Scopes\CabangScope::class)
             ->whereBetween('tanggal_transaksi', [$mulai->toDateString(), $akhir->toDateString()])
             ->whereNull('deleted_at');
-        if ($cabangId) {
-            $query->where('cabang_id', $cabangId);
-        }
+        \App\Support\KeuanganBaba::saring($query, 'cabang_id', $cabangId); // Tahap 4: tanpa toko mitra
 
         $totalMasuk = (float) (clone $query)->where('tipe', \App\Enums\TipeTransaksiKeuangan::Pemasukan)->sum('jumlah');
         $totalKeluar = (float) (clone $query)->where('tipe', \App\Enums\TipeTransaksiKeuangan::Pengeluaran)->sum('jumlah');
@@ -134,9 +132,7 @@ class BusinessOverviewService
         $query = Asset::where('status', \App\Enums\StatusAset::Aktif)
             ->whereNotNull('umur_ekonomis_bulan')
             ->whereNotNull('tanggal_perolehan');
-        if ($cabangId) {
-            $query->where('lokasi_id', $cabangId);
-        }
+        \App\Support\KeuanganBaba::saring($query, 'lokasi_id', $cabangId);
 
         $assets = $query->get(['tanggal_perolehan', 'umur_ekonomis_bulan']);
         if ($assets->isEmpty()) {
@@ -161,9 +157,7 @@ class BusinessOverviewService
         $query = Order::withoutGlobalScopes()
             ->penjualanSah()
             ->whereBetween('tanggal_order', [$mulai->toDateString(), $akhir->toDateString()]);
-        if ($cabangId) {
-            $query->where('cabang_id', $cabangId);
-        }
+        \App\Support\KeuanganBaba::saring($query, 'cabang_id', $cabangId); // Tahap 4: tanpa toko mitra
 
         $totalOrder = (clone $query)->count();
         $totalNominal = (float) (clone $query)->sum('total_bayar');
@@ -196,7 +190,7 @@ class BusinessOverviewService
             ->whereNotIn('status', \App\Enums\StatusOrder::bukanPenjualan())->whereNull('deleted_at')
             ->whereBetween('tanggal_order', [$mulai->toDateString(), $akhir->toDateString()])
             ->whereNull('deleted_at')
-            ->when($cabangId, fn ($q) => $q->where('cabang_id', $cabangId))
+            ->tap(fn ($q) => \App\Support\KeuanganBaba::saring($q, 'cabang_id', $cabangId))
             ->exists();
         $kolomVolume = $adaJasaGiling ? 'order_items.berat_daging' : 'order_items.qty';
 
@@ -207,9 +201,7 @@ class BusinessOverviewService
             ->whereBetween('orders.tanggal_order', [$mulai->toDateString(), $akhir->toDateString()])
             ->whereNull('orders.deleted_at')
             ->whereNull('order_items.deleted_at');
-        if ($cabangId) {
-            $query->where('orders.cabang_id', $cabangId);
-        }
+        \App\Support\KeuanganBaba::saring($query, 'orders.cabang_id', $cabangId);
 
         $totalKg = (float) (clone $query)->sum($kolomVolume);
 

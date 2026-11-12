@@ -237,6 +237,7 @@ class ReturOnlineService
             $r->update(['status' => 'disetujui', 'pengembalian' => $lunas ? $pengembalian : 'potong_tagihan',
                 'catatan_penjual' => $catatan ? mb_substr(trim($catatan), 0, 255) : null,
                 'diputus_at' => now(), 'diputus_oleh_jenis' => $jenis, 'diputus_oleh_id' => $id, 'diputus_oleh_nama' => $nama]);
+            app(JurnalOnlineService::class)->returDisetujui($r, $oleh instanceof User ? $oleh->id : null); // Tahap 4: dana kembali (lunas)
             $p->nilai_retur = (float) $p->nilai_retur + (float) $r->nilai;
             $teks = "Retur {$r->nomor} disetujui (Rp " . number_format((float) $r->nilai, 0, ',', '.') . ', ' . ReturOnline::PENGEMBALIAN[$r->pengembalian] . ').';
             // belum lunas & seluruh sisa terpotong retur → otomatis lunas

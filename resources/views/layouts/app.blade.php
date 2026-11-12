@@ -616,7 +616,7 @@
              antrian mati sebagai bawaan per cabang (migration 2026_11_11_000001) --}}
 
         <!-- TOKO ONLINE (BABA Tahap 2: produk, harga, pesanan menu Belanja aplikasi member) -->
-        @if(auth()->check() && (auth()->user()->can('toko_online.kelola') || auth()->user()->can('toko_online.pesanan')))
+        @if(auth()->check() && (auth()->user()->can('toko_online.kelola') || auth()->user()->can('toko_online.pesanan') || auth()->user()->can('toko_online.laporan')))
         <div class="nav-section-title">Toko Online</div>
         @can('toko_online.pesanan')
         @php
@@ -666,6 +666,13 @@
            class="nav-link {{ request()->routeIs('toko-online.pengaturan*') ? 'active' : '' }}">
             <i class="bi bi-sliders"></i>
             <span>Pengaturan Toko Online</span>
+        </a>
+        @endcan
+        @can('toko_online.laporan')
+        <a href="{{ route('toko-online.laporan') }}"
+           class="nav-link {{ request()->routeIs('toko-online.laporan') ? 'active' : '' }}">
+            <i class="bi bi-graph-up-arrow"></i>
+            <span>Laporan Belanja Online</span>
         </a>
         @endcan
         @endif
@@ -1043,11 +1050,7 @@
                 <i class="bi bi-graph-up-arrow"></i><span>BEP</span>
             </a>
             @endcan
-            @can('laporan.bep_otomatis.view')
-            <a href="{{ route('laporan.bep-otomatis.index') }}" class="nav-link {{ request()->routeIs('laporan.bep-otomatis.*') ? 'active' : '' }}">
-                <i class="bi bi-speedometer2"></i><span>BEP Otomatis</span>
-            </a>
-            @endcan
+            {{-- BABA Tahap 4: menu BEP Otomatis (khusus lini jasa giling dimsum) disembunyikan; rutenya tetap ada --}}
             @can('laporan.transfer_dana.view')
             <a href="{{ route('laporan.setoran') }}" class="nav-link {{ request()->routeIs('laporan.setoran') ? 'active' : '' }}">
                 <i class="bi bi-arrow-left-right"></i><span>Transfer / Perpindahan Dana</span>

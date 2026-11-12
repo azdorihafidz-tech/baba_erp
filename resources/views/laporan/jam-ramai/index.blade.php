@@ -166,7 +166,8 @@
 (function() {
     var d = @json($analisa['per_jam']);
     var jamPuncak = @json($analisa['jam_puncak']['jam'] ?? null);
-    if (d.length > 0) {
+    // BABA: periode tanpa order → kanvas tidak dirender; jangan buat grafik (dulu galat JS)
+    if (d.length > 0 && document.getElementById('chartJamRamai')) {
         new Chart(document.getElementById('chartJamRamai'), {
             type: 'bar',
             data: {

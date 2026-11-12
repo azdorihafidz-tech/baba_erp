@@ -77,6 +77,7 @@
         <tr class="section-head"><td colspan="2">Aset Lancar</td></tr>
         <tr><td class="indent">Kas &amp; Setara Kas</td><td class="num">Rp {{ number_format($neraca['aset']['lancar']['kas_setara'], 0, ',', '.') }}</td></tr>
         <tr><td class="indent">Piutang Usaha</td><td class="num">Rp {{ number_format($neraca['aset']['lancar']['piutang'], 0, ',', '.') }}</td></tr>
+        <tr><td class="indent"><i>Tagihan member belum dibayar (informasi, tidak dijumlahkan)</i></td><td class="num"><i>Rp {{ number_format($neraca['aset']['lancar']['tagihan_member'] ?? 0, 0, ',', '.') }}</i></td></tr>
         <tr><td class="indent">Persediaan Bahan Baku</td><td class="num">Rp {{ number_format($neraca['aset']['lancar']['persediaan_bahan_baku'], 0, ',', '.') }}</td></tr>
         <tr><td class="indent">Persediaan Barang Jadi</td><td class="num">Rp {{ number_format($neraca['aset']['lancar']['persediaan_barang_jadi'], 0, ',', '.') }}</td></tr>
         <tr><td class="indent">Persediaan Kemasan</td><td class="num">Rp {{ number_format($neraca['aset']['lancar']['persediaan_kemasan'], 0, ',', '.') }}</td></tr>

@@ -54,9 +54,7 @@ class BukuBesarService
             ->whereBetween('transaksi_keuangans.tanggal_transaksi', [$mulai->toDateString(), $akhir->toDateString()])
             ->whereNull('transaksi_keuangans.deleted_at');
 
-        if ($cabangId) {
-            $query->where('transaksi_keuangans.cabang_id', $cabangId);
-        }
+        \App\Support\KeuanganBaba::saring($query, 'transaksi_keuangans.cabang_id', $cabangId); // Tahap 4: tanpa toko mitra
 
         $rows = $query->select(
                 'transaksi_keuangans.id',

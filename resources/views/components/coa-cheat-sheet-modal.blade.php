@@ -1,25 +1,25 @@
 {{--
     Modal cheat sheet Kode Akun COA — murni referensi visual, tidak
     mempengaruhi field form manapun. Data hardcoded (skenario umum bisnis
-    Berkah Mulyo), dipakai bareng oleh form Tambah/Edit Transaksi Keuangan.
+    BABA PARFUME), dipakai bareng oleh form Tambah/Edit Transaksi Keuangan.
 --}}
 @php
 $coaCheatSheet = [
-    ['skenario' => 'Terima uang dari pelanggan jasa giling', 'kategori' => 'Jasa Giling', 'kode' => '4-1101'],
-    ['skenario' => 'Jual produk jadi (bakso/sosis/tempura)', 'kategori' => 'Penjualan Produk', 'kode' => '4-1102'],
+    ['skenario' => 'Jual parfum (kasir / pesanan online — tercatat otomatis)', 'kategori' => 'Penjualan', 'kode' => '4-1102'],
+    ['skenario' => 'Terima uang jasa (mis. jasa racik / isi ulang pesanan khusus)', 'kategori' => 'Lainnya', 'kode' => '4-1199'],
     ['skenario' => 'Bayar sewa gedung bulanan', 'kategori' => 'Sewa Gedung', 'kode' => '6-1102'],
     ['skenario' => 'Bayar gaji karyawan', 'kategori' => 'Gaji Karyawan', 'kode' => '6-1101'],
     ['skenario' => 'Bayar listrik / air / pulsa', 'kategori' => 'Listrik & Air', 'kode' => '6-1103'],
-    ['skenario' => 'Beli tepung tapioka / daging (bahan baku produksi)', 'kategori' => 'Pembelian Bahan Baku', 'kode' => '5-1101'],
-    ['skenario' => 'Beli bumbu (masako, lada) & kemasan/plastik/label', 'kategori' => 'Pembelian Bahan Baku', 'kode' => '5-1102'],
-    ['skenario' => 'Beli mesin bakso baru > Rp 500rb', 'kategori' => 'Pembelian Aset', 'kode' => '1-2101 (ASET!)'],
+    ['skenario' => 'Beli bibit parfum / alkohol / fixative (bahan baku produksi)', 'kategori' => 'Pembelian Bahan Baku', 'kode' => '5-1101'],
+    ['skenario' => 'Beli botol, tutup, kotak & label (kemasan)', 'kategori' => 'Pembelian Bahan Baku', 'kode' => '5-1102'],
+    ['skenario' => 'Beli mesin / peralatan produksi baru > Rp 500rb', 'kategori' => 'Pembelian Aset', 'kode' => '1-2101 (ASET!)'],
     ['skenario' => 'Beli sapu/kemoceng/tong air (peralatan kecil)', 'kategori' => 'Biaya Operasional', 'kode' => '6-1106'],
     ['skenario' => 'Beli baterai/lampu/ATK (perlengkapan kantor)', 'kategori' => 'Biaya Operasional', 'kode' => '6-1106'],
     ['skenario' => 'Beli sarung tangan/masker produksi', 'kategori' => 'Biaya Operasional', 'kode' => '6-1106'],
     ['skenario' => 'Isi bensin motor operasional', 'kategori' => 'Biaya Operasional', 'kode' => '6-1302'],
     ['skenario' => 'Bayar ongkos kirim bahan/barang', 'kategori' => 'Biaya Operasional', 'kode' => '6-1302'],
     ['skenario' => 'Konsumsi karyawan (nasi bungkus, aqua)', 'kategori' => 'Biaya Operasional', 'kode' => '6-1303'],
-    ['skenario' => 'Servis / reparasi mesin giling', 'kategori' => 'Perawatan Aset', 'kode' => '6-1105'],
+    ['skenario' => 'Servis / reparasi mesin produksi', 'kategori' => 'Perawatan Aset', 'kode' => '6-1105'],
     ['skenario' => 'Kerugian stok (susut/rusak/hilang)', 'kategori' => 'Beban Kerugian Stok', 'kode' => '6-1401'],
     ['skenario' => 'Depresiasi bulanan (otomatis via sistem)', 'kategori' => 'Penyusutan Aset', 'kode' => '6-1104'],
     ['skenario' => 'Terima bunga tabungan bank', 'kategori' => 'Pemasukan Lainnya', 'kode' => '7-1101'],

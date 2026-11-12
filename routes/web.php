@@ -292,6 +292,8 @@ Route::middleware(['auth', 'verified', 'cabang'])->group(function () {
         // Tahap 2e — catatan RO belanja online (pantau + kirim ulang)
         Route::get('/ro', [\App\Http\Controllers\RoCatatanController::class, 'index'])->name('ro.index');
         Route::post('/ro/kirim-ulang', [\App\Http\Controllers\RoCatatanController::class, 'kirimUlang'])->name('ro.kirim-ulang');
+        // Tahap 4 — laporan belanja online (penjualan, RO, tagihan member)
+        Route::get('/laporan', [\App\Http\Controllers\LaporanOnlineController::class, 'index'])->name('laporan');
         // Tahap 2c — stok parfum milik member (pantau saja)
         Route::get('/stok-member', [\App\Http\Controllers\StokMemberController::class, 'index'])->name('stok-member.index');
         Route::get('/stok-member/{memberId}', [\App\Http\Controllers\StokMemberController::class, 'show'])->whereNumber('memberId')->name('stok-member.show');

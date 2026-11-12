@@ -125,7 +125,7 @@ class KeuanganDashboardController extends Controller
         // Factory: fresh query builder per call, bypasses all Eloquent global scopes
         $tbl = fn() => DB::table('transaksi_keuangans')
             ->whereNull('deleted_at')
-            ->when($cabangId, fn($q) => $q->where('cabang_id', $cabangId));
+            ->tap(fn ($q) => \App\Support\KeuanganBaba::saring($q, 'cabang_id', $cabangId));
 
         $from  = $dateFrom->toDateString();
         $to    = $dateTo->toDateString();
@@ -173,7 +173,7 @@ class KeuanganDashboardController extends Controller
             ->leftJoin('cabangs', 'cabangs.id', '=', 'kas.cabang_id')
             ->whereNull('kas.deleted_at')
             ->where('kas.is_active', true)
-            ->when($cabangId, fn($q) => $q->where('kas.cabang_id', $cabangId))
+            ->tap(fn ($q) => \App\Support\KeuanganBaba::saring($q, 'kas.cabang_id', $cabangId))
             ->selectRaw('kas.id, kas.nama_kas, kas.tipe_kas, kas.saldo_sekarang, kas.saldo_minimum, cabangs.nama_cabang')
             ->orderBy('cabangs.nama_cabang')
             ->orderBy('kas.nama_kas')
@@ -196,7 +196,7 @@ class KeuanganDashboardController extends Controller
             ->whereNull('tk.deleted_at')
             ->where('tk.tipe', 'pengeluaran')
             ->whereBetween('tk.tanggal_transaksi', [$bulanFrom, $bulanTo])
-            ->when($cabangId, fn($q) => $q->where('tk.cabang_id', $cabangId))
+            ->tap(fn ($q) => \App\Support\KeuanganBaba::saring($q, 'tk.cabang_id', $cabangId))
             ->selectRaw("COALESCE(kt.nama, 'Lainnya') as nama, SUM(tk.jumlah) as total")
             ->groupBy('kt.nama', 'tk.kategori_id')
             ->orderByDesc('total')

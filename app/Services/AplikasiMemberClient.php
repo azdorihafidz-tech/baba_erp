@@ -63,6 +63,25 @@ class AplikasiMemberClient
         return $this->kirimAman('GET', '/api/erp/akun', ['cari' => $q])->json('data') ?? [];
     }
 
+    /**
+     * ERP Tahap 4 — jabatan sendiri + jalur upline per akun (struktur aplikasi member saat ini), untuk laporan per tim.
+     *
+     * @return array<int, array{diri: ?array, jalur: array<int, array>}>  Melempar \RuntimeException bila gagal.
+     */
+    public function jalur(array $ids): array
+    {
+        $hasil = [];
+        foreach (array_chunk(array_values(array_unique(array_map('intval', $ids))), 1000) as $potong) {
+            $data = $this->kirimAman('POST', '/api/erp/jalur', [], ['ids' => $potong])->json('data') ?? [];
+            foreach ((array) $data as $id => $isi) {
+                $hasil[(int) $id] = ['diri' => $isi['diri'] ?? null, 'jalur' => array_combine(
+                    array_map('intval', array_keys((array) ($isi['jalur'] ?? []))), array_values((array) ($isi['jalur'] ?? [])))];
+            }
+        }
+
+        return $hasil;
+    }
+
     /** Lonceng aplikasi member untuk satu akun (status pesanan dsb.). Melempar \RuntimeException bila gagal. */
     public function notifikasi(int $memberId, string $judul, ?string $isi, ?string $url): void
     {

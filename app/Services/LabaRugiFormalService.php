@@ -95,9 +95,7 @@ class LabaRugiFormalService
             ->whereBetween('transaksi_keuangans.tanggal_transaksi', [$mulai->toDateString(), $akhir->toDateString()])
             ->whereNull('transaksi_keuangans.deleted_at');
 
-        if ($cabangId) {
-            $query->where('transaksi_keuangans.cabang_id', $cabangId);
-        }
+        \App\Support\KeuanganBaba::saring($query, 'transaksi_keuangans.cabang_id', $cabangId); // Tahap 4: tanpa toko mitra
 
         $rows = $query->selectRaw('
                 transaksi_keuangans.kategori_id as kategori_id,
@@ -222,7 +220,9 @@ class LabaRugiFormalService
      */
     private function breakdownHpp(Carbon $mulai, Carbon $akhir, ?int $cabangId): array
     {
-        $totalHpp = $this->hitungHppDariOrderItems($mulai, $akhir, $cabangId);
+        // ERP BABA Tahap 4: + HPP Pesanan Online gudang (barang keluar − barang retur kembali).
+        $totalHpp = $this->hitungHppDariOrderItems($mulai, $akhir, $cabangId)
+            + app(\App\Services\JurnalOnlineService::class)->hpp($mulai, $akhir, $cabangId);
 
         return ChartOfAccount::where('tipe', 'hpp')
             ->where('is_leaf', true)
@@ -258,9 +258,7 @@ class LabaRugiFormalService
             ->whereNull('orders.deleted_at')
             ->whereNull('order_items.deleted_at');
 
-        if ($cabangId) {
-            $query->where('orders.cabang_id', $cabangId);
-        }
+        \App\Support\KeuanganBaba::saring($query, 'orders.cabang_id', $cabangId);
 
         return (float) $query->sum('order_items.hpp');
     }

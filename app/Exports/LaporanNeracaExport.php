@@ -35,6 +35,7 @@ class LaporanNeracaExport implements FromArray, WithStyles
 
         $tambah('ASET LANCAR', 'Kas & Setara Kas', $n['aset']['lancar']['kas_setara']);
         $tambah('ASET LANCAR', 'Piutang Usaha', $n['aset']['lancar']['piutang']);
+        $tambah('ASET LANCAR', '(Informasi, tidak dijumlahkan) Tagihan member belum dibayar', $n['aset']['lancar']['tagihan_member'] ?? 0);
         $tambah('ASET LANCAR', 'Persediaan Bahan Baku', $n['aset']['lancar']['persediaan_bahan_baku']);
         $tambah('ASET LANCAR', 'Persediaan Barang Jadi', $n['aset']['lancar']['persediaan_barang_jadi']);
         $tambah('ASET LANCAR', 'Persediaan Kemasan', $n['aset']['lancar']['persediaan_kemasan']);
