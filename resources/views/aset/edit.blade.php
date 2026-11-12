@@ -267,21 +267,21 @@
                             <div class="card-header bg-info bg-opacity-10 py-2 small fw-semibold text-info"><i class="bi bi-calculator me-1"></i>Contoh</div>
                             <div class="card-body py-3 small">
                                 <div class="row g-2 mb-2">
-                                    <div class="col-7 text-muted">Harga mesin giling</div><div class="col-5 fw-semibold">Rp 10.000.000</div>
-                                    <div class="col-7 text-muted">Estimasi total produksi</div><div class="col-5 fw-semibold">10.000 kg</div>
+                                    <div class="col-7 text-muted">Harga mesin pengisi botol</div><div class="col-5 fw-semibold">Rp 10.000.000</div>
+                                    <div class="col-7 text-muted">Estimasi total produksi</div><div class="col-5 fw-semibold">10.000 botol</div>
                                 </div>
-                                <div class="alert alert-secondary py-2 mb-2">Tarif per kg = 10.000.000 &divide; 10.000 = <strong>Rp 1.000/kg</strong></div>
+                                <div class="alert alert-secondary py-2 mb-2">Tarif per botol = 10.000.000 &divide; 10.000 = <strong>Rp 1.000/botol</strong></div>
                                 <div class="row g-1">
-                                    <div class="col-7 text-muted">Bulan produksi 800 kg</div><div class="col-5">= <strong class="text-danger">Rp 800.000</strong></div>
-                                    <div class="col-7 text-muted">Bulan produksi 200 kg</div><div class="col-5">= <strong class="text-success">Rp 200.000</strong></div>
+                                    <div class="col-7 text-muted">Bulan produksi 800 botol</div><div class="col-5">= <strong class="text-danger">Rp 800.000</strong></div>
+                                    <div class="col-7 text-muted">Bulan produksi 200 botol</div><div class="col-5">= <strong class="text-success">Rp 200.000</strong></div>
                                 </div>
                             </div>
                         </div>
                         <div class="alert alert-info py-2 small mb-3">
-                            <i class="bi bi-lightbulb me-1"></i><strong>Tip untuk Berkah Mulyo:</strong> Cocok untuk mesin giling karena penyusutan proporsional dengan kg daging yang digiling.
+                            <i class="bi bi-lightbulb me-1"></i><strong>Tip:</strong> Cocok untuk mesin produksi (mis. mixer / pengisi botol) karena penyusutan sebanding dengan jumlah yang diproduksi.
                         </div>
                         <div class="d-flex gap-2 flex-wrap">
-                            <span class="badge bg-info bg-opacity-10 text-info border border-info border-opacity-25 py-2 px-3"><i class="bi bi-fan me-1"></i>Mesin Giling</span>
+                            <span class="badge bg-info bg-opacity-10 text-info border border-info border-opacity-25 py-2 px-3"><i class="bi bi-fan me-1"></i>Mesin Produksi</span>
                             <span class="badge bg-info bg-opacity-10 text-info border border-info border-opacity-25 py-2 px-3"><i class="bi bi-wrench me-1"></i>Alat Produksi</span>
                             <span class="badge bg-info bg-opacity-10 text-info border border-info border-opacity-25 py-2 px-3"><i class="bi bi-box-seam me-1"></i>Mesin Pabrik</span>
                         </div>

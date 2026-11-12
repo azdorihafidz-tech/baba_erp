@@ -251,7 +251,8 @@ async function init() {
 async function loadModels() {
     try {
         modelAlertText.textContent = 'Memuat model face detection...';
-        await faceapi.nets.ssdMobilenetv1.loadFromUri(MODEL_URL);
+        // BABA Tahap 5: detektor sama dengan scan absensi (tinyFaceDetector; file ssd_mobilenetv1 tidak disediakan)
+        await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
         modelAlertText.textContent = 'Memuat model face landmarks...';
         await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL);
         modelAlertText.textContent = 'Memuat model face recognition...';
@@ -275,7 +276,7 @@ async function loadModelsFromCDN() {
     const CDN = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.13/model';
     try {
         modelAlertText.textContent = 'Memuat model dari CDN...';
-        await faceapi.nets.ssdMobilenetv1.loadFromUri(CDN);
+        await faceapi.nets.tinyFaceDetector.loadFromUri(CDN);
         await faceapi.nets.faceLandmark68Net.loadFromUri(CDN);
         await faceapi.nets.faceRecognitionNet.loadFromUri(CDN);
         modelsLoaded = true;
@@ -318,7 +319,7 @@ function startDetection() {
         if (!modelsLoaded || videoEl.paused || videoEl.ended) return;
         try {
             const det = await faceapi
-                .detectSingleFace(videoEl, new faceapi.SsdMobilenetv1Options({ minConfidence: 0.5 }))
+                .detectSingleFace(videoEl, new faceapi.TinyFaceDetectorOptions({ inputSize: 320, scoreThreshold: 0.5 }))
                 .withFaceLandmarks();
             const ctx = canvas.getContext('2d');
             ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -351,7 +352,7 @@ btnAmbil.addEventListener('click', async () => {
     try {
         // Deteksi wajah & ambil descriptor
         const det = await faceapi
-            .detectSingleFace(videoEl, new faceapi.SsdMobilenetv1Options({ minConfidence: 0.4 }))
+            .detectSingleFace(videoEl, new faceapi.TinyFaceDetectorOptions({ inputSize: 416, scoreThreshold: 0.4 }))
             .withFaceLandmarks()
             .withFaceDescriptor();
 

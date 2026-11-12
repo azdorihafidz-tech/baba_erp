@@ -104,10 +104,11 @@ class KaryawanController extends Controller
             $karyawan = Karyawan::create($data);
 
             if ($buatAkun) {
+                $sandi = self::sandiAwal(); // BABA Tahap 5: acak, ditampilkan sekali (dulu tetap "password123")
                 $user = User::create([
                     'name'      => $karyawan->nama_lengkap,
                     'email'     => $request->user_email,
-                    'password'  => Hash::make('password123'),
+                    'password'  => Hash::make($sandi),
                     'role'      => $request->user_role,
                     'is_active' => true,
                 ]);
@@ -116,11 +117,11 @@ class KaryawanController extends Controller
                     $user->cabangs()->attach($karyawan->cabang_id, ['is_default' => true]);
                 }
                 return redirect()->route('karyawan.index')
-                    ->with('success', "Karyawan {$karyawan->nama_lengkap} berhasil ditambahkan. Akun login <strong>{$request->user_email}</strong> telah dibuat dengan password default: <code>password123</code>.");
+                    ->with('success', "Karyawan " . e($karyawan->nama_lengkap) . " berhasil ditambahkan. Akun login <strong>" . e($request->user_email) . "</strong> telah dibuat dengan password awal: <code>" . e($sandi) . "</code> — catat dan berikan ke karyawan (hanya ditampilkan sekali), lalu minta ia menggantinya setelah login.");
             }
 
             return redirect()->route('karyawan.index')
-                ->with('success', "Karyawan {$karyawan->nama_lengkap} berhasil ditambahkan.");
+                ->with('success', "Karyawan " . e($karyawan->nama_lengkap) . " berhasil ditambahkan.");
         });
     }
 
@@ -228,12 +229,14 @@ class KaryawanController extends Controller
         return DB::transaction(function () use ($request, $karyawan, $data, $hasUser) {
             $karyawan->update($data);
 
+            $sandi = null;
             if (!$hasUser && $request->boolean('buat_akun_login')) {
-                // Buat akun login baru
+                // Buat akun login baru — BABA Tahap 5: password acak, ditampilkan sekali
+                $sandi = self::sandiAwal();
                 $user = User::create([
                     'name'      => $karyawan->nama_lengkap,
                     'email'     => $request->user_email,
-                    'password'  => Hash::make('password123'),
+                    'password'  => Hash::make($sandi),
                     'role'      => $request->user_role,
                     'is_active' => true,
                 ]);
@@ -253,8 +256,21 @@ class KaryawanController extends Controller
             }
 
             return redirect()->route('karyawan.show', $karyawan)
-                ->with('success', "Data karyawan {$karyawan->nama_lengkap} berhasil diperbarui.");
+                ->with('success', "Data karyawan " . e($karyawan->nama_lengkap) . " berhasil diperbarui."
+                    . ($sandi ? " Akun login <strong>" . e($request->user_email) . "</strong> dibuat dengan password awal: <code>" . e($sandi) . "</code> — catat dan berikan ke karyawan (hanya ditampilkan sekali)." : ""));
         });
+    }
+
+    /** Password awal akun karyawan: 10 karakter acak tanpa huruf/angka yang mirip (0/O, 1/l/I). */
+    private static function sandiAwal(): string
+    {
+        $huruf = 'abcdefghjkmnpqrstuvwxyzABCDEFGHJKMNPQRSTUVWXYZ23456789';
+        $h = '';
+        for ($i = 0; $i < 10; $i++) {
+            $h .= $huruf[random_int(0, strlen($huruf) - 1)];
+        }
+
+        return $h;
     }
 
     public function destroy(Karyawan $karyawan, CascadeDeleteService $cascadeService)

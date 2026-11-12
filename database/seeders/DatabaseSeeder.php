@@ -42,6 +42,7 @@ class DatabaseSeeder extends Seeder
             ProduksiParfumSeeder::class,         // BABA Tahap 1 — konsentrasi parfum, panduan Produksi Parfum (setelah Porting449Seeder)
             TokoOnlineSeeder::class,             // BABA Tahap 2 — izin, panduan, tooltip Toko Online
             KeuanganBabaSeeder::class,           // BABA Tahap 4 — izin laporan, peran Pemilik Toko Mitra, panduan
+            IstilahBabaSeeder::class,            // BABA Tahap 4–5 — istilah parfum di panduan & tooltip (setelah semua panduan dibuat)
         ]);
     }
 }

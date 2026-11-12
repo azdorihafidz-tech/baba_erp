@@ -26,9 +26,17 @@
         @endif
         @if(in_array($penggajian->status, ['draft','disetujui']))
         @can('penggajian.manage')
-        <form action="{{ route('penggajian.bayar', $penggajian) }}" method="POST" class="d-inline">
+        <form action="{{ route('penggajian.bayar', $penggajian) }}" method="POST" class="d-inline-flex gap-1 align-items-center"
+              onsubmit="return confirm('Tandai gaji ini sudah dibayar? Pengeluaran gaji dicatat di kas yang dipilih.')">
             @csrf
-            <button class="btn btn-sm btn-success"><i class="bi bi-cash me-1"></i>Tandai Dibayar</button>
+            <select name="kas_id" class="form-select form-select-sm" style="max-width:220px" title="Kas pembayaran gaji" data-uji="kas-gaji">
+                @forelse(($kasList ?? collect()) as $k)
+                <option value="{{ $k->id }}" @selected($k->default_untuk === 'transfer')>{{ $k->nama_kas }} (Rp {{ number_format($k->saldo_sekarang, 0, ',', '.') }})</option>
+                @empty
+                <option value="">Kas Transfer {{ $penggajian->cabang?->nama_cabang }} (dibuat otomatis)</option>
+                @endforelse
+            </select>
+            <button class="btn btn-sm btn-success text-nowrap"><i class="bi bi-cash me-1"></i>Tandai Dibayar</button>
         </form>
         @endcan
         @endif
@@ -166,7 +174,8 @@
                 </div>
 
                 @if($penggajian->tanggal_bayar)
-                <div class="mt-2 text-muted small">Dibayar pada: {{ $penggajian->tanggal_bayar->format('d/m/Y') }}</div>
+                <div class="mt-2 text-muted small">Dibayar pada: {{ $penggajian->tanggal_bayar->format('d/m/Y') }}
+                    @if($trxGaji ?? null)<span data-uji="jurnal-gaji"> — dicatat sebagai pengeluaran Gaji di {{ $trxGaji->kas?->nama_kas }} ({{ $trxGaji->nomor_transaksi }})</span>@endif</div>
                 @endif
                 @if($penggajian->approvedBy)
                 <div class="text-muted small">Disetujui oleh: {{ $penggajian->approvedBy->name }}</div>

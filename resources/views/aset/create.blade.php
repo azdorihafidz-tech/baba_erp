@@ -28,7 +28,7 @@
                         <div class="col-12 col-md-8">
                             <label class="form-label fw-semibold">Nama Aset <span class="text-danger">*</span></label>
                             <input type="text" name="nama_aset" class="form-control @error('nama_aset') is-invalid @enderror"
-                                value="{{ old('nama_aset') }}" placeholder="Mesin Giling, Freezer, Kendaraan..." required>
+                                value="{{ old('nama_aset') }}" placeholder="Mesin Pengisi Botol, Mixer, Kendaraan..." required>
                             @error('nama_aset')<div class="invalid-feedback">{{ $message }}</div>@enderror
                         </div>
                         <div class="col-12 col-md-6">
@@ -327,20 +327,20 @@
                             </div>
                             <div class="card-body py-3 small">
                                 <div class="row g-2 mb-3">
-                                    <div class="col-7"><span class="text-muted">Harga mesin giling</span></div>
+                                    <div class="col-7"><span class="text-muted">Harga mesin pengisi botol</span></div>
                                     <div class="col-5 fw-semibold">Rp 10.000.000</div>
                                     <div class="col-7"><span class="text-muted">Nilai residu</span></div>
                                     <div class="col-5 fw-semibold">Rp 0</div>
                                     <div class="col-7"><span class="text-muted">Estimasi total produksi</span></div>
-                                    <div class="col-5 fw-semibold">10.000 kg</div>
+                                    <div class="col-5 fw-semibold">10.000 botol</div>
                                 </div>
                                 <div class="alert alert-secondary py-2 mb-2">
-                                    <strong>Tarif per kg</strong> = 10.000.000 &divide; 10.000 = <strong>Rp 1.000 / kg</strong>
+                                    <strong>Tarif per botol</strong> = 10.000.000 &divide; 10.000 = <strong>Rp 1.000 / botol</strong>
                                 </div>
                                 <div class="row g-2">
-                                    <div class="col-7 text-muted">Bulan produksi 800 kg</div>
+                                    <div class="col-7 text-muted">Bulan produksi 800 botol</div>
                                     <div class="col-5">= <strong class="text-danger">Rp 800.000</strong></div>
-                                    <div class="col-7 text-muted">Bulan produksi 200 kg</div>
+                                    <div class="col-7 text-muted">Bulan produksi 200 botol</div>
                                     <div class="col-5">= <strong class="text-success">Rp 200.000</strong></div>
                                 </div>
                             </div>
@@ -348,12 +348,12 @@
 
                         <div class="alert alert-info py-2 small mb-3">
                             <i class="bi bi-lightbulb me-1"></i>
-                            <strong>Tip untuk Berkah Mulyo:</strong> Cocok untuk mesin giling karena penyusutan langsung proporsional dengan kg daging yang digiling.
+                            <strong>Tip:</strong> Cocok untuk mesin produksi (mis. mixer / pengisi botol) karena penyusutan sebanding dengan jumlah yang diproduksi.
                         </div>
 
                         <div class="d-flex gap-2 flex-wrap">
                             <span class="badge bg-info bg-opacity-10 text-info border border-info border-opacity-25 py-2 px-3">
-                                <i class="bi bi-fan me-1"></i>Mesin Giling
+                                <i class="bi bi-fan me-1"></i>Mesin Produksi
                             </span>
                             <span class="badge bg-info bg-opacity-10 text-info border border-info border-opacity-25 py-2 px-3">
                                 <i class="bi bi-wrench me-1"></i>Alat Produksi

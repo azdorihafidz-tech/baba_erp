@@ -251,7 +251,7 @@
                 </div>
                 <div class="alert alert-info mt-3 mb-0 py-2" style="font-size:.875rem">
                     <i class="bi bi-info-circle me-1"></i>
-                    Password default: <strong>password123</strong> — karyawan dapat menggantinya setelah login pertama.
+                    Password awal dibuat acak dan ditampilkan sekali setelah disimpan — catat dan berikan ke karyawan, lalu minta ia menggantinya setelah login.
                 </div>
             </div>
         </div>

@@ -110,7 +110,11 @@ class PenggajianController extends Controller
     public function show(Penggajian $penggajian)
     {
         $penggajian->load(['karyawan.cabang', 'cabang', 'approvedBy']);
-        return view('penggajian.show', compact('penggajian'));
+        // Tahap 5 BABA: pilihan kas pembayaran gaji (kas lokasi slip; kosong = Kas Transfer lokasi itu dibuat otomatis)
+        $kasList = \App\Models\Kas::where('cabang_id', $penggajian->cabang_id)->where('is_active', true)->orderBy('nama_kas')->get(['id', 'nama_kas', 'saldo_sekarang', 'default_untuk']);
+        $trxGaji = \App\Models\TransaksiKeuangan::with('kas:id,nama_kas')->where('referensi_type', \App\Services\JurnalGajiService::REF)->where('referensi_id', $penggajian->id)->first();
+
+        return view('penggajian.show', compact('penggajian', 'kasList', 'trxGaji'));
     }
 
     /**
@@ -142,18 +146,20 @@ class PenggajianController extends Controller
     /**
      * Tandai dibayar
      */
-    public function bayar(Penggajian $penggajian)
+    public function bayar(Request $request, Penggajian $penggajian)
     {
         if (!in_array($penggajian->status, ['draft', 'disetujui'])) {
             return back()->with('error', 'Slip gaji ini sudah dibayar atau tidak valid.');
         }
+        $request->validate(['kas_id' => ['nullable', 'integer']]);
 
-        $penggajian->update([
-            'status'       => 'dibayar',
-            'tanggal_bayar' => today(),
-        ]);
+        try {
+            $kas = app(\App\Services\JurnalGajiService::class)->bayar($penggajian, $request->integer('kas_id') ?: null, auth()->id());
+        } catch (\InvalidArgumentException $e) {
+            return back()->with('error', $e->getMessage());
+        }
 
-        return back()->with('success', 'Slip gaji berhasil ditandai sebagai dibayar.');
+        return back()->with('success', 'Slip gaji ditandai dibayar' . ($kas ? ' — pengeluaran gaji tercatat di ' . e($kas->nama_kas) . '.' : '.'));
     }
 
     /**

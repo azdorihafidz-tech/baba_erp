@@ -331,7 +331,7 @@ class ImportBumbuPusatTest extends TestCase
 
         $response->assertOk();
         $response->assertSee('Import dari Bumbu Pusat');
-        $response->assertSee('Bumbu Kecap Manis Standar');
+        $response->assertSee('Campuran Standar'); // BABA: contoh dimsum diganti IstilahBabaSeeder
     }
 
     public function test_tooltip_import_bumbu_dan_baris_linked_muncul_di_form(): void
