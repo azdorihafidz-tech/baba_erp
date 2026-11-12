@@ -38,7 +38,7 @@ class LaporanPenggajianExport implements FromCollection, WithHeadings, WithMappi
             (float) $p->tunjangan,
             (float) $p->uang_lembur,
             (float) $p->bonus,
-            (float) ($p->potongan_absensi + $p->potongan_lain),
+            (float) ($p->potongan_absensi + $p->potongan_lain + $p->potongan_ganti_rugi),
             (float) $p->total_gaji,
             ucfirst(str_replace('_', ' ', $p->status)),
         ];

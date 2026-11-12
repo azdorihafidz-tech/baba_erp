@@ -135,7 +135,7 @@ class PenggajianService
             $totalPotongan    = $potonganAbsensi + $bpjsKesehatan + $bpjsTk + $pph21 + $kasbon + $potonganLain;
             $totalGaji        = max(0, $totalPenambahan - $totalPotongan);
 
-            return Penggajian::updateOrCreate(
+            $slip = Penggajian::updateOrCreate(
                 ['karyawan_id' => $karyawan->id, 'periode' => $periode],
                 [
                     'cabang_id'            => $karyawan->cabang_id,
@@ -168,6 +168,12 @@ class PenggajianService
                     'status'                         => 'draft',
                 ]
             );
+
+            // BABA Tahap 7d: cicilan ganti rugi barang hilang yang jatuh tempo (maks. gaji bersih yang tersedia)
+            $gantiRugi = app(GantiRugiStokService::class)->potonganSlip($slip, $totalGaji);
+            $slip->update(['potongan_ganti_rugi' => $gantiRugi, 'total_gaji' => max(0, round($totalGaji - $gantiRugi, 2))]);
+
+            return $slip;
         });
     }
 

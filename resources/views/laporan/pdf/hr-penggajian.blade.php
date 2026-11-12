@@ -14,7 +14,7 @@
             <td class="num">Rp {{ number_format($p->tunjangan, 0, ',', '.') }}</td>
             <td class="num">Rp {{ number_format($p->uang_lembur, 0, ',', '.') }}</td>
             <td class="num">Rp {{ number_format($p->bonus, 0, ',', '.') }}</td>
-            <td class="num">Rp {{ number_format($p->potongan_absensi + $p->potongan_lain, 0, ',', '.') }}</td>
+            <td class="num">Rp {{ number_format($p->potongan_absensi + $p->potongan_lain + $p->potongan_ganti_rugi, 0, ',', '.') }}</td>
             <td class="num">Rp {{ number_format($p->total_gaji, 0, ',', '.') }}</td>
             <td class="center">{{ ucfirst(str_replace('_',' ',$p->status)) }}</td>
         </tr>

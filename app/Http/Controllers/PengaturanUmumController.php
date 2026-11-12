@@ -33,6 +33,9 @@ class PengaturanUmumController extends Controller
             'telepon'           => ['nullable', 'string', 'max:30'],
             'tanggal_mulai_periode' => ['nullable', 'integer', 'min:1', 'max:28'],
             'mode_ro'           => ['nullable', 'in:' . implode(',', array_keys(\App\Services\RoService::MODE))],
+            // BABA Tahap 7d — bawaan stok opname
+            'opname_hitung_buta'       => ['nullable', 'boolean'],
+            'opname_batas_foto_hilang' => ['nullable', 'numeric', 'min:0', 'max:1000000000'],
             'logo'              => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
             // 4.48 — Warna Aplikasi (#RRGGBB). Latar wajib warna terang supaya tulisan terbaca.
             'warna_utama'       => ['nullable', 'regex:/^#[0-9a-fA-F]{6}$/'],
@@ -60,6 +63,15 @@ class PengaturanUmumController extends Controller
         if (! empty($validated['mode_ro']) && $validated['mode_ro'] !== $setting->mode_ro) {
             activity()->performedOn($setting)->log('Mode RO belanja online diubah: ' . ($setting->mode_ro ?? 'lunas') . ' → ' . $validated['mode_ro']);
             $setting->mode_ro = $validated['mode_ro'];
+        }
+        if ($request->has('opname_batas_foto_hilang')) {
+            $batas = round((float) ($validated['opname_batas_foto_hilang'] ?? 0), 2);
+            $buta = $request->boolean('opname_hitung_buta');
+            if ($batas !== (float) $setting->opname_batas_foto_hilang || $buta !== (bool) $setting->opname_hitung_buta) {
+                activity()->performedOn($setting)->log('Pengaturan stok opname diubah: hitung buta ' . ($buta ? 'ya' : 'tidak') . ', batas foto hilang Rp ' . number_format($batas, 0, ',', '.'));
+            }
+            $setting->opname_hitung_buta = $buta;
+            $setting->opname_batas_foto_hilang = $batas;
         }
         if (isset($validated['tanggal_mulai_periode'])) {
             $setting->tanggal_mulai_periode = (int) $validated['tanggal_mulai_periode'];

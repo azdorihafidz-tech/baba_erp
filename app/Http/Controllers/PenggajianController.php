@@ -429,6 +429,8 @@ class PenggajianController extends Controller
             return back()->with('error', 'Hanya slip gaji berstatus draft yang bisa dihapus.');
         }
 
+        // BABA Tahap 7d: cicilan ganti rugi yang menunggu slip ini dilepas (masuk lagi ke slip berikutnya)
+        \App\Models\GantiRugiStokBayar::where('penggajian_id', $penggajian->id)->where('status', 'menunggu')->delete();
         $penggajian->delete();
 
         return redirect()->route('penggajian.index')

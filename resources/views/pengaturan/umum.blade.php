@@ -148,6 +148,27 @@
                 </div>
             </div>
 
+            {{-- BABA Tahap 7d — bawaan Stok Opname --}}
+            <div class="card mb-3" data-uji="pengaturan-opname">
+                <div class="card-header py-3 px-4">
+                    <i class="bi bi-clipboard-check me-2 text-primary"></i>
+                    <span class="fw-semibold">Stok Opname</span>
+                    <x-tooltip key="pengaturan_umum.stok_opname" />
+                </div>
+                <div class="card-body px-4">
+                    <input type="hidden" name="opname_hitung_buta" value="0">
+                    <div class="form-check form-switch mb-2">
+                        <input class="form-check-input" type="checkbox" name="opname_hitung_buta" value="1" id="opname_hitung_buta" @checked(old('opname_hitung_buta', $setting->opname_hitung_buta ?? true)) data-uji="set-hitung-buta">
+                        <label class="form-check-label" for="opname_hitung_buta">Hitung buta menyala bawaan saat opname dimulai</label>
+                    </div>
+                    <label class="form-label small mb-0" for="opname_batas_foto_hilang">Barang hilang wajib difoto bila nilainya mulai (Rp)</label>
+                    <input type="number" name="opname_batas_foto_hilang" id="opname_batas_foto_hilang" class="form-control" style="max-width:240px" min="0" step="1000"
+                           value="{{ old('opname_batas_foto_hilang', (int) ($setting->opname_batas_foto_hilang ?? 200000)) }}" data-uji="set-batas-foto">
+                    <div class="form-text">Barang rusak selalu wajib difoto. Isi 0 bila semua barang hilang wajib difoto.</div>
+                    @error('opname_batas_foto_hilang')<div class="text-danger small">{{ $message }}</div>@enderror
+                </div>
+            </div>
+
             <div class="card">
                 <div class="card-header py-3 px-4">
                     <i class="bi bi-image me-2 text-primary"></i>

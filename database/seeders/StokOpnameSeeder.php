@@ -23,16 +23,17 @@ class StokOpnameSeeder extends Seeder
         ['name' => 'stok_opname.setujui', 'display_name' => 'Setujui / tolak opname (stok & keuangan disesuaikan)', 'group' => 'stok_opname'],
         ['name' => 'stok_opname.batal', 'display_name' => 'Batalkan opname yang belum disetujui', 'group' => 'stok_opname'],
         ['name' => 'stok_opname.laporan', 'display_name' => 'Lihat Laporan Kerugian Stok', 'group' => 'stok_opname'],
+        ['name' => 'stok_opname.ganti_rugi', 'display_name' => 'Bebankan & terima ganti rugi karyawan (barang hilang)', 'group' => 'stok_opname'],
         ['name' => 'stok_opname.stok_rusak', 'display_name' => 'Kelola stok rusak (pakai lagi, kembali ke pemasok, musnahkan)', 'group' => 'stok_opname'],
     ];
 
     public const ROLE_DEFAULTS = [
-        'admin_pusat'    => ['stok_opname.lihat', 'stok_opname.hitung', 'stok_opname.ajukan', 'stok_opname.setujui', 'stok_opname.batal', 'stok_opname.laporan', 'stok_opname.stok_rusak'],
+        'admin_pusat'    => ['stok_opname.lihat', 'stok_opname.hitung', 'stok_opname.ajukan', 'stok_opname.setujui', 'stok_opname.batal', 'stok_opname.laporan', 'stok_opname.stok_rusak', 'stok_opname.ganti_rugi'],
         'admin_gudang'   => ['stok_opname.lihat', 'stok_opname.hitung', 'stok_opname.ajukan', 'stok_opname.stok_rusak'],
         'manajer_cabang' => ['stok_opname.lihat', 'stok_opname.hitung', 'stok_opname.ajukan'],
         'kasir'          => ['stok_opname.lihat', 'stok_opname.hitung'],
         'helper'         => ['stok_opname.lihat', 'stok_opname.hitung'],
-        'pemilik_toko'   => ['stok_opname.lihat', 'stok_opname.hitung', 'stok_opname.ajukan', 'stok_opname.setujui', 'stok_opname.batal', 'stok_opname.laporan', 'stok_opname.stok_rusak'],
+        'pemilik_toko'   => ['stok_opname.lihat', 'stok_opname.hitung', 'stok_opname.ajukan', 'stok_opname.setujui', 'stok_opname.batal', 'stok_opname.laporan', 'stok_opname.stok_rusak', 'stok_opname.ganti_rugi'],
     ];
 
     /** Akun beban per penyebab (di bawah 6-0000 BEBAN OPERASIONAL). */
@@ -81,6 +82,19 @@ class StokOpnameSeeder extends Seeder
         \App\Services\StokRusakService::kategoriPulih();
         Panduan::updateOrCreate(['slug' => 'stok-rusak'], ['judul' => 'Stok Rusak', 'konten' => self::PANDUAN_RUSAK, 'modul' => 'stok', 'urutan' => 6, 'aktif' => true]);
         Cache::forget('panduan:stok-rusak');
+        // Tahap 7d: ganti rugi karyawan
+        Panduan::updateOrCreate(['slug' => 'ganti-rugi-karyawan'], ['judul' => 'Ganti Rugi Karyawan', 'konten' => self::PANDUAN_GANTI_RUGI, 'modul' => 'stok', 'urutan' => 7, 'aktif' => true]);
+        Cache::forget('panduan:ganti-rugi-karyawan');
+        $gaji = Panduan::where('slug', 'penggajian')->first();
+        if ($gaji && ! str_contains((string) $gaji->konten, 'Ganti rugi barang hilang')) {
+            $gaji->update(['konten' => rtrim((string) $gaji->konten) . "
+
+## Ganti rugi barang hilang (stok opname)
+- Bila karyawan dibebani ganti rugi **potong gaji**, cicilannya otomatis masuk slip gaji bulan berikutnya sebagai potongan **Ganti rugi barang hilang** (paling banyak sebesar gaji yang tersedia).
+- Saat slip ditandai dibayar: kas berkurang sebesar gaji bersih, potongan dicatat sebagai **Pemulihan Kerugian Stok**. Hapus slip draft = cicilannya pindah ke slip berikutnya.
+"]);
+            Cache::forget('panduan:penggajian');
+        }
 
         Panduan::updateOrCreate(['slug' => 'stok-opname'], [
             'judul' => 'Stok Opname', 'konten' => self::PANDUAN, 'modul' => 'stok', 'urutan' => 4, 'aktif' => true,
@@ -145,10 +159,29 @@ Barang yang dicatat **rusak / pecah / bocor** saat stok opname disetujui keluar 
 - Izin **Kelola stok rusak** diatur di Role & Hak Akses (bawaan: Admin Pusat, Admin Gudang, Pemilik Toko Mitra).
 MD;
 
+    public const PANDUAN_GANTI_RUGI = <<<'MD'
+## Untuk apa?
+Membebankan nilai barang yang **hilang** saat stok opname kepada karyawan yang bertanggung jawab, lalu mencatat pembayarannya — **tunai** atau **potong gaji** (boleh dicicil).
+
+## Langkah
+1. Buka stok opname yang sudah **Selesai** › tab **Selisih**. Di barang yang hilang tekan **Bebankan ke karyawan**.
+2. Pilih **Karyawan**. **Nilai ganti rugi** bawaan = harga pokok barang; bila diubah (mis. harga jual sebagai sanksi) isi **Alasan nilai berbeda**. Satu barang hilang boleh dibagi ke beberapa karyawan.
+3. Pilih cara:
+   - **Bayar tunai** — terima uangnya di **Stok & Gudang › Ganti Rugi Karyawan** › **Bayar tunai** (pilih kas). Kas bertambah, tercatat sebagai Pemulihan Kerugian Stok.
+   - **Potong gaji** — pilih **Dicicil** 1–12 bulan. Mulai bulan depan cicilannya otomatis masuk slip gaji sebagai potongan **Ganti rugi barang hilang**, dibukukan saat slip ditandai dibayar.
+4. Daftar **Ganti Rugi Karyawan** menampilkan nilai, terbayar, sisa, dan riwayat bayar. Cicilan yang belum lunas tetap bisa dilunasi tunai.
+
+## Catatan
+- **Batalkan** hanya untuk ganti rugi yang belum dibayar sama sekali; potongan yang sudah masuk slip gaji yang belum dibayar ikut dikeluarkan.
+- Izin **Bebankan & terima ganti rugi karyawan** diatur di Role & Hak Akses (bawaan: Admin Pusat, Pemilik Toko Mitra).
+MD;
+
     public const TOOLTIP = [
         'stok_opname.hitung_buta' => ['Hitung buta', 'Penghitung tidak melihat angka stok sistem, hanya mengisi jumlah yang ada di rak. Angka sistem & selisih hanya terlihat oleh pemeriksa dan penyetuju — supaya hitungan jujur, bukan menyalin angka sistem.'],
         'stok_opname.cakupan' => ['Cakupan opname', 'Semua barang di lokasi, barang dalam kategori tertentu, atau beberapa barang saja (mis. cek mendadak barang mahal). Satu barang hanya boleh ada di satu opname yang sedang berjalan.'],
         'stok_opname.penyebab' => ['Penyebab selisih', 'Kurang 5 bisa dipecah, mis. 2 rusak + 2 hilang + 1 tester. Setiap penyebab dicatat ke pos beban sendiri di Laba Rugi. Barang rusak wajib difoto; barang hilang wajib difoto bila nilainya di atas batas di Pengaturan.'],
+        'stok_opname.ganti_rugi' => ['Ganti rugi karyawan', 'Nilai barang hilang yang dibebankan ke karyawan. Bawaan = harga pokok. Tunai → kas bertambah; potong gaji → cicilan otomatis masuk slip gaji bulan depan. Keduanya tercatat sebagai Pemulihan Kerugian Stok (mengurangi rugi).'],
+        'pengaturan_umum.stok_opname' => ['Bawaan stok opname', 'Hitung buta = penghitung tidak melihat stok sistem (bisa diubah per opname saat Mulai Opname). Batas foto = barang hilang senilai ini ke atas wajib difoto sebelum opname diajukan.'],
         'stok_opname.sistem' => ['Stok sistem', 'Stok menurut ERP pada saat barang itu dihitung. Toko tetap boleh berjualan selama opname: saat disetujui hanya SELISIH yang diterapkan, jadi penjualan sesudah barang dihitung tidak terhapus.'],
     ];
 
@@ -165,6 +198,7 @@ Mencocokkan **stok fisik** di rak dengan **stok sistem** ERP, menyesuaikan stok 
 6. Tekan **Ajukan**. Opname terkunci (tidak bisa dihitung) sambil menunggu persetujuan.
 7. Penyetuju memeriksa lalu **Setujui** — stok & keuangan langsung disesuaikan dan opname dikunci — atau **Tolak** dengan alasan (opname kembali ke tahap hitung).
 8. Barang yang dicatat **rusak** tidak langsung dibuang: barang itu **ditahan** di menu **Stok Rusak** untuk dipakai lagi, dikembalikan ke pemasok, atau dimusnahkan.
+9. Barang yang **hilang** bisa dibebankan ke karyawan (tunai / potong gaji) — lihat panduan Ganti Rugi Karyawan.
 
 ## Pencatatan keuangan
 | Penyebab | Pos di Laba Rugi |

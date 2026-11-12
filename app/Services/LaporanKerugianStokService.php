@@ -90,13 +90,22 @@ class LaporanKerugianStokService
             'dipulihkan' => round((float) $tindakan->sum('nilai_pulih'), 2),
         ];
 
+        // Tahap 7d: ganti rugi karyawan — dibebankan (dalam periode), diterima (tunai + potong gaji yang slipnya dibayar), sisa sekarang
+        $grDasar = \App\Models\GantiRugiStok::whereIn('cabang_id', $lokasi ?: [0]);
+        $gantiRugi = [
+            'dibebankan' => round((float) (clone $grDasar)->where('status', '!=', 'batal')->whereBetween('created_at', [$mulai, $akhir])->sum('nilai'), 2),
+            'diterima' => round((float) \App\Models\GantiRugiStokBayar::where('status', 'dibayar')->whereBetween('updated_at', [$mulai, $akhir])
+                ->whereIn('ganti_rugi_stok_id', (clone $grDasar)->select('id'))->sum('jumlah'), 2),
+            'sisa' => round((float) (clone $grDasar)->where('status', 'berjalan')->get()->sum(fn ($g) => $g->sisa), 2),
+        ];
+
         $nilaiKurang = round((float) $rincian->where('penyebab', '!=', 'lebih')->sum('nilai'), 2);
         $nilaiLebih = round((float) $rincian->where('penyebab', 'lebih')->sum('nilai'), 2);
         $manualRugi = round(collect($manual)->whereIn('kode', ['BEBAN-STOK', 'SO-SALAH'])->sum('nilai'), 2);
 
         return [
-            'per_penyebab' => $perPenyebab, 'per_lokasi' => $perLokasi, 'per_barang' => $perBarang, 'riwayat' => $riwayat, 'manual' => $manual, 'rusak' => $rusak,
-            'total' => ['opname' => $opname->count(), 'dipulihkan' => $rusak['dipulihkan'], 'akurasi' => round((float) $opname->avg(fn ($o) => (float) ($o->ringkasan['akurasi'] ?? 0)), 1),
+            'per_penyebab' => $perPenyebab, 'per_lokasi' => $perLokasi, 'per_barang' => $perBarang, 'riwayat' => $riwayat, 'manual' => $manual, 'rusak' => $rusak, 'ganti_rugi' => $gantiRugi,
+            'total' => ['opname' => $opname->count(), 'dipulihkan' => round($rusak['dipulihkan'] + $gantiRugi['diterima'], 2), 'akurasi' => round((float) $opname->avg(fn ($o) => (float) ($o->ringkasan['akurasi'] ?? 0)), 1),
                 'nilai_kurang' => $nilaiKurang, 'nilai_lebih' => $nilaiLebih, 'bersih' => round($nilaiLebih - $nilaiKurang, 2), 'manual_rugi' => $manualRugi],
         ];
     }

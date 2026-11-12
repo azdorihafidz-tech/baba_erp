@@ -123,7 +123,7 @@
                         <td class="text-end px-3 d-none d-md-table-cell" style="font-size:0.875rem">Rp {{ number_format($pg->tunjangan, 0, ',', '.') }}</td>
                         <td class="text-end px-3 d-none d-lg-table-cell" style="font-size:0.875rem">Rp {{ number_format($pg->bonus, 0, ',', '.') }}</td>
                         <td class="text-end px-3 d-none d-md-table-cell text-danger" style="font-size:0.875rem">
-                            -Rp {{ number_format($pg->potongan_absensi + $pg->potongan_lain, 0, ',', '.') }}
+                            -Rp {{ number_format($pg->potongan_absensi + $pg->potongan_lain + $pg->potongan_ganti_rugi, 0, ',', '.') }}
                         </td>
                         <td class="text-end px-3 fw-bold" style="font-size:0.875rem">Rp {{ number_format($pg->total_gaji, 0, ',', '.') }}</td>
                         <td>

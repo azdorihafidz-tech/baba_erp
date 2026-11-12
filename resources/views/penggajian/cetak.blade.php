@@ -168,6 +168,7 @@
                     ['PPh21', $penggajian->pph21],
                     ['Kasbon', $penggajian->kasbon],
                     ['Potongan Lain', $penggajian->potongan_lain],
+                    ['Ganti rugi barang hilang', $penggajian->potongan_ganti_rugi],
                 ];
                 $totalPotongan = array_sum(array_column($potonganRows, 1));
             @endphp

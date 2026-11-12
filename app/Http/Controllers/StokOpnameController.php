@@ -78,7 +78,7 @@ class StokOpnameController extends Controller
         $lokasi = $this->svc->lokasiUntuk(auth()->user());
         abort_if($lokasi->isEmpty(), 403);
         $kategori = ItemCategory::orderBy('nama_kategori')->get(['id', 'nama_kategori']);
-        $hitungButa = (bool) (PengaturanUmum::getSetting()->opname_hitung_buta ?? true);
+        $hitungButa = StokOpnameService::pengaturan()['hitung_buta'];
 
         return view('stok-opname.mulai', compact('lokasi', 'kategori', 'hitungButa'));
     }
@@ -132,9 +132,14 @@ class StokOpnameController extends Controller
         $stokKini = $lihatSistem ? \App\Models\Stock::where('lokasi_id', $o->cabang_id)->whereIn('item_id', $rows->pluck('item_id'))->pluck('qty', 'item_id') : collect();
         $masalah = $boleh['periksa'] ? $this->svc->masalah($o) : [];
         $sebabSetujui = $o->status === 'diajukan' && ! $boleh['setujui'] && $u->can('stok_opname.setujui') ? $this->svc->sebabTidakBolehSetujui($u, $o) : null;
-        $batasFoto = (float) (PengaturanUmum::getSetting()->opname_batas_foto_hilang ?? 200000);
+        $batasFoto = StokOpnameService::pengaturan()['batas_foto_hilang'];
+        // Tahap 7d: ganti rugi barang hilang per rincian + boleh membebankan
+        $gr = app(\App\Services\GantiRugiStokService::class);
+        $gantiRugi = $o->status === 'selesai' ? \App\Models\GantiRugiStok::with('karyawan')->where('stok_opname_id', $o->id)->get()->groupBy('stok_opname_rincian_id') : collect();
+        $bolehGr = $gr->boleh($u, $o);
+        $karyawan = $bolehGr ? $gr->karyawanUntuk($u, (int) $o->cabang_id) : collect();
 
-        return view('stok-opname.show', compact('o', 'rows', 'boleh', 'lihatSistem', 'stokKini', 'masalah', 'sebabSetujui', 'batasFoto'));
+        return view('stok-opname.show', compact('o', 'rows', 'boleh', 'lihatSistem', 'stokKini', 'masalah', 'sebabSetujui', 'batasFoto', 'gantiRugi', 'bolehGr', 'karyawan'));
     }
 
     /** Catat hitungan (JSON): {baris, qty} = isi jumlah; {kode, tambah: 1} = scan barcode / +1. */

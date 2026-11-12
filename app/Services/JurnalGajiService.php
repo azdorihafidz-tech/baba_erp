@@ -20,6 +20,9 @@ class JurnalGajiService
 {
     public const REF = 'penggajian';
 
+    /** BABA Tahap 7d: bagian gaji yang dipotong untuk ganti rugi barang hilang (tanpa kas). */
+    public const REF_POTONGAN = 'penggajian_potongan';
+
     /** @return Kas|null kas yang dipakai (null bila total gaji 0) */
     public function bayar(Penggajian $slip, ?int $kasId, ?int $userId): ?Kas
     {
@@ -46,6 +49,18 @@ class JurnalGajiService
                     'keterangan' => mb_substr("Gaji {$nama} periode {$p->periode}", 0, 255), 'jumlah' => $total,
                     'referensi_type' => self::REF, 'referensi_id' => $p->id, 'created_by' => $userId,
                 ]);
+            }
+            // BABA Tahap 7d: potongan ganti rugi barang hilang = bagian gaji yang tidak dibayar tunai/transfer.
+            // Beban gaji bagian itu dicatat tanpa kas (bruto tetap tercatat), lalu dipulihkan sebagai Pemulihan Kerugian Stok.
+            $gantiRugi = round((float) $p->potongan_ganti_rugi, 2);
+            if ($gantiRugi > 0 && ! TransaksiKeuangan::where('referensi_type', self::REF_POTONGAN)->where('referensi_id', $p->id)->exists()) {
+                TransaksiKeuangan::create([
+                    'cabang_id' => $p->cabang_id, 'kas_id' => null, 'nomor_transaksi' => 'TRX-GJ-' . $p->id . '-GR', 'tanggal_transaksi' => today(),
+                    'tipe' => TipeTransaksiKeuangan::Pengeluaran, 'kategori' => KategoriTransaksi::Gaji,
+                    'keterangan' => mb_substr('Gaji ' . ($p->karyawan?->nama_lengkap ?? 'karyawan') . " periode {$p->periode} — dipotong ganti rugi barang hilang", 0, 255),
+                    'jumlah' => $gantiRugi, 'referensi_type' => self::REF_POTONGAN, 'referensi_id' => $p->id, 'created_by' => $userId,
+                ]);
+                app(GantiRugiStokService::class)->slipDibayar($p, $userId);
             }
             $p->update(['status' => 'dibayar', 'tanggal_bayar' => today()]);
 

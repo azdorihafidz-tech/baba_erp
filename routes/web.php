@@ -262,6 +262,11 @@ Route::middleware(['auth', 'verified', 'cabang'])->group(function () {
         Route::post('/mulai', 'mulai')->name('mulai.store');
         Route::get('/barang', 'barang')->name('barang');
         Route::get('/laporan', 'laporan')->name('laporan');
+        // Tahap 7d — ganti rugi karyawan (barang hilang)
+        Route::get('/ganti-rugi', [\App\Http\Controllers\GantiRugiStokController::class, 'index'])->name('ganti-rugi');
+        Route::post('/ganti-rugi/rincian/{rincian}', [\App\Http\Controllers\GantiRugiStokController::class, 'bebankan'])->whereNumber('rincian')->name('ganti-rugi.bebankan');
+        Route::post('/ganti-rugi/{gantiRugi}/tunai', [\App\Http\Controllers\GantiRugiStokController::class, 'bayarTunai'])->whereNumber('gantiRugi')->name('ganti-rugi.tunai');
+        Route::post('/ganti-rugi/{gantiRugi}/batal', [\App\Http\Controllers\GantiRugiStokController::class, 'batal'])->whereNumber('gantiRugi')->name('ganti-rugi.batal');
         // Tahap 7c — stok rusak ditahan
         Route::get('/rusak', [\App\Http\Controllers\StokRusakController::class, 'index'])->name('rusak');
         Route::post('/rusak/{rusak}/tindak', [\App\Http\Controllers\StokRusakController::class, 'tindak'])->whereNumber('rusak')->name('rusak.tindak');

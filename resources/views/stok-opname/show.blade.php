@@ -186,6 +186,19 @@
                         @if($x->foto)<a href="{{ route('stok-opname.foto', [$o, $x->id]) }}" target="_blank" class="ms-1" data-uji="foto-link"><i class="bi bi-image"></i></a>@endif
                         @if($x->penyebab === 'rusak' && $o->status === 'selesai')@can('stok_opname.stok_rusak')<a href="{{ route('stok-opname.rusak', ['lokasi' => $o->cabang_id]) }}" class="ms-1" data-uji="ke-rusak">→ Stok Rusak</a>@endcan @endif</span>
                     @if($x->catatan)<span class="small text-muted me-2">{{ $x->catatan }}</span>@endif
+                    @if($x->penyebab === 'hilang' && $o->status === 'selesai')
+                    {{-- Tahap 7d: ganti rugi karyawan --}}
+                    <div class="mt-1" data-uji="gr-rincian-{{ $x->id }}">
+                        @foreach($gantiRugi->get($x->id, collect()) as $g)
+                        <span class="badge bg-{{ $g->status_warna }} me-1">{{ $g->karyawan?->nama_lengkap }} · {{ $rp($g->nilai) }} · {{ \App\Models\GantiRugiStok::CARA[$g->cara] }} · {{ $g->status_label }}</span>
+                        @endforeach
+                        @if($bolehGr)
+                        <button type="button" class="btn btn-sm btn-outline-danger py-0 so-gr" data-url="{{ route('stok-opname.ganti-rugi.bebankan', $x->id) }}"
+                                data-nama="{{ $r->barang?->nama_item }} — hilang {{ $ang($x->qty) }} {{ $r->satuan }}"
+                                data-pokok="{{ max(0, round((float) $x->nilai - $gantiRugi->get($x->id, collect())->where('status', '!=', 'batal')->sum('nilai_pokok'))) }}" data-uji="bebankan">Bebankan ke karyawan</button>
+                        @endif
+                    </div>
+                    @endif
                     @empty
                     <span class="text-danger"><i class="bi bi-exclamation-circle"></i> Penyebab belum diisi</span>
                     @endforelse
@@ -247,6 +260,34 @@
     <div class="modal-body"><label class="form-label small" for="alasanBatal">Alasan pembatalan (stok tidak berubah)</label>
         <textarea name="alasan" id="alasanBatal" class="form-control" rows="3" minlength="5" maxlength="500" required data-uji="alasan-batal-isi"></textarea></div>
     <div class="modal-footer py-2"><button class="btn btn-sm btn-secondary" data-uji="batal-kirim">Batalkan opname</button></div>
+    </form>
+</div></div></div>
+@endif
+@if($bolehGr)
+<div class="modal fade" id="modalGr" tabindex="-1" aria-hidden="true"><div class="modal-dialog modal-fullscreen-sm-down"><div class="modal-content">
+    <form method="POST" id="formGr">@csrf
+    <div class="modal-header py-2"><h6 class="modal-title fw-bold">Bebankan ke karyawan <x-tooltip key="stok_opname.ganti_rugi" /></h6><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button></div>
+    <div class="modal-body d-flex flex-column gap-2">
+        <div class="fw-semibold" id="grNama"></div>
+        <div><label class="form-label small mb-0" for="grKaryawan">Karyawan</label>
+            <select name="karyawan_id" id="grKaryawan" class="form-select form-select-sm" required data-uji="gr-karyawan">
+                @forelse($karyawan as $k)<option value="{{ $k->id }}">{{ $k->nama_lengkap }} — {{ $k->jabatan }} · {{ $k->cabang?->nama_cabang }}</option>@empty<option value="">Belum ada karyawan aktif</option>@endforelse
+            </select></div>
+        <div><label class="form-label small mb-0" for="grNilai">Nilai ganti rugi (Rp)</label>
+            <input type="number" name="nilai" id="grNilai" class="form-control form-control-sm" min="1" required data-uji="gr-nilai">
+            <div class="small text-muted">Bawaan = harga pokok <span id="grPokok"></span>. Nilai lain (mis. harga jual sebagai sanksi) wajib diberi alasan.</div></div>
+        <div id="grAlasanWrap" style="display:none"><label class="form-label small mb-0" for="grAlasanNilai">Alasan nilai berbeda</label>
+            <input type="text" name="alasan" id="grAlasanNilai" class="form-control form-control-sm" maxlength="500" data-uji="gr-alasan-nilai"></div>
+        <div>
+            <div class="form-check"><input class="form-check-input" type="radio" name="cara" id="grTunai" value="tunai" checked data-uji="gr-tunai"><label class="form-check-label small" for="grTunai">Bayar tunai (terima uangnya di menu Ganti Rugi Karyawan)</label></div>
+            <div class="form-check"><input class="form-check-input" type="radio" name="cara" id="grPotong" value="potong_gaji" data-uji="gr-potong"><label class="form-check-label small" for="grPotong">Potong gaji, mulai bulan depan</label></div>
+        </div>
+        <div id="grCicilanWrap" style="display:none"><label class="form-label small mb-0" for="grCicilan">Dicicil (bulan)</label>
+            <select name="cicilan_bulan" id="grCicilan" class="form-select form-select-sm" data-uji="gr-cicilan">@for($i = 1; $i <= 12; $i++)<option value="{{ $i }}">{{ $i }} bulan</option>@endfor</select>
+            <div class="small text-muted">Cicilan masuk otomatis ke slip gaji (Potongan: Ganti rugi barang hilang).</div></div>
+        <div><label class="form-label small mb-0" for="grCatatan">Catatan (opsional)</label><input type="text" name="catatan" id="grCatatan" class="form-control form-control-sm" maxlength="255"></div>
+    </div>
+    <div class="modal-footer py-2"><button class="btn btn-sm btn-danger" data-uji="gr-simpan">Bebankan</button></div>
     </form>
 </div></div></div>
 @endif
@@ -322,6 +363,26 @@
     const DATA = @json($dataPenyebab);
     const PENYEBAB = @json($labelPenyebab);
     const URL_RINCIAN = @json(route('stok-opname.rincian', [$o, 0]));
+    // Tahap 7d: bebankan barang hilang ke karyawan
+    const grEl = document.getElementById('modalGr');
+    if (grEl) {
+        const grModal = new bootstrap.Modal(grEl), f = document.getElementById('formGr');
+        let pokok = 0;
+        const atur = () => {
+            const beda = Math.abs(Number(document.getElementById('grNilai').value || 0) - pokok) > 0.5;
+            document.getElementById('grAlasanWrap').style.display = beda ? '' : 'none';
+            document.getElementById('grAlasanNilai').required = beda;
+            document.getElementById('grCicilanWrap').style.display = document.getElementById('grPotong').checked ? '' : 'none';
+        };
+        f.addEventListener('input', atur); f.addEventListener('change', atur);
+        document.querySelectorAll('.so-gr').forEach((b) => b.addEventListener('click', () => {
+            f.reset(); f.action = b.dataset.url; pokok = Number(b.dataset.pokok);
+            document.getElementById('grNama').textContent = b.dataset.nama;
+            document.getElementById('grPokok').textContent = 'Rp ' + pokok.toLocaleString('id-ID');
+            document.getElementById('grNilai').value = pokok || ''; atur(); grModal.show();
+        }));
+    }
+
     const modalEl = document.getElementById('modalPenyebab');
     if (modalEl) {
         const modal = new bootstrap.Modal(modalEl);

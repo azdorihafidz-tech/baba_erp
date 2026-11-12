@@ -702,7 +702,7 @@
         @can('stok_opname.lihat')
         @php try { $jmlOpnameMenunggu = app(\App\Services\StokOpnameService::class)->jumlahMenunggu(auth()->user()); } catch (\Throwable $e) { $jmlOpnameMenunggu = 0; } @endphp
         <a href="{{ route('stok-opname.index') }}"
-           class="nav-link {{ request()->routeIs('stok-opname.*') && ! request()->routeIs('stok-opname.laporan', 'stok-opname.rusak*') ? 'active' : '' }}">
+           class="nav-link {{ request()->routeIs('stok-opname.*') && ! request()->routeIs('stok-opname.laporan', 'stok-opname.rusak*', 'stok-opname.ganti-rugi*') ? 'active' : '' }}">
             <i class="bi bi-clipboard-check"></i>
             <span>Stok Opname</span>
             @if($jmlOpnameMenunggu > 0)<span class="badge rounded-pill bg-danger ms-auto" title="Menunggu persetujuan Anda">{{ $jmlOpnameMenunggu }}</span>@endif
@@ -721,6 +721,13 @@
             <i class="bi bi-heartbreak"></i>
             <span>Stok Rusak</span>
             @if($jmlRusak > 0)<span class="badge rounded-pill bg-warning text-dark ms-auto" title="Barang rusak masih ditahan">{{ $jmlRusak }}</span>@endif
+        </a>
+        @endcan
+        @can('stok_opname.ganti_rugi')
+        <a href="{{ route('stok-opname.ganti-rugi') }}"
+           class="nav-link {{ request()->routeIs('stok-opname.ganti-rugi*') ? 'active' : '' }}">
+            <i class="bi bi-person-exclamation"></i>
+            <span>Ganti Rugi Karyawan</span>
         </a>
         @endcan
         @can('stok_opname.laporan')

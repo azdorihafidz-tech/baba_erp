@@ -37,7 +37,7 @@
 
 <div class="row g-2 mb-3">
     @foreach([['Opname disetujui', $t['opname'], ''], ['Akurasi rata-rata', $t['akurasi'] . '%', 'fw-bold'], ['Nilai kurang', $rp($t['nilai_kurang']), 'text-danger'], ['Nilai lebih', $rp($t['nilai_lebih']), 'text-primary'],
-        ['Selisih bersih opname', $rp($t['bersih']), $t['bersih'] < 0 ? 'text-danger' : ''], ['Kerugian penyesuaian manual', $rp($t['manual_rugi']), 'text-danger'], ['Dipulihkan dari stok rusak', $rp($t['dipulihkan']), 'text-success']] as [$l, $v, $c])
+        ['Selisih bersih opname', $rp($t['bersih']), $t['bersih'] < 0 ? 'text-danger' : ''], ['Kerugian penyesuaian manual', $rp($t['manual_rugi']), 'text-danger'], ['Kerugian dipulihkan', $rp($t['dipulihkan']), 'text-success']] as [$l, $v, $c])
     <div class="col-6 col-md-4 col-xl-2"><div class="card h-100"><div class="card-body p-2"><div class="small text-muted">{{ $l }}</div><div class="fw-semibold {{ $c }}" data-uji="total-{{ \Illuminate\Support\Str::slug($l) }}">{{ $v }}</div></div></div></div>
     @endforeach
 </div>
@@ -70,6 +70,14 @@
         @empty
             <tr><td colspan="6" class="text-center text-muted py-3">Belum ada opname yang disetujui pada periode ini.</td></tr>
         @endforelse
+        </tbody>
+    </table>
+    <div class="fw-semibold small mt-3 mb-1">Ganti rugi karyawan (barang hilang)</div>
+    <table class="table table-sm small mb-0" data-uji="ganti-rugi">
+        <tbody>
+            <tr><td>Dibebankan pada periode ini</td><td class="text-end">{{ $rp($data['ganti_rugi']['dibebankan']) }}</td></tr>
+            <tr><td>Diterima (tunai & potong gaji) pada periode ini</td><td class="text-end text-success">{{ $rp($data['ganti_rugi']['diterima']) }}</td></tr>
+            <tr><td>Sisa tagihan karyawan sekarang</td><td class="text-end text-danger">{{ $rp($data['ganti_rugi']['sisa']) }}</td></tr>
         </tbody>
     </table>
 @elseif($tab === 'barang')

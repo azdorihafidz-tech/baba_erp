@@ -18,7 +18,7 @@ class Penggajian extends Model
         'gaji_pokok', 'tunjangan', 'tunjangan_jabatan', 'tunjangan_makan',
         'tunjangan_transport', 'tunjangan_kehadiran',
         'uang_lembur', 'bonus', 'insentif', 'thr', 'komisi',
-        'potongan_absensi', 'potongan_lain',
+        'potongan_absensi', 'potongan_lain', 'potongan_ganti_rugi',
         'bpjs_kesehatan', 'bpjs_ketenagakerjaan', 'pph21', 'kasbon',
         'total_gaji', 'status', 'tanggal_bayar',
         'tarif_lembur_per_jam_override', 'potongan_alpa_per_hari_override',
@@ -39,6 +39,7 @@ class Penggajian extends Model
         'bonus',
         'potongan_absensi',
         'potongan_lain',
+        'potongan_ganti_rugi', // BABA Tahap 7d: cicilan ganti rugi barang hilang (GantiRugiStokService)
         'bpjs_kesehatan',
         'bpjs_ketenagakerjaan',
         'pph21',

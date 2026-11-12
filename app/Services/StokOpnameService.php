@@ -56,6 +56,19 @@ class StokOpnameService
     {
     }
 
+    /**
+     * Bawaan stok opname dari Pengaturan Umum — dibaca langsung dari tabel (PengaturanUmum::getSetting() menyimpan nilai
+     * statis per proses sehingga perubahan tidak terbaca di proses yang sama).
+     *
+     * @return array{hitung_buta: bool, batas_foto_hilang: float}
+     */
+    public static function pengaturan(): array
+    {
+        $s = PengaturanUmum::query()->orderBy('id')->first(['opname_hitung_buta', 'opname_batas_foto_hilang']);
+
+        return ['hitung_buta' => (bool) ($s->opname_hitung_buta ?? true), 'batas_foto_hilang' => (float) ($s->opname_batas_foto_hilang ?? 200000)];
+    }
+
     // ───────────────────────────── hak ─────────────────────────────
 
     public static function lokasiMitra(?Cabang $c): bool
@@ -184,7 +197,7 @@ class StokOpnameService
             $o = StokOpname::create([
                 'nomor' => $prefix . str_pad((string) (((int) $akhir) + 1), 4, '0', STR_PAD_LEFT), 'cabang_id' => $c->id, 'cakupan' => $cakupan,
                 'cakupan_ket' => $ket, 'status' => 'hitung', 'dibuat_oleh' => $u->id,
-                'hitung_buta' => array_key_exists('hitung_buta', $d) ? (bool) $d['hitung_buta'] : (bool) (PengaturanUmum::getSetting()->opname_hitung_buta ?? true),
+                'hitung_buta' => array_key_exists('hitung_buta', $d) ? (bool) $d['hitung_buta'] : self::pengaturan()['hitung_buta'],
                 'catatan' => isset($d['catatan']) ? Str::limit(trim((string) $d['catatan']), 500, '') : null,
             ]);
             $now = now();
@@ -371,7 +384,7 @@ class StokOpnameService
     public function masalah(StokOpname $o): array
     {
         $rows = StokOpnameItem::with(['barang', 'rincian'])->where('stok_opname_id', $o->id)->get();
-        $batas = (float) (PengaturanUmum::getSetting()->opname_batas_foto_hilang ?? 200000);
+        $batas = self::pengaturan()['batas_foto_hilang'];
         $belum = $rows->whereNull('qty_fisik');
         $ulang = $rows->where('minta_hitung_ulang', true);
         $out = [];
