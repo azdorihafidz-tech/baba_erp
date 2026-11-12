@@ -22,15 +22,16 @@ class StokOpnameSeeder extends Seeder
         ['name' => 'stok_opname.ajukan', 'display_name' => 'Periksa selisih, isi penyebab & ajukan opname', 'group' => 'stok_opname'],
         ['name' => 'stok_opname.setujui', 'display_name' => 'Setujui / tolak opname (stok & keuangan disesuaikan)', 'group' => 'stok_opname'],
         ['name' => 'stok_opname.batal', 'display_name' => 'Batalkan opname yang belum disetujui', 'group' => 'stok_opname'],
+        ['name' => 'stok_opname.laporan', 'display_name' => 'Lihat Laporan Kerugian Stok', 'group' => 'stok_opname'],
     ];
 
     public const ROLE_DEFAULTS = [
-        'admin_pusat'    => ['stok_opname.lihat', 'stok_opname.hitung', 'stok_opname.ajukan', 'stok_opname.setujui', 'stok_opname.batal'],
+        'admin_pusat'    => ['stok_opname.lihat', 'stok_opname.hitung', 'stok_opname.ajukan', 'stok_opname.setujui', 'stok_opname.batal', 'stok_opname.laporan'],
         'admin_gudang'   => ['stok_opname.lihat', 'stok_opname.hitung', 'stok_opname.ajukan'],
         'manajer_cabang' => ['stok_opname.lihat', 'stok_opname.hitung', 'stok_opname.ajukan'],
         'kasir'          => ['stok_opname.lihat', 'stok_opname.hitung'],
         'helper'         => ['stok_opname.lihat', 'stok_opname.hitung'],
-        'pemilik_toko'   => ['stok_opname.lihat', 'stok_opname.hitung', 'stok_opname.ajukan', 'stok_opname.setujui', 'stok_opname.batal'],
+        'pemilik_toko'   => ['stok_opname.lihat', 'stok_opname.hitung', 'stok_opname.ajukan', 'stok_opname.setujui', 'stok_opname.batal', 'stok_opname.laporan'],
     ];
 
     /** Akun beban per penyebab (di bawah 6-0000 BEBAN OPERASIONAL). */
@@ -71,11 +72,14 @@ class StokOpnameSeeder extends Seeder
         foreach (array_keys(StokOpnameService::PENYEBAB) as $penyebab) {
             StokOpnameService::kategori($penyebab);
         }
-
         Panduan::updateOrCreate(['slug' => 'stok-opname'], [
             'judul' => 'Stok Opname', 'konten' => self::PANDUAN, 'modul' => 'stok', 'urutan' => 4, 'aktif' => true,
         ]);
         Cache::forget('panduan:stok-opname');
+        Panduan::updateOrCreate(['slug' => 'laporan-kerugian-stok'], [
+            'judul' => 'Laporan Kerugian Stok', 'konten' => self::PANDUAN_LAPORAN, 'modul' => 'stok', 'urutan' => 5, 'aktif' => true,
+        ]);
+        Cache::forget('panduan:laporan-kerugian-stok');
 
         // Penyesuaian Stok lama: audit/salah hitung turun kini tercatat sebagai Selisih Persediaan
         $adj = Panduan::where('slug', 'stok-adjustment')->first();
@@ -90,6 +94,26 @@ class StokOpnameSeeder extends Seeder
             Cache::forget("tooltip:{$key}");
         }
     }
+
+    public const PANDUAN_LAPORAN = <<<'MD'
+## Untuk apa?
+Melihat berapa nilai barang yang **rusak, hilang, susut, dipakai tester, kedaluwarsa, atau salah catat** dalam satu periode — dari stok opname yang sudah **disetujui** — supaya Owner tahu lokasi dan barang mana yang paling sering bermasalah.
+
+## Langkah
+1. Buka **Stok & Gudang › Laporan Kerugian Stok**.
+2. Pilih **Dari** / **Sampai** (maks. 1 tahun) dan **Lokasi**, tekan **Tampilkan**. Bawaan = semua lokasi milik BABA (tanpa toko mitra).
+3. Pilih tab:
+   - **Ringkasan** — nilai per penyebab (dengan pos keuangannya) dan per lokasi (jumlah opname, akurasi rata-rata, kurang, lebih, bersih).
+   - **Per barang** — barang yang paling banyak kurang, penyebabnya, dan berapa kali kurang.
+   - **Riwayat opname** — semua opname di periode itu beserta status & akurasinya (klik nomor untuk membuka).
+   - **Penyesuaian manual** — kerugian dari menu Penyesuaian Stok (per barang, di luar opname).
+4. Tekan **Excel** untuk mengunduh tab yang sedang dibuka.
+
+## Catatan
+- Nilai = harga pokok (harga beli), sama dengan yang dicatat di Laba Rugi.
+- Kerugian **tidak memotong kas**; yang turun adalah laba.
+- Toko mitra hanya tampil bila dipilih (lokasinya sendiri atau "Semua lokasi + toko mitra").
+MD;
 
     public const TOOLTIP = [
         'stok_opname.hitung_buta' => ['Hitung buta', 'Penghitung tidak melihat angka stok sistem, hanya mengisi jumlah yang ada di rak. Angka sistem & selisih hanya terlihat oleh pemeriksa dan penyetuju — supaya hitungan jujur, bukan menyalin angka sistem.'],
@@ -130,6 +154,11 @@ Nilai = **harga pokok** (harga beli FIFO), bukan harga jual.
 - **Toko Kemitraan / Toko Refill Member**: opname dimulai dan disetujui pemilik toko itu sendiri. Owner BABA hanya melihat, dan kerugiannya tidak masuk Laba Rugi BABA.
 - Siapa boleh menghitung, mengajukan, menyetujui, membatalkan → atur di **Role & Hak Akses** (grup STOK_OPNAME).
 - Opname yang sudah disetujui tidak bisa diubah. Yang belum disetujui bisa **Dibatalkan** dengan alasan.
+
+## Berita acara & laporan
+- Di halaman opname tekan **Berita Acara** (PDF) atau ikon Excel: rincian per barang (sistem, fisik, selisih, harga pokok, nilai, penyebab), ringkasan & akurasi, per penyebab, kolom tanda tangan Penghitung / Pemeriksa / Disetujui, dan lampiran foto. Sebelum disetujui tertulis **SEMENTARA**.
+- Penghitung dengan hitung buta tidak bisa mengunduh berita acara selama opname berjalan (berisi stok sistem).
+- Rekap semua opname & kerugian per periode: **Stok & Gudang › Laporan Kerugian Stok**. Di kartu stok, penyesuaian dari opname bertautan ke opnamenya.
 
 ## Pertanyaan umum
 - **Tombol Setujui tidak ada?** Anda ikut menghitung opname itu, tidak punya izin setujui, atau itu opname toko mitra.

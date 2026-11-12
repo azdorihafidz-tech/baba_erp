@@ -125,13 +125,16 @@ class StokOpnameService
 
     // ───────────────────────────── mulai ─────────────────────────────
 
-    /** Barang yang bisa dihitung di lokasi: barang ber-stok milik lokasi (aktif, atau nonaktif tetapi masih ada stoknya). */
+    /**
+     * Barang yang bisa dihitung di lokasi: barang ber-stok (track_stok) milik lokasi yang aktif, plus barang yang masih punya
+     * stok di lokasi itu (nonaktif, atau data lama tanpa pemilik lokasi — yang tanpa stok di sini tidak ikut supaya daftar tidak penuh barang lokasi lain).
+     */
     public function barangLokasi(Cabang $c): \Illuminate\Database\Eloquent\Builder
     {
+        $adaStok = fn ($s) => $s->from('stocks')->whereColumn('stocks.item_id', 'items.id')->where('stocks.lokasi_id', $c->id)->where('stocks.qty', '>', 0);
+
         return Item::query()->where('track_stok', true)
-            ->where(fn ($q) => $q->where('items.cabang_id', $c->id)->orWhereNull('items.cabang_id'))
-            ->where(fn ($q) => $q->where('items.is_active', true)
-                ->orWhereExists(fn ($s) => $s->from('stocks')->whereColumn('stocks.item_id', 'items.id')->where('stocks.lokasi_id', $c->id)->where('stocks.qty', '>', 0)));
+            ->where(fn ($q) => $q->where(fn ($w) => $w->where('items.cabang_id', $c->id)->where('items.is_active', true))->orWhereExists($adaStok));
     }
 
     /**
@@ -592,6 +595,73 @@ class StokOpnameService
 
             return $o;
         });
+    }
+
+    // ───────────────────────────── berita acara (Tahap 7b) ─────────────────────────────
+
+    /**
+     * Data Berita Acara Stok Opname (PDF & Excel). Opname selesai = angka final tersimpan; belum selesai = perkiraan
+     * (harga pokok rata-rata sekarang) dan diberi tanda SEMENTARA.
+     */
+    public function beritaAcara(StokOpname $o): array
+    {
+        $o->loadMissing(['cabang', 'pembuat', 'pengaju', 'penyetuju', 'pembatal']);
+        $final = $o->status === 'selesai';
+        $rows = StokOpnameItem::with(['barang.category', 'rincian', 'penghitung'])->where('stok_opname_id', $o->id)
+            ->join('items', 'items.id', '=', 'stok_opname_item.item_id')->orderBy('items.nama_item')->select('stok_opname_item.*')->get();
+        $baris = [];
+        $ring = ['dihitung' => 0, 'belum' => 0, 'cocok' => 0, 'kurang' => 0, 'lebih' => 0, 'nilai_kurang' => 0.0, 'nilai_lebih' => 0.0];
+        $perPenyebab = [];
+        $foto = [];
+        foreach ($rows as $r) {
+            $s = $r->selisih;
+            $harga = $final ? (float) $r->harga_pokok : $this->stok->hargaPokokRata((int) $r->item_id, (int) $o->cabang_id);
+            $nilai = $final ? (float) $r->nilai_selisih : ($s === null ? 0.0 : round($s * $harga, 2));
+            if ($s === null) {
+                $ring['belum']++;
+            } else {
+                $ring['dihitung']++;
+                if (abs($s) < 0.0005) {
+                    $ring['cocok']++;
+                } elseif ($s < 0) {
+                    $ring['kurang']++;
+                    $ring['nilai_kurang'] += abs($nilai);
+                } else {
+                    $ring['lebih']++;
+                    $ring['nilai_lebih'] += $nilai;
+                }
+            }
+            $penyebab = [];
+            foreach ($r->rincian as $x) {
+                $nx = $final && $x->nilai !== null ? (float) $x->nilai : round($x->qty * $harga, 2);
+                $penyebab[] = $x->penyebab_label . ' ' . $this->angka($x->qty) . ($x->catatan ? " ({$x->catatan})" : '');
+                $perPenyebab[$x->penyebab]['nilai'] = ($perPenyebab[$x->penyebab]['nilai'] ?? 0) + $nx;
+                $perPenyebab[$x->penyebab]['qty'][$r->satuan] = ($perPenyebab[$x->penyebab]['qty'][$r->satuan] ?? 0) + $x->qty;
+                if ($x->foto) {
+                    $foto[] = ['barang' => $r->barang?->nama_item, 'penyebab' => $x->penyebab_label, 'qty' => $this->angka($x->qty) . ' ' . $r->satuan, 'path' => $x->foto];
+                }
+            }
+            if ($s !== null && $s > 0 && ! $r->rincian->contains('penyebab', 'lebih')) {
+                $penyebab[] = self::PENYEBAB['lebih']['label'];
+                $perPenyebab['lebih']['nilai'] = ($perPenyebab['lebih']['nilai'] ?? 0) + $nilai;
+            }
+            $baris[] = [
+                'kode' => $r->barang?->kode_item, 'nama' => $r->barang?->nama_item, 'kategori' => $r->barang?->category?->nama_kategori, 'satuan' => $r->satuan,
+                'sistem' => $r->qty_sistem, 'fisik' => $r->qty_fisik, 'selisih' => $s, 'harga' => $harga, 'nilai' => $s === null ? null : $nilai,
+                'penyebab' => implode('; ', $penyebab), 'hitung_ke' => $r->hitung_ke, 'penghitung' => $r->penghitung?->name,
+            ];
+        }
+        $ring['nilai_kurang'] = round($ring['nilai_kurang'], 2);
+        $ring['nilai_lebih'] = round($ring['nilai_lebih'], 2);
+        $ring['nilai_bersih'] = round($ring['nilai_lebih'] - $ring['nilai_kurang'], 2);
+        $ring['akurasi'] = $ring['dihitung'] ? round($ring['cocok'] / $ring['dihitung'] * 100, 1) : 0;
+        ksort($perPenyebab);
+
+        return [
+            'o' => $o, 'final' => $final, 'baris' => $baris, 'ringkasan' => $ring, 'per_penyebab' => $perPenyebab, 'foto' => $foto,
+            'penghitung' => $rows->pluck('penghitung.name')->filter()->unique()->values()->all(),
+            'selesai_at' => $o->disetujui_at,
+        ];
     }
 
     // ───────────────────────────── pendukung ─────────────────────────────

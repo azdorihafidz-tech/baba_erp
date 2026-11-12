@@ -216,6 +216,96 @@ class StokOpnameController extends Controller
         return $this->aksi(fn () => $this->svc->batal(auth()->user(), $opname, (string) $request->input('alasan')), fn () => 'Opname dibatalkan. Stok tidak berubah.');
     }
 
+    // ───────────── Tahap 7b: Berita Acara & Laporan Kerugian Stok ─────────────
+
+    /** Berita acara memuat stok sistem → tidak untuk penghitung buta selama opname berjalan. */
+    private function izinBeritaAcara(StokOpname $o): void
+    {
+        $this->izinLihat($o);
+        abort_unless($this->svc->lihatSistem(auth()->user(), $o), 403);
+    }
+
+    public function beritaAcara(StokOpname $opname)
+    {
+        $this->izinBeritaAcara($opname);
+        $ba = $this->svc->beritaAcara($opname);
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('laporan.pdf.stok-opname', [
+            'ba' => $ba, 'judulLaporan' => 'Berita Acara Stok Opname',
+            'filterInfo' => ['Nomor' => $opname->nomor, 'Lokasi' => $opname->cabang?->nama_cabang, 'Status' => $opname->status_label],
+            'footerDicetak' => 'Dicetak oleh: ' . auth()->user()->name . ' pada ' . now()->translatedFormat('d F Y, H:i') . ' WIB',
+        ])->setPaper('a4', 'landscape');
+
+        return $pdf->download("berita-acara-{$opname->nomor}.pdf");
+    }
+
+    public function beritaAcaraExcel(StokOpname $opname)
+    {
+        $this->izinBeritaAcara($opname);
+
+        return \Maatwebsite\Excel\Facades\Excel::download(new \App\Exports\StokOpnameExport($this->svc->beritaAcara($opname), auth()->user()->name), "berita-acara-{$opname->nomor}.xlsx");
+    }
+
+    public const TAB_LAPORAN = ['ringkasan' => 'Ringkasan', 'barang' => 'Per barang', 'riwayat' => 'Riwayat opname', 'manual' => 'Penyesuaian manual'];
+
+    /**
+     * Laporan Kerugian Stok. Lokasi: kosong = semua lokasi milik BABA yang boleh dilihat (tanpa toko mitra),
+     * angka = satu lokasi, "semua" = termasuk toko mitra.
+     */
+    public function laporan(Request $request, \App\Services\LaporanKerugianStokService $lap)
+    {
+        abort_unless(auth()->user()->can('stok_opname.laporan'), 403);
+        $terlihat = $this->lokasiTerlihat();
+        $pilih = (string) $request->query('lokasi', '');
+        if (ctype_digit($pilih) && $terlihat->contains('id', (int) $pilih)) {
+            $ids = [(int) $pilih];
+        } elseif ($pilih === 'semua') {
+            $ids = $terlihat->pluck('id')->all();
+        } else {
+            $pilih = '';
+            $baba = $terlihat->filter(fn ($c) => ! StokOpnameService::lokasiMitra($c));
+            $ids = ($baba->isNotEmpty() ? $baba : $terlihat)->pluck('id')->all(); // pemilik toko mitra: tokonya sendiri
+        }
+        try {
+            $dari = \Illuminate\Support\Carbon::parse($request->query('dari', now()->startOfMonth()->toDateString()));
+            $sampai = \Illuminate\Support\Carbon::parse($request->query('sampai', now()->toDateString()));
+        } catch (\Throwable $e) {
+            $dari = now()->startOfMonth();
+            $sampai = now();
+        }
+        if ($dari->gt($sampai) || $dari->diffInDays($sampai) > 370) {
+            $dari = now()->startOfMonth();
+            $sampai = now();
+        }
+        $tab = array_key_exists($request->query('tab'), self::TAB_LAPORAN) ? $request->query('tab') : 'ringkasan';
+        $data = $lap->laporan($dari, $sampai, $ids);
+
+        if ($request->boolean('excel')) {
+            [$kolom, $baris] = $this->tabelLaporan($tab, $data);
+
+            return \Maatwebsite\Excel\Facades\Excel::download(new \App\Exports\LaporanOnlineExport('Kerugian Stok ' . self::TAB_LAPORAN[$tab], $kolom, $baris, auth()->user()->name),
+                'kerugian-stok-' . $tab . '-' . $dari->format('Ymd') . '-' . $sampai->format('Ymd') . '.xlsx');
+        }
+
+        return view('stok-opname.laporan', ['data' => $data, 'tab' => $tab, 'dari' => $dari, 'sampai' => $sampai, 'terlihat' => $terlihat, 'pilih' => $pilih]);
+    }
+
+    /** @return array{0: array<int,string>, 1: array<int,array>} judul kolom & baris Excel per tab */
+    private function tabelLaporan(string $tab, array $d): array
+    {
+        return match ($tab) {
+            'barang' => [['Kode', 'Barang', 'Lokasi', 'Satuan', 'Jumlah kurang', 'Nilai kurang (Rp)', 'Kali opname', 'Penyebab'],
+                array_map(fn ($b) => [$b['kode'], $b['nama'], $b['lokasi'], $b['satuan'], $b['qty'], $b['nilai'], $b['kali'], $b['penyebab']], $d['per_barang'])],
+            'riwayat' => [['Nomor', 'Lokasi', 'Status', 'Dimulai', 'Disetujui', 'Barang', 'Akurasi (%)', 'Nilai kurang (Rp)', 'Nilai lebih (Rp)'],
+                $d['riwayat']->map(fn ($o) => [$o->nomor, $o->cabang?->nama_cabang, $o->status_label, $o->created_at?->format('d/m/Y H:i'), $o->disetujui_at?->format('d/m/Y H:i'),
+                    $o->item_count, $o->ringkasan['akurasi'] ?? null, $o->ringkasan['nilai_kurang'] ?? null, $o->ringkasan['nilai_lebih'] ?? null])->all()],
+            'manual' => [['Lokasi', 'Pos', 'Jumlah transaksi', 'Nilai (Rp)'], array_map(fn ($m) => [$m['lokasi'], $m['nama'], $m['jumlah'], $m['nilai']], $d['manual'])],
+            default => [['Penyebab', 'Pos keuangan', 'Barang', 'Nilai (Rp)'],
+                array_merge(array_values(array_map(fn ($p) => [$p['label'], $p['akun'], $p['barang'], $p['nilai']], $d['per_penyebab'])),
+                    [[], ['Lokasi', 'Opname', 'Akurasi rata-rata (%)', 'Nilai kurang (Rp)', 'Nilai lebih (Rp)', 'Selisih bersih (Rp)']],
+                    array_map(fn ($l) => [$l['lokasi'], $l['opname'], $l['akurasi'], $l['nilai_kurang'], $l['nilai_lebih'], $l['bersih']], $d['per_lokasi']))],
+        };
+    }
+
     public function foto(StokOpname $opname, int $rincian)
     {
         $this->izinLihat($opname);

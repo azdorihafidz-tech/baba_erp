@@ -7,6 +7,9 @@
     <h5 class="mb-0 fw-bold"><i class="bi bi-clipboard-check me-2 text-primary"></i>Stok Opname</h5>
     <div class="d-flex gap-2 flex-wrap">
         <x-panduan-button slug="stok-opname" />
+        @can('stok_opname.laporan')
+        <a href="{{ route('stok-opname.laporan') }}" class="btn btn-sm btn-outline-danger" data-uji="ke-laporan"><i class="bi bi-graph-down-arrow me-1"></i>Laporan Kerugian Stok</a>
+        @endcan
         @if($bisaMulai)
         <a href="{{ route('stok-opname.mulai') }}" class="btn btn-sm btn-primary" data-uji="mulai-opname"><i class="bi bi-plus-lg me-1"></i>Mulai Opname</a>
         @endif

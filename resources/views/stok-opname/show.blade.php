@@ -39,6 +39,10 @@
     </div>
     <div class="d-flex gap-2 flex-wrap">
         <x-panduan-button slug="stok-opname" />
+        @if($lihatSistem)
+        <a href="{{ route('stok-opname.berita-acara', $o) }}" class="btn btn-sm btn-outline-danger" data-uji="ba-pdf"><i class="bi bi-file-earmark-pdf me-1"></i>Berita Acara</a>
+        <a href="{{ route('stok-opname.berita-acara.excel', $o) }}" class="btn btn-sm btn-outline-success" data-uji="ba-excel"><i class="bi bi-file-earmark-excel"></i></a>
+        @endif
         <a href="{{ route('stok-opname.index') }}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-arrow-left"></i> Daftar</a>
     </div>
 </div>

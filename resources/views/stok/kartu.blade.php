@@ -198,8 +198,13 @@
                         </td>
                         <td class="d-none d-lg-table-cell">
                             <span class="text-muted" style="font-size:0.78rem">
+                                @if($mv->referensi_type === 'stok_opname' && $mv->referensi_id)
+                                {{-- BABA Tahap 7: penyesuaian dari stok opname → tautan ke berita acaranya --}}
+                                <a href="{{ route('stok-opname.show', $mv->referensi_id) }}" data-uji="kartu-opname">Stok opname #{{ $mv->referensi_id }}</a>
+                                @else
                                 {{ $mv->referensi_type ? Str::limit($mv->referensi_type, 20) : '—' }}
                                 @if($mv->referensi_id) #{{ $mv->referensi_id }} @endif
+                                @endif
                             </span>
                         </td>
                         <td class="d-none d-xl-table-cell">

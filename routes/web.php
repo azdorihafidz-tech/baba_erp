@@ -261,6 +261,9 @@ Route::middleware(['auth', 'verified', 'cabang'])->group(function () {
         Route::get('/mulai', 'mulaiForm')->name('mulai');
         Route::post('/mulai', 'mulai')->name('mulai.store');
         Route::get('/barang', 'barang')->name('barang');
+        Route::get('/laporan', 'laporan')->name('laporan');
+        Route::get('/{opname}/berita-acara', 'beritaAcara')->whereNumber('opname')->name('berita-acara');
+        Route::get('/{opname}/berita-acara/excel', 'beritaAcaraExcel')->whereNumber('opname')->name('berita-acara.excel');
         Route::get('/{opname}', 'show')->whereNumber('opname')->name('show');
         Route::post('/{opname}/hitung', 'hitung')->whereNumber('opname')->name('hitung');
         Route::post('/{opname}/hitung-ulang', 'hitungUlang')->whereNumber('opname')->name('hitung-ulang');
