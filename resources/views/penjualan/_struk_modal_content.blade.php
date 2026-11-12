@@ -226,6 +226,18 @@
         <button class="btn btn-sm btn-outline-secondary" onclick="window.KDApk && window.KDApk.bukaPengaturan()">⚙️ Pengaturan Printer Aplikasi</button>
     </div>
 
+    {{-- BABA 6b — agen printer PC (BABA Printer Agent): cetak langsung tanpa pilih printer.
+         Ditampilkan oleh script di bawah kalau sudah diaktifkan di PC/browser ini. --}}
+    <div class="d-none" id="strukAgentGroup">
+        <div class="d-grid gap-2 mb-3">
+            <button class="btn btn-primary btn-lg" id="strukBtnAgent" onclick="window.strukCetakAgent()">🖨️ Cetak Struk (Printer PC)</button>
+            <div class="d-flex gap-2">
+                <button class="btn btn-sm btn-outline-secondary flex-fill" onclick="window.BabaAgent && window.BabaAgent.bukaPengaturan()">⚙️ Pengaturan Printer PC</button>
+                <button class="btn btn-sm btn-outline-secondary flex-fill" onclick="window.strukMatikanAgent()">Pakai Bluetooth Browser</button>
+            </div>
+        </div>
+    </div>
+
     {{-- Grup 1: PRIMARY — cetak Bluetooth --}}
     <div class="d-grid gap-2 mb-3" id="strukWebBtGroup">
         {{-- Cetak ke printer terakhir — muncul kalau ada printer tersimpan --}}
@@ -281,6 +293,10 @@
         {{-- Browser Print (mencetak semua salinan sekaligus) --}}
         <button class="btn btn-sm btn-outline-secondary" id="strukBtnBrowserPrint" onclick="window.print()">
             🖨️ Cetak Browser
+        </button>
+        {{-- BABA 6b — aktifkan agen printer PC di browser ini (muncul kalau belum aktif, bukan di APK) --}}
+        <button class="btn btn-sm btn-outline-secondary d-none" id="strukBtnPakaiAgent" onclick="window.strukAktifkanAgent()">
+            🖥️ Pakai Agen Printer PC
         </button>
     </div>
 
@@ -912,6 +928,98 @@ $_struData = [
             }
         });
     })();
+
+
+    // ============================================================
+    //  AGEN PRINTER PC (BABA Printer Agent)
+    //  Sama seperti APK: data buildReceipt() apa adanya, dikirim ke
+    //  agen di 127.0.0.1 yang meneruskan ke printer — tanpa pilih
+    //  printer. Kalau agen mati, jalur Bluetooth browser tetap tersedia.
+    // ============================================================
+    var PANDUAN_PRINTER = @json(route('panduan.show', 'printer-kasir'));
+    var WEB_BT_IDS = ['strukWebBtGroup', 'strukBtnForgetPrinter', 'strukToggleGuide', 'strukBtGuide'];
+
+    function sembunyikanWebBt(ya) {
+        WEB_BT_IDS.forEach(function (id) {
+            var x = el(id);
+            if (x) x.classList.toggle('d-none', ya);
+        });
+    }
+
+    async function cetakAgent() {
+        var btn = el('strukBtnAgent');
+        if (btn) btn.disabled = true;
+        var copies = STRUK.copies || 1;
+        btStatus('Mengirim struk ke printer PC…', 'info');
+        try {
+            var j = await window.BabaAgent.cetak(buildReceipt());
+            btStatus('✓ ' + (j.pesan || 'Struk tercetak') + (copies > 1 ? ' (' + copies + ' salinan)' : '') + '.', 'success');
+            return true;
+        } catch (e) {
+            if (e.agentMati) sembunyikanWebBt(false);
+            btStatus('Gagal cetak struk: ' + e.message + (e.agentMati
+                ? '\nJalankan BABA Printer Agent di PC ini, atau cetak lewat Bluetooth di bawah.'
+                : '\nCek printer lalu tekan "Cetak Struk (Printer PC)" lagi, atau buka Pengaturan Printer PC.'), 'error');
+            return false;
+        } finally {
+            if (btn) btn.disabled = false;
+        }
+    }
+
+    async function initAgent() {
+        if (!window.BabaAgent || (window.KDApk && window.KDApk.ada())) return;
+        if (!window.BabaAgent.aktif()) {
+            var b = el('strukBtnPakaiAgent');
+            if (b) b.classList.remove('d-none');
+            return;
+        }
+        var grup = el('strukAgentGroup');
+        if (grup) grup.classList.remove('d-none');
+        btStatus('Menghubungi agen printer PC…', 'info');
+        try {
+            var s = await window.BabaAgent.cek();
+            if (!s.siap) {
+                btStatus('Agen printer PC menyala, tapi printer belum diatur. Tekan "Pengaturan Printer PC".', 'warning');
+                return;
+            }
+            sembunyikanWebBt(true);
+            btStatus('Printer PC: ' + s.printer, 'info');
+            // Cetak otomatis hanya untuk transaksi baru di POS (sama seperti APK)
+            if (typeof window.resetPosForm === 'function') cetakAgent();
+        } catch (e) {
+            btStatus(e.message + ' Jalankan BABA Printer Agent, atau cetak lewat Bluetooth di bawah.', 'warning');
+        }
+    }
+
+    async function aktifkanAgent() {
+        btStatus('Mencari agen printer di PC ini…', 'info');
+        try {
+            await window.BabaAgent.cek();
+        } catch (e) {
+            btStatus(e.message + '\nPasang dulu BABA Printer Agent — lihat Panduan "Cetak Struk Tanpa Pilih Printer": ' + PANDUAN_PRINTER, 'error');
+            return;
+        }
+        window.BabaAgent.setAktif(true);
+        var b = el('strukBtnPakaiAgent');
+        if (b) b.classList.add('d-none');
+        initAgent();
+    }
+
+    function matikanAgent() {
+        window.BabaAgent.setAktif(false);
+        var grup = el('strukAgentGroup');
+        if (grup) grup.classList.add('d-none');
+        sembunyikanWebBt(false);
+        var b = el('strukBtnPakaiAgent');
+        if (b) b.classList.remove('d-none');
+        btStatus('Agen printer PC dimatikan di browser ini. Cetak lewat Bluetooth seperti biasa.', 'info');
+    }
+
+    initAgent();
+
+    window.strukCetakAgent    = cetakAgent;
+    window.strukAktifkanAgent = aktifkanAgent;
+    window.strukMatikanAgent  = matikanAgent;
 
 })();
 </script>

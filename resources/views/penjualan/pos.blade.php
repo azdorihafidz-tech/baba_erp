@@ -2355,6 +2355,22 @@ async function bukaLaciManual() {
         return;
     }
 
+    // BABA 6b — PC dengan BABA Printer Agent aktif: buka laci lewat agen
+    if (window.BabaAgent && window.BabaAgent.aktif()) {
+        try {
+            await window.BabaAgent.bukaLaci();
+            await fetch(LACI_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': LACI_CSRF },
+                body: JSON.stringify({ alasan }),
+            });
+            await window.showAlert('success', 'Berhasil', 'Laci berhasil dibuka.');
+        } catch (e) {
+            await window.showAlert('error', 'Gagal Buka Laci', e.message);
+        }
+        return;
+    }
+
     if (!navigator.bluetooth) {
         await window.showAlert('error', 'Bluetooth Tidak Didukung', 'Browser tidak mendukung Web Bluetooth. Gunakan Chrome atau Edge.');
         return;

@@ -554,6 +554,12 @@
             <i class="bi bi-printer"></i>
             <span>Pengaturan Printer Aplikasi</span>
         </a>
+        {{-- BABA 6b — hanya tampil di PC yang sudah mengaktifkan BABA Printer Agent --}}
+        <a href="#" id="babaAgentSettingsLink" class="nav-link" style="display:none"
+           onclick="window.BabaAgent && window.BabaAgent.bukaPengaturan(); return false;">
+            <i class="bi bi-pc-display"></i>
+            <span>Pengaturan Printer PC</span>
+        </a>
 
         <!-- PENJUALAN -->
         @canany(['order.view', 'order.create', 'pelanggan.view', 'loyalty.view',

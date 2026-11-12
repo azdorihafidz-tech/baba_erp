@@ -120,6 +120,18 @@ Route::get('/offline.html', function () {
 // 4.44 Poin 1 — identitas usaha untuk aplikasi kasir Android "Kasir POS".
 // Publik: hanya identitas yang memang tampil di halaman login. APK menolak
 // alamat ERP yang tidak punya endpoint ini (erp: true). Format JSON = kontrak APK.
+// ===== BABA 6b — unduh BABA Printer Agent (PC kasir Windows, tools/printer-agent) =====
+// Lewat route (bukan link file langsung) supaya wajib login & tidak di-cache.
+Route::get('/unduh/baba-printer-agent.exe', function () {
+    $file = base_path('public/downloads/baba-printer-agent.exe');
+    abort_unless(is_file($file), 404);
+
+    return response()->download($file, 'baba-printer-agent.exe', [
+        'Content-Type'  => 'application/vnd.microsoft.portable-executable',
+        'Cache-Control' => 'no-cache',
+    ]);
+})->middleware('auth')->name('printer-agent.unduh');
+
 Route::get('/app-info', function (\App\Support\Branding $brand) {
     return response()->json(['erp' => true] + $brand->untukAplikasi());
 })->name('app.info');

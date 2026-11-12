@@ -34,3 +34,6 @@ Thumbs.db
 # Foto produk online (unggahan; .htaccess penolak skrip tetap di git)
 /public/uploads/produk-online/*
 !/public/uploads/produk-online/.htaccess
+
+# BABA 6b — exe agen printer PC tidak masuk git; dibangun dari tools/printer-agent lalu diunggah manual ke hosting
+public/downloads/*.exe

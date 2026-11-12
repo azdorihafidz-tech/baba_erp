@@ -9,6 +9,9 @@
     KONTRAK DENGAN APK — JANGAN DIUBAH: window.KopiDripPrinter.info(),
     .print(target, base64, cbId), .openDrawer(cbId), .openSettings(), dan
     callback window.KopiDripPrinterResult(id, ok, pesan).
+
+    BABA Tahap 6b: helper `window.BabaAgent` untuk agen printer PC Windows
+    (BABA Printer Agent, tools/printer-agent, port 17331) — lihat bagian AGEN PRINTER PC.
 --}}
 <script>
 (function () {
@@ -90,5 +93,87 @@
         var link = document.getElementById('kdApkSettingsLink');
         if (link) link.style.display = '';
     }
+
+    // ============================================================
+    //  AGEN PRINTER PC (BABA Printer Agent, tools/printer-agent)
+    //  Program kecil di PC kasir Windows yang mendengar HANYA di
+    //  127.0.0.1:17331 dan meneruskan byte ESC/POS ke printer
+    //  (Bluetooth via port COM / printer USB Windows).
+    //  Opt-in per PC (localStorage) — ERP TIDAK menghubungi 127.0.0.1
+    //  sebelum diaktifkan, supaya browser lain (tablet/HP) tidak
+    //  menampilkan izin "akses perangkat di jaringan lokal".
+    // ============================================================
+    var AGENT_URL = 'http://127.0.0.1:17331';
+    var AGENT_KEY = 'baba_print_agent';
+
+    function agentFetch(path, opt, ms) {
+        var ctrl = ('AbortController' in window) ? new AbortController() : null;
+        var t = ctrl ? setTimeout(function () { ctrl.abort(); }, ms) : null;
+        opt = opt || {};
+        if (ctrl) opt.signal = ctrl.signal;
+        return fetch(AGENT_URL + path, opt).then(function (r) {
+            return r.json().catch(function () { return {}; }).then(function (j) {
+                if (!r.ok || j.ok === false) {
+                    var e = new Error(j.pesan || ('Agen printer menjawab HTTP ' + r.status));
+                    e.agentMenjawab = true;
+                    throw e;
+                }
+                return j;
+            });
+        }, function (err) {
+            var e = new Error(err && err.name === 'AbortError'
+                ? 'Agen printer PC tidak merespons (timeout).'
+                : 'Agen printer PC tidak menyala di komputer ini.');
+            e.agentMati = true;
+            throw e;
+        }).finally(function () { if (t) clearTimeout(t); });
+    }
+
+    function kirimAgent(path, body) {
+        return agentFetch(path, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body || {}),
+        }, 30000);
+    }
+
+    window.BabaAgent = {
+        url: AGENT_URL,
+
+        /** Sudah diaktifkan di PC/browser ini? */
+        aktif: function () {
+            try { return localStorage.getItem(AGENT_KEY) === '1'; } catch (e) { return false; }
+        },
+
+        setAktif: function (v) {
+            try { v ? localStorage.setItem(AGENT_KEY, '1') : localStorage.removeItem(AGENT_KEY); } catch (e) {}
+            tampilLinkAgent();
+        },
+
+        /** {agent, versi, siap, tipe, printer} — throw kalau agen tidak menyala. */
+        cek: function () {
+            return agentFetch('/status', {}, 2500).then(function (j) {
+                if (j.agent !== 'baba-printer-agent') {
+                    var e = new Error('Agen printer PC tidak menyala di komputer ini.');
+                    e.agentMati = true;
+                    throw e;
+                }
+                return j;
+            });
+        },
+
+        /** bytes: Uint8Array data printer (sama dengan jalur Bluetooth). */
+        cetak: function (bytes) { return kirimAgent('/print', { data: keBase64(bytes) }); },
+
+        bukaLaci: function () { return kirimAgent('/drawer'); },
+
+        bukaPengaturan: function () { window.open(AGENT_URL + '/', '_blank'); },
+    };
+
+    function tampilLinkAgent() {
+        var l = document.getElementById('babaAgentSettingsLink');
+        if (l) l.style.display = (!bridge() && window.BabaAgent.aktif()) ? '' : 'none';
+    }
+    tampilLinkAgent();
 })();
 </script>
