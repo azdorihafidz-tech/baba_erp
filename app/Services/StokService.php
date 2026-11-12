@@ -180,8 +180,8 @@ class StokService
      *
      * @param array|null $batchDistribusi  [['batch_id'=>1,'qty'=>2],...]  null = FIFO otomatis
      * @param string     $alasan           alasan koreksi, ditampilkan di notif & keuangan.
-     *                                     'salah_hitung'/'audit' TIDAK bikin transaksi_keuangan
-     *                                     (murni koreksi data, stok fisik tidak pernah berubah).
+     *                                     'salah_hitung'/'audit': stok TURUN → Selisih Persediaan (BABA Tahap 7),
+     *                                     stok NAIK → tanpa transaksi_keuangan (koreksi data / stok awal).
      */
     /**
      * @param array $options  mode_distribusi (batch_baru|batch_existing), harga_custom, batch_id_target,
@@ -237,8 +237,15 @@ class StokService
                     'user_id'          => auth()->id(),
                 ]);
 
-                if ($nilaiTransaksi > 0 && $catatKeKeuangan) {
-                    $kategori = KategoriTransaksi::firstOrCreate(
+                // ERP BABA Tahap 7: stok TURUN karena audit/salah hitung dulu tidak tercatat di keuangan sama sekali
+                // (kerugian tidak terlihat di Laba Rugi). Kini dicatat sebagai Selisih Persediaan (6-1406).
+                // Stok NAIK karena audit tetap tanpa keuangan (sering dipakai untuk stok awal).
+                $selisihPersediaan = in_array($alasan, $alasanTanpaKeuangan, true);
+                if ($nilaiTransaksi > 0 && ($catatKeKeuangan || $selisihPersediaan)) {
+                    $kategori = $selisihPersediaan
+                        ? KategoriTransaksi::firstOrCreate(['kode' => 'SO-SALAH'], ['nama' => 'Selisih Persediaan', 'tipe' => 'pengeluaran',
+                            'kode_akun_coa' => '6-1406', 'is_system' => true, 'is_active' => true, 'urutan' => 17])
+                        : KategoriTransaksi::firstOrCreate(
                         ['kode' => 'BEBAN-STOK'],
                         ['nama' => 'Beban Kerugian Stok', 'tipe' => 'pengeluaran',
                          'is_system' => true, 'is_active' => true, 'urutan' => 17]
@@ -414,6 +421,68 @@ class StokService
                     rtrim(rtrim(number_format($qtyLama, 3, ',', '.'), '0'), ',') . ' ke 0'
                 );
         });
+    }
+
+    /**
+     * ERP BABA Tahap 7 — terapkan SELISIH stok opname (bukan menimpa angka stok, supaya penjualan sesudah barang
+     * dihitung tidak terhapus). Pemanggil wajib di dalam DB::transaction. Tidak membuat transaksi keuangan
+     * (dicatat StokOpnameService per penyebab).
+     *  - $delta < 0: stok keluar FIFO; ditolak bila stok sekarang kurang dari yang dikurangi.
+     *  - $delta > 0: stok masuk sebagai batch baru seharga $hargaMasuk (harga pokok rata-rata).
+     *
+     * @return float nilai pokok yang keluar / masuk (selalu positif)
+     */
+    public function selisihOpname(int $itemId, int $lokasiId, float $delta, float $hargaMasuk, string $catatan, int $opnameId): float
+    {
+        if (abs($delta) < 0.0005) {
+            return 0.0;
+        }
+        Stock::withTrashed()->where('item_id', $itemId)->where('lokasi_id', $lokasiId)->lockForUpdate()->first();
+
+        if ($delta < 0) {
+            $turun = -$delta;
+            $ada = $this->getStok($itemId, $lokasiId);
+            if ($ada + 0.0005 < $turun) {
+                $nama = Item::find($itemId)?->nama_item ?? "barang #{$itemId}";
+                throw new \App\Exceptions\StokOpnameException("Stok {$nama} sekarang tinggal " . rtrim(rtrim(number_format($ada, 3, ',', '.'), '0'), ',')
+                    . ', tidak cukup untuk dikurangi ' . rtrim(rtrim(number_format($turun, 3, ',', '.'), '0'), ',') . '. Hitung ulang barang ini lalu ajukan lagi.');
+            }
+            $this->updateStok($itemId, $lokasiId, -$turun);
+            StockMovement::create([
+                'item_id' => $itemId, 'lokasi_asal_id' => $lokasiId, 'lokasi_tujuan_id' => null, 'qty' => $turun,
+                'tipe' => TipeStockMovement::Adjustment, 'referensi_type' => 'stok_opname', 'referensi_id' => $opnameId,
+                'catatan' => $catatan, 'user_id' => auth()->id(),
+            ]);
+
+            return $this->consumeBatchesFifo($itemId, $lokasiId, $turun);
+        }
+
+        $this->updateStok($itemId, $lokasiId, $delta);
+        $mv = StockMovement::create([
+            'item_id' => $itemId, 'lokasi_asal_id' => null, 'lokasi_tujuan_id' => $lokasiId, 'qty' => $delta,
+            'tipe' => TipeStockMovement::Adjustment, 'referensi_type' => 'stok_opname', 'referensi_id' => $opnameId,
+            'catatan' => $catatan, 'user_id' => auth()->id(),
+        ]);
+        if ($hargaMasuk > 0) {
+            StockBatch::create([
+                'item_id' => $itemId, 'lokasi_id' => $lokasiId, 'referensi_type' => 'stok_opname', 'referensi_id' => $mv->id,
+                'qty_awal' => $delta, 'qty_sisa' => $delta, 'harga_beli_per_unit' => $hargaMasuk, 'tanggal_masuk' => today(),
+            ]);
+        }
+
+        return $delta * $hargaMasuk;
+    }
+
+    /** Harga pokok rata-rata per satuan di lokasi (batch FIFO yang masih ada); tanpa batch → harga beli outlet. */
+    public function hargaPokokRata(int $itemId, int $lokasiId): float
+    {
+        $b = StockBatch::where('item_id', $itemId)->where('lokasi_id', $lokasiId)->where('qty_sisa', '>', 0)->whereNull('deleted_at')
+            ->selectRaw('SUM(qty_sisa) as q, SUM(qty_sisa * harga_beli_per_unit) as n')->first();
+        if ($b && (float) $b->q > 0) {
+            return round((float) $b->n / (float) $b->q, 4);
+        }
+
+        return (float) (Item::find($itemId)?->hargaBeliDiCabang($lokasiId) ?? 0);
     }
 
     /**

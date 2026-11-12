@@ -255,6 +255,23 @@ Route::middleware(['auth', 'verified', 'cabang'])->group(function () {
     Route::get('/api/stok/qty', [StokController::class, 'apiQty'])->name('api.stok.qty');
     Route::get('/api/stok/batches', [StokController::class, 'apiBatches'])->name('api.stok.batches');
 
+    // ERP BABA Tahap 7 — Stok Opname (izin dicek per aksi di StokOpnameController/Service)
+    Route::prefix('stok-opname')->name('stok-opname.')->controller(\App\Http\Controllers\StokOpnameController::class)->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::get('/mulai', 'mulaiForm')->name('mulai');
+        Route::post('/mulai', 'mulai')->name('mulai.store');
+        Route::get('/barang', 'barang')->name('barang');
+        Route::get('/{opname}', 'show')->whereNumber('opname')->name('show');
+        Route::post('/{opname}/hitung', 'hitung')->whereNumber('opname')->name('hitung');
+        Route::post('/{opname}/hitung-ulang', 'hitungUlang')->whereNumber('opname')->name('hitung-ulang');
+        Route::post('/{opname}/rincian/{baris}', 'rincian')->whereNumber(['opname', 'baris'])->name('rincian');
+        Route::post('/{opname}/ajukan', 'ajukan')->whereNumber('opname')->name('ajukan');
+        Route::post('/{opname}/setujui', 'setujui')->whereNumber('opname')->name('setujui');
+        Route::post('/{opname}/tolak', 'tolak')->whereNumber('opname')->name('tolak');
+        Route::post('/{opname}/batal', 'batal')->whereNumber('opname')->name('batal');
+        Route::get('/{opname}/foto/{rincian}', 'foto')->whereNumber(['opname', 'rincian'])->name('foto');
+    });
+
     // Stock Request (permintaan bahan)
     Route::resource('stock-request', StockRequestController::class)->only(['index','create','store','show','destroy']);
     Route::post('/stock-request/{stockRequest}/approve', [StockRequestController::class, 'approve'])->name('stock-request.approve');

@@ -684,7 +684,7 @@
         @endif
 
         <!-- STOK & GUDANG -->
-        @canany(['stok.view', 'stok.request', 'stok.transfer', 'master.bahan_baku.view', 'master.produk_jual.view', 'item.view', 'pemakaian_perlengkapan.view', 'produksi.view', 'kiriman.view', 'retur.view'])
+        @canany(['stok.view', 'stok_opname.lihat', 'stok.request', 'stok.transfer', 'master.bahan_baku.view', 'master.produk_jual.view', 'item.view', 'pemakaian_perlengkapan.view', 'produksi.view', 'kiriman.view', 'retur.view'])
         <div class="nav-section-title">Stok & Gudang</div>
         @can('stok.view')
         <a href="{{ route('stok.dashboard') }}"
@@ -696,6 +696,16 @@
            class="nav-link {{ request()->routeIs('stok.index','stok.kartu','stok.adjustment') ? 'active' : '' }}">
             <i class="bi bi-boxes"></i>
             <span>Stok Barang</span>
+        </a>
+        @endcan
+        {{-- ERP BABA Tahap 7 — Stok Opname (angka merah = menunggu persetujuan Anda) --}}
+        @can('stok_opname.lihat')
+        @php try { $jmlOpnameMenunggu = app(\App\Services\StokOpnameService::class)->jumlahMenunggu(auth()->user()); } catch (\Throwable $e) { $jmlOpnameMenunggu = 0; } @endphp
+        <a href="{{ route('stok-opname.index') }}"
+           class="nav-link {{ request()->routeIs('stok-opname.*') ? 'active' : '' }}">
+            <i class="bi bi-clipboard-check"></i>
+            <span>Stok Opname</span>
+            @if($jmlOpnameMenunggu > 0)<span class="badge rounded-pill bg-danger ms-auto" title="Menunggu persetujuan Anda">{{ $jmlOpnameMenunggu }}</span>@endif
         </a>
         @endcan
         @can('stok.request')

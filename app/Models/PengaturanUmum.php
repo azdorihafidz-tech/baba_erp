@@ -23,6 +23,7 @@ class PengaturanUmum extends Model
         'warna_sidebar',
         'warna_latar',
         'mode_ro', // BABA Tahap 2e: kapan RO belanja online dihitung (lihat RoService::MODE)
+        'opname_hitung_buta', 'opname_batas_foto_hilang', // BABA Tahap 7: bawaan stok opname
     ];
 
     protected $casts = [

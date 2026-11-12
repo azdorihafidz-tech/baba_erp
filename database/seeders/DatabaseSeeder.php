@@ -43,6 +43,7 @@ class DatabaseSeeder extends Seeder
             TokoOnlineSeeder::class,             // BABA Tahap 2 — izin, panduan, tooltip Toko Online
             KeuanganBabaSeeder::class,           // BABA Tahap 4 — izin laporan, peran Pemilik Toko Mitra, panduan
             PrinterBabaSeeder::class,           // BABA Tahap 6b — panduan cetak struk tanpa pilih printer
+            StokOpnameSeeder::class,            // BABA Tahap 7 — izin, COA, kategori, panduan Stok Opname
             IstilahBabaSeeder::class,            // BABA Tahap 4–5 — istilah parfum di panduan & tooltip (setelah semua panduan dibuat)
         ]);
     }
