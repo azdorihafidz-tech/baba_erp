@@ -81,6 +81,8 @@ class TokoOnlineSeeder extends Seeder
                 'content' => 'Toko BABA = milik BABA (keuangan penuh). Toko Kemitraan & Toko Refill Member = milik mitra / member (cukup laporan transaksi, produk, kategori). Kosongkan untuk gudang / kantor. Toko baru otomatis mendapat Kas Tunai, Transfer, dan QRIS.'],
             ['key' => 'produk_toko.botol', 'title' => 'Jual botol',
                 'content' => 'Produk kasir per botol. Saat dijual, stok botol di toko berkurang 1 per produk. Stok botol toko diisi lewat Permintaan / Transfer Stok dari gudang.'],
+            ['key' => 'produk_toko.barcode', 'title' => 'Barcode botol',
+                'content' => 'Kode yang tercetak di botol. Klik kotaknya lalu scan dengan scanner (atau ketik). Satu barcode per parfum, berlaku di kasir semua toko. Di Kasir (POS), scan barcode langsung memasukkan botol ke keranjang.'],
             ['key' => 'produk_toko.cairan', 'title' => 'Isi ulang per ml',
                 'content' => 'Produk kasir isi ulang dengan harga per ml. Jumlah di kasir = ml; stok cairan toko berkurang sebanyak ml yang dijual.'],
             ['key' => 'toko_online.status_toko', 'title' => 'Status toko online',
@@ -195,12 +197,14 @@ Menyiapkan produk kasir parfum di sebuah toko (Toko BABA, Toko Kemitraan, atau T
 1. Pastikan tokonya sudah ada di menu **Cabang** (tipe **Cabang**, isi **Jenis toko**). Toko baru otomatis mendapat Kas Tunai, Transfer, dan QRIS.
 2. Buka **Produk Parfum Toko**, pilih **Toko**.
 3. Bagian **Botol**: centang **Jual** dan isi **Harga jual per botol**. Bagian **Isi ulang per ml**: centang **Jual** dan isi **Harga per ml**.
-4. Tekan **Simpan**. Produk langsung tampil di **Kasir (POS)** toko itu.
-5. Isi stok toko lewat **Permintaan Stok / Transfer Stok** dari gudang (botol dan cairan).
+4. (Opsional) Isi **Barcode** botol: klik kotaknya lalu scan barcode di botol. Satu barcode berlaku di kasir semua toko.
+5. Tekan **Simpan**. Produk langsung tampil di **Kasir (POS)** toko itu.
+6. Isi stok toko lewat **Permintaan Stok / Transfer Stok** dari gudang (botol dan cairan).
 
 ## Catatan Penting
 - Botol: stok toko berkurang 1 per botol terjual. Isi ulang: jumlah di kasir = ml, stok cairan toko berkurang sebanyak itu.
 - Hapus centang **Jual** untuk menyembunyikan produk dari kasir (data tidak dihapus).
+- Di **Kasir (POS)**: scan barcode botol (kursor di kotak **Cari produk / scan barcode** atau di mana saja) → botol langsung masuk keranjang.
 - Parfum baru dibuat di **Produksi › Buat Parfum**.
 MARKDOWN;
 

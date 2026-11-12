@@ -14,7 +14,7 @@ class Item extends Model
     use HasFactory, HasAuditLog, SoftDeletes, FillsDeletedBy;
 
     protected array $auditedAttributes = [
-        'kode_item', 'nama_item', 'item_category_id', 'tipe', 'satuan',
+        'kode_item', 'barcode', 'nama_item', 'item_category_id', 'tipe', 'satuan',
         'harga_jual', 'harga_beli_terakhir', 'qty_minimum', 'is_active',
         'jenis', 'track_stok', 'punya_varian', 'stok_per_varian', 'foto',
     ];
@@ -22,6 +22,7 @@ class Item extends Model
     protected $fillable = [
         'cabang_id',
         'kode_item',
+        'barcode', // BABA Tahap 6a — scan di kasir
         'nama_item',
         'item_category_id',
         'tipe',

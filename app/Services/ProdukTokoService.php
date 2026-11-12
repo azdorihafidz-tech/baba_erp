@@ -53,9 +53,42 @@ class ProdukTokoService
             $hasil[$jenis][] = [
                 'sumber' => $s, 'kode' => $kode, 'produk' => $p, 'aktif' => (bool) ($p?->is_active),
                 'harga' => $p?->harga_jual !== null ? (float) $p->harga_jual : null,
+                'barcode' => $jenis === 'botol' ? $s->barcode : null,
                 'stok_toko' => $b ? $this->stok->getStok($b->id, $toko->id) : 0.0,
                 'nama' => $jenis === 'botol' ? $s->nama_item : $this->namaIsiUlang($s->nama_item),
             ];
+        }
+
+        return $hasil;
+    }
+
+    /**
+     * Barcode isian (hanya baris botol yang dikirim). Kosong = hapus. Huruf/angka/titik/strip 3–64 karakter, tidak boleh
+     * sama dengan parfum lain. @return array<int, ?string> [item_id gudang => barcode]
+     */
+    private function periksaBarcode(array $botol, array $pilih): array
+    {
+        $hasil = [];
+        foreach ($botol as $r) {
+            if (! array_key_exists('barcode', $pilih[$r['sumber']->id] ?? [])) {
+                continue;
+            }
+            $kode = trim((string) $pilih[$r['sumber']->id]['barcode']);
+            if ($kode !== '' && ! preg_match('/^[A-Za-z0-9.\-]{3,64}$/', $kode)) {
+                throw new \InvalidArgumentException("Barcode {$r['nama']} hanya boleh huruf, angka, titik, atau strip (3–64 karakter).");
+            }
+            $hasil[$r['sumber']->id] = $kode === '' ? null : $kode;
+        }
+        $isi = array_filter($hasil);
+        if (count($isi) !== count(array_unique($isi))) {
+            throw new \InvalidArgumentException('Ada barcode yang sama untuk dua parfum berbeda.');
+        }
+        foreach ($isi as $id => $kode) {
+            $lain = Item::where('barcode', $kode)->where('tipe', '!=', 'produk_jual')->where('id', '!=', $id)
+                ->where('kode_item', '!=', collect($botol)->firstWhere('sumber.id', $id)['sumber']->kode_item)->first();
+            if ($lain) {
+                throw new \InvalidArgumentException("Barcode {$kode} sudah dipakai {$lain->nama_item}.");
+            }
         }
 
         return $hasil;
@@ -67,14 +100,23 @@ class ProdukTokoService
     }
 
     /**
-     * @param array<int, array{aktif?:bool|string, harga?:mixed}> $pilih [item_id gudang => {aktif, harga}]
+     * @param array<int, array{aktif?:bool|string, harga?:mixed, barcode?:string}> $pilih [item_id gudang => {aktif, harga, barcode (botol)}]
      * @return array{dibuat:int, diubah:int, dimatikan:int}
      */
     public function simpan(Cabang $toko, array $pilih, ?int $userId): array
     {
         $rencana = $this->rencana($toko);
         $hasil = ['dibuat' => 0, 'diubah' => 0, 'dimatikan' => 0];
-        DB::transaction(function () use ($toko, $pilih, $userId, $rencana, &$hasil) {
+        $barcode = $this->periksaBarcode($rencana['botol'], $pilih);
+        DB::transaction(function () use ($toko, $pilih, $userId, $rencana, $barcode, &$hasil) {
+            // Tahap 6a: barcode melekat pada parfum botol gudang → disalin ke produk kasir JL- di SEMUA toko
+            foreach ($barcode as $sumberId => $kode) {
+                $sumber = collect($rencana['botol'])->firstWhere('sumber.id', $sumberId)['sumber'];
+                if ($sumber->barcode !== $kode) {
+                    $sumber->update(['barcode' => $kode]);
+                    Item::where('tipe', 'produk_jual')->where('kode_item', 'JL-' . $sumber->kode_item)->update(['barcode' => $kode]);
+                }
+            }
             foreach (['botol', 'cairan'] as $jenis) {
                 foreach ($rencana[$jenis] as $r) {
                     $p = $pilih[$r['sumber']->id] ?? [];
@@ -96,7 +138,7 @@ class ProdukTokoService
                     $produk->fill([
                         'nama_item' => $r['nama'], 'item_category_id' => $r['sumber']->item_category_id, 'tipe' => 'produk_jual',
                         'jenis' => 'bahan_baku', 'satuan' => $jenis === 'botol' ? 'pcs' : 'ml', 'harga_jual' => $harga,
-                        'track_stok' => false, 'is_active' => true, 'deskripsi' => 'Produk kasir parfum (dibuat dari ' . $r['sumber']->nama_item . ')',
+                        'track_stok' => false, 'is_active' => true, 'barcode' => $jenis === 'botol' ? ($barcode[$r['sumber']->id] ?? $r['sumber']->barcode) : null, 'deskripsi' => 'Produk kasir parfum (dibuat dari ' . $r['sumber']->nama_item . ')',
                     ])->save();
                     $resep = ResepBumbu::firstOrCreate(['item_id' => $produk->id], [
                         'cabang_id' => $toko->id, 'nama' => $produk->nama_item,

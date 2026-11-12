@@ -82,6 +82,7 @@ class IstilahBabaSeeder extends Seeder
 
     /** Tambahan per panduan (ditambahkan sekali di akhir bila belum ada). */
     public const TAMBAH = [
+        'pos' => "\n## Toko parfum BABA\n- **Scan barcode:** arahkan scanner ke barcode botol — botol langsung masuk keranjang (kursor boleh di kotak **Cari produk / scan barcode** atau di mana saja). Barcode diisi di **Produk Parfum Toko**.\n- **Isi ulang per ml:** pilih produk *Isi Ulang … (per ml)*, lalu isi jumlah = ml.\n- Tombol **Cek Antrian** & centang **Tampilkan di Antrian Produksi** hanya muncul bila antrian dinyalakan untuk toko itu (Cabang › Edit).\n- **Bukti QRIS / Transfer** wajib atau tidak diatur per toko di Cabang › Edit.",
         'karyawan' => "\n- **Akun login karyawan:** centang **Buat akun login**, isi email & peran. Password awal dibuat **acak** dan hanya ditampilkan sekali setelah disimpan — catat, berikan ke karyawan, lalu minta ia menggantinya di Profil.",
     ];
 

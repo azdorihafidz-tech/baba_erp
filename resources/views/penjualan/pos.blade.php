@@ -211,14 +211,16 @@ body.pos-tablet-mode .pos-bayar-kaki { padding: 0 10px 7px; }
 <div class="d-flex align-items-center justify-content-between mb-3" id="posHeader">
     <div>
         <h5 class="mb-0 fw-bold"><i class="bi bi-cart3 me-2 text-success"></i>POS - Kasir</h5>
-        <small class="text-muted">Cabang aktif: {{ session('cabang_aktif_nama') ?? 'Cabang' }}</small>
+        <small class="text-muted">Toko: <strong>{{ $cabangAktif?->nama_cabang ?? session('cabang_aktif_nama') ?? '-' }}</strong></small>
     </div>
     <div class="d-flex gap-2 align-items-center">
+        @if($cabangAktif?->antrian_produksi_aktif) {{-- BABA 6a: antrian hanya bila dinyalakan di toko ini --}}
         @can('antrian.lihat')
         <button type="button" class="btn btn-sm btn-outline-info" data-bs-toggle="modal" data-bs-target="#modalCekAntrian">
             <i class="bi bi-search me-1"></i><span class="pos-hp-sembunyi">Cek Antrian</span>
         </button>
         @endcan
+        @endif
         @can('kas.buka_laci')
         <button type="button" class="btn btn-sm btn-outline-warning" onclick="bukaLaciManual()">
             <i class="bi bi-unlock me-1"></i><span class="pos-hp-sembunyi">Buka Laci</span>
@@ -383,7 +385,7 @@ body.pos-tablet-mode .pos-bayar-kaki { padding: 0 10px 7px; }
             <div class="card mb-3">
                 <div class="card-header">Pilih Produk</div>
                 <div class="card-body">
-                    <input type="text" class="form-control form-control-sm mb-2" id="searchProdukGrid" placeholder="🔍 Cari produk...">
+                    <input type="text" class="form-control form-control-sm mb-2" id="searchProdukGrid" placeholder="🔍 Cari produk / scan barcode..." autocomplete="off">
                     <div class="d-flex flex-wrap gap-2 mb-2" id="filterKategoriGrid">
                         <button type="button" class="btn btn-sm btn-dark cat-pill active" data-kategori="all" onclick="filterKategoriGrid('all', this)">Semua</button>
                         @foreach($categories as $cat)
@@ -400,7 +402,7 @@ body.pos-tablet-mode .pos-bayar-kaki { padding: 0 10px 7px; }
                                     @if($item->foto)
                                         <img src="{{ asset('storage/'.$item->foto) }}" alt="{{ $item->nama_item }}">
                                     @else
-                                        🥟
+                                        🧴
                                     @endif
                                 </div>
                                 <div class="body">
@@ -629,6 +631,9 @@ body.pos-tablet-mode .pos-bayar-kaki { padding: 0 10px 7px; }
                          checkbox unchecked -> browser tidak kirim field-nya sama sekali,
                          jadi hidden input inilah yang mengisi nilai "0" ke server. Kalau
                          checkbox checked, submisinya "0" lalu "1" (PHP ambil value terakhir). --}}
+                    @if(! $cabangAktif?->antrian_produksi_aktif)
+                    <input type="hidden" name="tampil_di_antrian" value="0">
+                    @else
                     <div class="form-check mb-2">
                         <input type="hidden" name="tampil_di_antrian" value="0">
                         <input class="form-check-input" type="checkbox" name="tampil_di_antrian"
@@ -637,6 +642,7 @@ body.pos-tablet-mode .pos-bayar-kaki { padding: 0 10px 7px; }
                             <i class="bi bi-list-ol me-1"></i>Tampilkan di Antrian Produksi
                         </label>
                     </div>
+                    @endif
 
                     {{-- Order pengganti — diisi otomatis (auto-detect) atau manual dari
                          detail order. Kosong = order berdiri sendiri. --}}
@@ -914,6 +920,7 @@ $produkJadiJson = $semuaItemDropdown->map(fn($i) => [
     'id'             => $i->id,
     'nama_item'      => $i->nama_item,
     'kode_item'      => $i->kode_item,
+    'barcode'        => $i->barcode, // BABA 6a — scan barcode
     'satuan'         => $i->satuan,
     'harga_jual'     => $i->harga_jual ?? 0,
     'stok_cabang'    => $i->stok_cabang,
@@ -1106,6 +1113,53 @@ document.getElementById('searchProdukGrid')?.addEventListener('input', function 
     const activeBtn = document.querySelector('#filterKategoriGrid .btn.active');
     applyGridFilter(activeBtn ? activeBtn.dataset.kategori : 'all', this.value);
 });
+
+// ==== BABA 6a — scan barcode ====
+// Scanner barcode = keyboard yang mengetik cepat lalu Enter. Cocokkan persis barcode / kode produk → masuk keranjang.
+function cariBarcode(kode) {
+    const k = String(kode || '').trim().toLowerCase();
+    if (!k) return null;
+    return produkJadi.find(p => (p.barcode && String(p.barcode).toLowerCase() === k) || String(p.kode_item || '').toLowerCase() === k) || null;
+}
+function tambahLewatBarcode(kode) {
+    const p = cariBarcode(kode);
+    const kotak = document.getElementById('searchProdukGrid');
+    if (!p) {
+        if (window.Swal) Swal.fire({ toast: true, position: 'top', icon: 'warning', title: 'Barcode ' + kode + ' tidak ditemukan di toko ini', showConfirmButton: false, timer: 2500 });
+        return false;
+    }
+    klikProdukGrid(p.id);
+    if (kotak) { kotak.value = ''; kotak.dispatchEvent(new Event('input')); }
+    return true;
+}
+window.tambahLewatBarcode = tambahLewatBarcode;
+document.getElementById('searchProdukGrid')?.addEventListener('keydown', function (e) {
+    if (e.key !== 'Enter') return;
+    e.preventDefault();
+    const v = this.value.trim();
+    if (!v) return;
+    if (!tambahLewatBarcode(v)) {
+        // bukan barcode: bila hasil cari tinggal satu produk, tambahkan produk itu
+        const tampil = [...document.querySelectorAll('#gridProduk [data-id]')].filter(el => el.offsetParent !== null);
+        if (tampil.length === 1) { klikProdukGrid(Number(tampil[0].dataset.id)); this.value = ''; this.dispatchEvent(new Event('input')); }
+    }
+});
+(function () {
+    let buf = '', terakhir = 0;
+    document.addEventListener('keydown', function (e) {
+        const t = e.target;
+        if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT' || t.isContentEditable)) return;
+        const kini = Date.now();
+        if (kini - terakhir > 80) buf = '';
+        terakhir = kini;
+        if (e.key === 'Enter') {
+            if (buf.length >= 3) { e.preventDefault(); tambahLewatBarcode(buf); }
+            buf = '';
+        } else if (e.key.length === 1) {
+            buf += e.key;
+        }
+    });
+})();
 
 function applyGridFilter(kategoriId, search) {
     const term = (search || '').toLowerCase().trim();

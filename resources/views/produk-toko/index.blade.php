@@ -31,7 +31,7 @@
     @foreach(['botol' => ['Botol', 'Harga jual per botol'], 'cairan' => ['Isi ulang per ml', 'Harga per ml']] as $jenis => [$judul, $labelHarga])
     <div class="card mb-3"><div class="card-header fw-semibold small">{{ $judul }} <x-tooltip key="produk_toko.{{ $jenis }}" /></div>
         <div class="table-responsive"><table class="table table-sm align-middle mb-0">
-            <thead><tr><th style="width:40px">Jual</th><th>Produk di kasir</th><th class="text-end">Stok toko</th><th style="width:170px">{{ $labelHarga }}</th></tr></thead>
+            <thead><tr><th style="width:40px">Jual</th><th>Produk di kasir</th><th class="text-end">Stok toko</th>@if($jenis === 'botol')<th style="width:190px">Barcode <x-tooltip key="produk_toko.barcode" /></th>@endif<th style="width:170px">{{ $labelHarga }}</th></tr></thead>
             <tbody>
             @forelse($rencana[$jenis] as $r)
             @php $id = $r['sumber']->id; @endphp
@@ -39,11 +39,15 @@
                 <td><input type="checkbox" class="form-check-input" name="produk[{{ $id }}][aktif]" value="1" data-uji="jual-{{ $r['kode'] }}" @checked(old("produk.$id.aktif", $r['aktif']))></td>
                 <td>{{ $r['nama'] }}<div class="small text-muted">{{ $r['kode'] }}</div></td>
                 <td class="text-end small">{{ fmt_qty($r['stok_toko']) }} {{ $jenis === 'botol' ? 'pcs' : 'ml' }}</td>
+                @if($jenis === 'botol')
+                <td><input type="text" class="form-control form-control-sm" name="produk[{{ $id }}][barcode]" data-uji="barcode-{{ $r['kode'] }}" maxlength="64"
+                    value="{{ old("produk.$id.barcode", $r['barcode']) }}" placeholder="Scan / ketik" autocomplete="off" onkeydown="if(event.key==='Enter'){event.preventDefault();}"></td>
+                @endif
                 <td><input type="number" min="0" step="any" class="form-control form-control-sm text-end" name="produk[{{ $id }}][harga]" data-uji="harga-{{ $r['kode'] }}"
                     value="{{ old("produk.$id.harga", $nilai($r['harga'])) }}" placeholder="Rp"></td>
             </tr>
             @empty
-            <tr><td colspan="4" class="text-center text-muted py-3">Belum ada {{ strtolower($judul) }} di gudang. Buat lewat Produksi › Buat Parfum.</td></tr>
+            <tr><td colspan="{{ $jenis === 'botol' ? 5 : 4 }}" class="text-center text-muted py-3">Belum ada {{ strtolower($judul) }} di gudang. Buat lewat Produksi › Buat Parfum.</td></tr>
             @endforelse
             </tbody>
         </table></div>

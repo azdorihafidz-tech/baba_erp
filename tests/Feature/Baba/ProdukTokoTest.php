@@ -114,6 +114,50 @@ class ProdukTokoTest extends TestCase
             ->assertSee($this->botol->nama_item)->assertSee('Isi Ulang Amber');
     }
 
+    public function test_barcode_botol_berlaku_di_semua_toko_dan_divalidasi(): void
+    {
+        $kode = 'BC' . strtoupper(Str::random(8));
+        $this->svc->simpan($this->toko, $this->pilih(['aktif' => '1', 'harga' => 150000, 'barcode' => $kode], ['aktif' => '1', 'harga' => 2500]), auth()->id());
+        $this->assertSame($kode, $this->botol->fresh()->barcode);
+        $this->assertSame($kode, Item::where('cabang_id', $this->toko->id)->where('kode_item', 'JL-' . $this->botol->kode_item)->value('barcode'));
+        $this->assertNull(Item::where('cabang_id', $this->toko->id)->where('kode_item', 'RF-' . $this->cairan->kode_item)->value('barcode'));
+        // toko kedua otomatis memakai barcode yang sama
+        $toko2 = Cabang::create(['nama_cabang' => 'Toko Dua ' . uniqid(), 'kode_cabang' => 'TD' . rand(10000, 99999), 'tipe' => 'cabang', 'jenis_toko' => 'baba', 'is_active' => true]);
+        $this->svc->simpan($toko2, $this->pilih(['aktif' => '1', 'harga' => 150000], []), auth()->id());
+        $this->assertSame($kode, Item::where('cabang_id', $toko2->id)->where('kode_item', 'JL-' . $this->botol->kode_item)->value('barcode'));
+        // ubah barcode → semua toko ikut
+        $baru = $kode . 'X';
+        $this->svc->simpan($toko2, $this->pilih(['aktif' => '1', 'harga' => 150000, 'barcode' => $baru], []), auth()->id());
+        $this->assertSame([$baru, $baru], Item::where('kode_item', 'JL-' . $this->botol->kode_item)->orderBy('id')->pluck('barcode')->unique()->values()->pad(2, $baru)->all());
+        // format salah & dipakai barang lain → ditolak
+        foreach (['ab', 'kode spasi', str_repeat('9', 65)] as $salah) {
+            try {
+                $this->svc->simpan($this->toko, $this->pilih(['aktif' => '1', 'harga' => 150000, 'barcode' => $salah], []), auth()->id());
+                $this->fail('barcode salah lolos: ' . $salah);
+            } catch (\InvalidArgumentException $e) {
+                $this->assertStringContainsString('Barcode', $e->getMessage());
+            }
+        }
+        Item::create(['cabang_id' => $this->gudang->id, 'kode_item' => 'LAIN' . rand(1000, 9999), 'barcode' => 'DIPAKAI123', 'nama_item' => 'Barang Lain', 'tipe' => 'bahan_baku', 'satuan' => 'pcs', 'is_active' => true]);
+        $this->expectExceptionMessage('sudah dipakai Barang Lain');
+        $this->svc->simpan($this->toko, $this->pilih(['aktif' => '1', 'harga' => 150000, 'barcode' => 'DIPAKAI123'], []), auth()->id());
+    }
+
+    public function test_pos_toko_parfum_rapi_dan_memuat_barcode(): void
+    {
+        $this->svc->simpan($this->toko, $this->pilih(['aktif' => '1', 'harga' => 150000, 'barcode' => 'BCPOS12345'], ['aktif' => '1', 'harga' => 2500]), auth()->id());
+        $r = $this->withSession(['active_cabang_id' => $this->toko->id])->get(route('penjualan.pos'))->assertOk();
+        $h = $r->getContent();
+        $this->assertStringContainsString('Toko: <strong>' . e($this->toko->nama_cabang) . '</strong>', $h, 'nama toko');
+        $this->assertStringNotContainsString('id="tampilAntrianCheck"', $h, 'antrian');
+        $this->assertStringNotContainsString('data-bs-target="#modalCekAntrian"', $h, 'tombol antrian');
+        $this->assertStringNotContainsString('🥟', $h, 'ikon dimsum');
+        $this->assertStringContainsString('BCPOS12345', $h, 'barcode di data');
+        $this->assertStringContainsString('scan barcode', $h, 'placeholder');
+        $this->toko->update(['antrian_produksi_aktif' => true]);
+        $this->withSession(['active_cabang_id' => $this->toko->id])->get(route('penjualan.pos'))->assertSee('id="tampilAntrianCheck"', false)->assertSee('data-bs-target="#modalCekAntrian"', false);
+    }
+
     public function test_halaman_dan_izin(): void
     {
         $this->get(route('produk-toko.index', ['toko' => $this->toko->id]))->assertOk()->assertSee('Produk Parfum Toko')->assertSee($this->botol->nama_item);
