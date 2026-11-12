@@ -26,7 +26,7 @@ class PrinterBabaSeeder extends Seeder
 ## Tujuan
 Di browser biasa (Chrome), cetak struk Bluetooth sering meminta **pilih printer** lagi. Ada cara supaya printer cukup diatur **sekali**, lalu struk langsung tercetak:
 - **PC / laptop Windows** → pakai **Agen Printer PC** (BABA Printer Agent)
-- **Tablet / HP Android** → pakai **Aplikasi Kasir (APK)**
+- **Tablet / HP Android** → pakai **Aplikasi BABA Kasir (APK)**
 
 Isi struk, jumlah salinan, dan buka laci untuk pembayaran **Tunai** tetap sama. Kalau agen/aplikasi tidak dipakai, cara lama (pilih printer Bluetooth / **Cetak Browser**) tetap bisa dipakai.
 
@@ -53,6 +53,32 @@ Agen otomatis jalan setiap Windows menyala. Pengaturannya bisa dibuka lagi dari 
 - Cetak ulang dari Riwayat tidak tercetak otomatis (supaya laci tidak ikut terbuka)
 - **Buka Laci** di POS juga lewat agen
 - Kalau agen mati/printer bermasalah, tombol Bluetooth browser yang lama tetap tersedia. Tombol **Pakai Bluetooth Browser** mematikan agen di browser itu
+
+## Tablet / HP Android — Aplikasi BABA Kasir (APK)
+Aplikasi kasir BABA berisi ERP + printer Bluetooth. Printer cukup dipilih sekali di aplikasi.
+
+### Pasang sekali per tablet
+1. **Pairing printer dulu:** buka **Pengaturan → Bluetooth** di tablet, nyalakan printer, lalu pilih printer itu (PIN biasanya `0000` atau `1234`)
+2. Unduh dan pasang aplikasi: **[baba-kasir.apk](/unduh/baba-kasir.apk)**. Kalau Android memperingatkan "sumber tidak dikenal", izinkan untuk pemasangan ini
+3. **Buka aplikasi BABA Kasir.** Izinkan akses **Perangkat di sekitar** (Bluetooth). Halaman **Pengaturan Kasir** terbuka:
+   - **Alamat ERP** sudah terisi `https://erp.babaparfume.id` → tekan **Hubungkan**. Logo & nama **BABA PARFUME** tampil
+   - **Printer Struk** → pilih printer. Kalau belum muncul, tekan **Muat Ulang Daftar Printer**
+   - Tekan **Tes Cetak Struk** sampai kertas tes keluar, lalu **Tes Buka Laci** kalau laci tersambung ke printer
+   - Nyalakan **Cetak struk otomatis setelah bayar** kalau mau struk langsung keluar setiap transaksi
+   - **Printer Label** boleh dikosongkan
+4. Tekan **Selesai — Buka ERP**, lalu **login**. Aplikasi membuka halaman **POS**
+5. Pengaturan bisa dibuka lagi dari menu sidebar **Pengaturan Printer Aplikasi** (hanya muncul di dalam aplikasi)
+
+### Sehari-hari
+- Transaksi di **POS** → setelah **Proses**, struk langsung tercetak (bila cetak otomatis menyala) tanpa memilih printer
+- Atau tekan **🖨️ Cetak Struk** di jendela struk. **Buka Laci** di POS juga lewat printer aplikasi
+- Cetak ulang dari Riwayat tidak tercetak otomatis (supaya laci tidak ikut terbuka)
+
+### Troubleshooting (tablet)
+- **"Printer struk belum dipilih"** → buka **Pengaturan Printer Aplikasi**, pilih printer struk
+- **Printer tidak muncul di daftar** → pairing dulu di Pengaturan Bluetooth Android, lalu **Muat Ulang Daftar Printer**
+- **"Alamat ini tidak dikenali sebagai ERP"** → cek alamat `erp.babaparfume.id` dan koneksi internet
+- **Menu "Pengaturan Printer Aplikasi" tidak ada** → ERP dibuka dari Chrome, bukan dari aplikasi BABA Kasir
 
 ## Siapa yang Bisa Akses
 Tidak ada hak akses baru. Semua yang bisa memakai POS bisa memakai agen ini; **Buka Laci** tetap butuh hak `kas.buka_laci`. Agen hanya menerima perintah cetak dari alamat ERP BABA (`erp.babaparfume.id`); website lain ditolak.

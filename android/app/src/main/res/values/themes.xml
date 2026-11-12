@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="kd_hitam">#141414</color>
+    <color name="baba_ink">#141414</color>
+    <color name="kd_hijau">#B8890F</color>
+    <color name="kd_cream">#F6F4EF</color>
+
+    <style name="Theme.BabaKasir" parent="Theme.AppCompat.Light.DarkActionBar">
+        <item name="colorPrimary">@color/kd_hitam</item>
+        <item name="colorPrimaryDark">@color/kd_hitam</item>
+        <item name="colorAccent">@color/kd_hijau</item>
+        <item name="android:statusBarColor">@color/kd_hitam</item>
+    </style>
+
+    <style name="Theme.BabaKasir.Fullscreen" parent="Theme.AppCompat.Light.NoActionBar">
+        <item name="colorPrimary">@color/kd_hitam</item>
+        <item name="colorPrimaryDark">@color/kd_hitam</item>
+        <item name="colorAccent">@color/kd_hijau</item>
+        <item name="android:statusBarColor">@color/kd_hitam</item>
+    </style>
+</resources>

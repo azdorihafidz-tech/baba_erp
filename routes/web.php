@@ -132,6 +132,17 @@ Route::get('/unduh/baba-printer-agent.exe', function () {
     ]);
 })->middleware('auth')->name('printer-agent.unduh');
 
+// ===== BABA 6b — unduh APK "BABA Kasir" (tablet/HP kasir). Publik: dipasang sebelum login di tablet. =====
+Route::get('/unduh/baba-kasir.apk', function () {
+    $file = base_path('public/downloads/baba-kasir.apk');
+    abort_unless(is_file($file), 404, 'APK BABA Kasir belum diunggah ke server.');
+
+    return response()->download($file, 'baba-kasir.apk', [
+        'Content-Type'  => 'application/vnd.android.package-archive',
+        'Cache-Control' => 'no-cache',
+    ]);
+})->name('kasir-apk.unduh');
+
 Route::get('/app-info', function (\App\Support\Branding $brand) {
     return response()->json(['erp' => true] + $brand->untukAplikasi());
 })->name('app.info');

@@ -25,6 +25,17 @@ class PrinterAgentTest extends TestCase
         $this->assertSame('MZ', substr((string) file_get_contents(public_path('downloads/baba-printer-agent.exe'), false, null, 0, 2), 0, 2), 'file Windows PE');
     }
 
+    public function test_unduh_apk_kasir_dan_app_info(): void
+    {
+        $file = public_path('downloads/baba-kasir.apk');
+        is_file($file)
+            ? $this->get(route('kasir-apk.unduh'))->assertOk()->assertHeader('content-type', 'application/vnd.android.package-archive')
+            : $this->get(route('kasir-apk.unduh'))->assertNotFound();
+        // APK menolak alamat tanpa /app-info {erp:true}
+        $this->getJson('/app-info')->assertOk()->assertJsonPath('erp', true)->assertJsonStructure(['nama', 'nama_singkat', 'logo_url']);
+        $this->actingAs($this->buatUser('kasir'))->get(route('panduan.show', 'printer-kasir'))->assertOk()->assertSee('baba-kasir.apk')->assertSee('BABA Kasir');
+    }
+
     public function test_komponen_agen_dan_panduan(): void
     {
         $this->actingAs($this->buatUser('owner'));
