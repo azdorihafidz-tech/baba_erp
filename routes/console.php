@@ -26,3 +26,6 @@ Schedule::command('pesanan-online:otomatis')->hourly();
 
 // BABA Tahap 2e: catatan RO belanja online ke aplikasi member (yang dipicu dari aplikasi member + yang gagal) — butuh cron schedule:run
 Schedule::command('ro:kirim')->everyMinute()->withoutOverlapping();
+
+// BABA Tahap 7e: pengingat stok opname akhir bulan (H-3 s.d. hari terakhir; di luar itu perintah langsung berhenti)
+Schedule::command('stok-opname:pengingat')->dailyAt('08:00');

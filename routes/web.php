@@ -262,6 +262,7 @@ Route::middleware(['auth', 'verified', 'cabang'])->group(function () {
         Route::post('/mulai', 'mulai')->name('mulai.store');
         Route::get('/barang', 'barang')->name('barang');
         Route::get('/laporan', 'laporan')->name('laporan');
+        Route::get('/dashboard', \App\Http\Controllers\StokOpnameDashboardController::class)->name('dashboard'); // Tahap 7e
         // Tahap 7d — ganti rugi karyawan (barang hilang)
         Route::get('/ganti-rugi', [\App\Http\Controllers\GantiRugiStokController::class, 'index'])->name('ganti-rugi');
         Route::post('/ganti-rugi/rincian/{rincian}', [\App\Http\Controllers\GantiRugiStokController::class, 'bebankan'])->whereNumber('rincian')->name('ganti-rugi.bebankan');

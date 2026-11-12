@@ -82,6 +82,9 @@ class StokOpnameSeeder extends Seeder
         \App\Services\StokRusakService::kategoriPulih();
         Panduan::updateOrCreate(['slug' => 'stok-rusak'], ['judul' => 'Stok Rusak', 'konten' => self::PANDUAN_RUSAK, 'modul' => 'stok', 'urutan' => 6, 'aktif' => true]);
         Cache::forget('panduan:stok-rusak');
+        // Tahap 7e: dashboard & pengingat akhir bulan
+        Panduan::updateOrCreate(['slug' => 'dashboard-stok-opname'], ['judul' => 'Dashboard Stok Opname', 'konten' => self::PANDUAN_DASHBOARD, 'modul' => 'stok', 'urutan' => 8, 'aktif' => true]);
+        Cache::forget('panduan:dashboard-stok-opname');
         // Tahap 7d: ganti rugi karyawan
         Panduan::updateOrCreate(['slug' => 'ganti-rugi-karyawan'], ['judul' => 'Ganti Rugi Karyawan', 'konten' => self::PANDUAN_GANTI_RUGI, 'modul' => 'stok', 'urutan' => 7, 'aktif' => true]);
         Cache::forget('panduan:ganti-rugi-karyawan');
@@ -159,6 +162,27 @@ Barang yang dicatat **rusak / pecah / bocor** saat stok opname disetujui keluar 
 - Izin **Kelola stok rusak** diatur di Role & Hak Akses (bawaan: Admin Pusat, Admin Gudang, Pemilik Toko Mitra).
 MD;
 
+    public const PANDUAN_DASHBOARD = <<<'MD'
+## Untuk apa?
+Satu layar untuk Owner / penanggung jawab: lokasi mana yang sudah dan **belum** stok opname bulan ini, opname yang menunggu persetujuan, nilai kerugian, akurasi stok, barang yang sering selisih, stok rusak, dan ganti rugi karyawan.
+
+## Isi
+- **Opname per lokasi bulan ini** — Selesai (dengan akurasi), Menunggu persetujuan, Sedang dihitung, atau **Belum opname** (merah). Klik nomor untuk membuka opnamenya.
+- **Menunggu persetujuan Anda** — opname yang bisa Anda setujui.
+- **Nilai kerugian per penyebab** — bulan ini dibanding bulan lalu (merah = naik).
+- **Akurasi stok 6 bulan** — grafik per lokasi; makin tinggi makin rapi pencatatan stoknya.
+- **10 barang paling sering selisih** — barang yang perlu diawasi (rak, CCTV, penghitungan).
+- **Stok rusak tertahan** dan **Ganti rugi karyawan** — ringkasan dan tautan ke menunya.
+
+## Pengingat akhir bulan
+- Mulai **3 hari sebelum akhir bulan**, lokasi yang belum memulai opname bulan itu mendapat pengingat di **lonceng** setiap pagi (jam 08.00) — untuk kepala lokasi (yang boleh mengajukan opname) dan Owner. Toko mitra diingatkan ke pemilik tokonya sendiri.
+- Angka merah di menu **Dashboard Opname** = jumlah lokasi yang belum opname (hanya tampil di masa pengingat).
+- Hosting wajib menjalankan jadwal otomatis (cron `schedule:run` setiap menit) — sama dengan RO otomatis.
+
+## Pilihan lokasi
+Bawaan = semua lokasi milik BABA. Toko mitra tampil bila dipilih. Izin: **Lihat Laporan Kerugian Stok**.
+MD;
+
     public const PANDUAN_GANTI_RUGI = <<<'MD'
 ## Untuk apa?
 Membebankan nilai barang yang **hilang** saat stok opname kepada karyawan yang bertanggung jawab, lalu mencatat pembayarannya — **tunai** atau **potong gaji** (boleh dicicil).
@@ -199,6 +223,7 @@ Mencocokkan **stok fisik** di rak dengan **stok sistem** ERP, menyesuaikan stok 
 7. Penyetuju memeriksa lalu **Setujui** — stok & keuangan langsung disesuaikan dan opname dikunci — atau **Tolak** dengan alasan (opname kembali ke tahap hitung).
 8. Barang yang dicatat **rusak** tidak langsung dibuang: barang itu **ditahan** di menu **Stok Rusak** untuk dipakai lagi, dikembalikan ke pemasok, atau dimusnahkan.
 9. Barang yang **hilang** bisa dibebankan ke karyawan (tunai / potong gaji) — lihat panduan Ganti Rugi Karyawan.
+10. Pantau semua lokasi di **Dashboard Opname**; menjelang akhir bulan lokasi yang belum opname diingatkan lewat lonceng.
 
 ## Pencatatan keuangan
 | Penyebab | Pos di Laba Rugi |

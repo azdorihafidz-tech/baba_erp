@@ -702,7 +702,7 @@
         @can('stok_opname.lihat')
         @php try { $jmlOpnameMenunggu = app(\App\Services\StokOpnameService::class)->jumlahMenunggu(auth()->user()); } catch (\Throwable $e) { $jmlOpnameMenunggu = 0; } @endphp
         <a href="{{ route('stok-opname.index') }}"
-           class="nav-link {{ request()->routeIs('stok-opname.*') && ! request()->routeIs('stok-opname.laporan', 'stok-opname.rusak*', 'stok-opname.ganti-rugi*') ? 'active' : '' }}">
+           class="nav-link {{ request()->routeIs('stok-opname.*') && ! request()->routeIs('stok-opname.laporan', 'stok-opname.rusak*', 'stok-opname.ganti-rugi*', 'stok-opname.dashboard') ? 'active' : '' }}">
             <i class="bi bi-clipboard-check"></i>
             <span>Stok Opname</span>
             @if($jmlOpnameMenunggu > 0)<span class="badge rounded-pill bg-danger ms-auto" title="Menunggu persetujuan Anda">{{ $jmlOpnameMenunggu }}</span>@endif
@@ -721,6 +721,22 @@
             <i class="bi bi-heartbreak"></i>
             <span>Stok Rusak</span>
             @if($jmlRusak > 0)<span class="badge rounded-pill bg-warning text-dark ms-auto" title="Barang rusak masih ditahan">{{ $jmlRusak }}</span>@endif
+        </a>
+        @endcan
+        @can('stok_opname.laporan')
+        @php
+            try {
+                $jmlBelumOpname = \App\Services\DashboardStokOpnameService::masaPengingat()
+                    ? collect(app(\App\Services\DashboardStokOpnameService::class)->statusBulanIni(\App\Services\DashboardStokOpnameService::lokasiBerstok()
+                        ->filter(fn ($c) => auth()->user()->canAccessAllBranches() ? ! \App\Services\StokOpnameService::lokasiMitra($c) : auth()->user()->cabangs->contains('id', $c->id))))->where('status', 'belum')->count()
+                    : 0;
+            } catch (\Throwable $e) { $jmlBelumOpname = 0; }
+        @endphp
+        <a href="{{ route('stok-opname.dashboard') }}"
+           class="nav-link {{ request()->routeIs('stok-opname.dashboard') ? 'active' : '' }}">
+            <i class="bi bi-speedometer2"></i>
+            <span>Dashboard Opname</span>
+            @if($jmlBelumOpname > 0)<span class="badge rounded-pill bg-danger ms-auto" title="Lokasi belum stok opname bulan ini">{{ $jmlBelumOpname }}</span>@endif
         </a>
         @endcan
         @can('stok_opname.ganti_rugi')
