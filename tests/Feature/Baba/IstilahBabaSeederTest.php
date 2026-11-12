@@ -36,4 +36,19 @@ class IstilahBabaSeederTest extends TestCase
         $this->assertSame(1, substr_count(Panduan::where('slug', 'karyawan')->value('konten'), 'Password awal dibuat **acak**'));
         $this->assertSame($p->id, Panduan::where('slug', 'karyawan')->value('id'));
     }
+
+    /** Hasil penggantian tidak boleh memuat kuncinya lagi — kalau memuat, setiap seeder dijalankan isi bertambah (pernah: langkah 8 Penggajian ganda). */
+    public function test_setiap_aturan_ganti_idempoten(): void
+    {
+        foreach (IstilahBabaSeeder::GANTI as $kunci => $hasil) {
+            $this->assertStringNotContainsString($kunci, $hasil, "Aturan tidak idempoten: {$kunci}");
+        }
+        $p = Panduan::updateOrCreate(['slug' => 'penggajian'], ['judul' => 'Cara Pakai Menu Penggajian', 'modul' => 'hr', 'aktif' => true,
+            'konten' => "## Langkah\n7. Klik **ikon printer** untuk cetak slip gaji\n\n## Catatan Penting\n- Isi"]);
+        (new IstilahBabaSeeder())->run();
+        (new IstilahBabaSeeder())->run();
+        $k = Panduan::where('id', $p->id)->value('konten');
+        $this->assertSame(1, substr_count($k, '**Tandai Dibayar** (pengeluaran gaji'));
+        $this->assertStringContainsString("Laba Rugi)\n\n## Catatan Penting", $k);
+    }
 }

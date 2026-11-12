@@ -66,8 +66,9 @@ class IstilahBabaSeeder extends Seeder
         // Tahap 5: gaji tercatat di keuangan saat slip ditandai dibayar
         '- Slip gaji otomatis terhitung masuk sebagai **Pengeluaran Gaji** di modul Keuangan'
             => '- Setelah gaji diserahkan, buka slip lalu pilih kas pembayaran dan tekan **Tandai Dibayar**: gaji dicatat sebagai **Pengeluaran Gaji** (Beban Gaji 6-1101) dan saldo kas berkurang — sekali per slip. Tanpa kas yang dipilih, dipakai Kas Transfer lokasi itu.',
-        '7. Klik **ikon printer** untuk cetak slip gaji'
-            => "7. Klik **ikon printer** untuk cetak slip gaji\n8. Setelah gaji dibayarkan, buka slip → pilih kas → **Tandai Dibayar** (pengeluaran gaji tercatat otomatis di Keuangan & Laba Rugi)",
+        // kunci memuat baris sesudahnya supaya tidak cocok lagi dengan hasilnya (seeder aman dijalankan berulang)
+        "7. Klik **ikon printer** untuk cetak slip gaji\n\n## Catatan Penting"
+            => "7. Klik **ikon printer** untuk cetak slip gaji\n8. Setelah gaji dibayarkan, buka slip → pilih kas → **Tandai Dibayar** (pengeluaran gaji tercatat otomatis di Keuangan & Laba Rugi)\n\n## Catatan Penting",
         '(contoh: "Dimsum & Gyoza")' => '(contoh: "Parfum Isi Ulang & Botol")',
         // tooltip
         'Contoh: Daging Segar, Bumbu, Kemasan Plastik.' => 'Contoh: Bibit Parfum, Alkohol, Kemasan Botol.',
