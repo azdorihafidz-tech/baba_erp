@@ -82,6 +82,12 @@ class StokOpnameSeeder extends Seeder
         \App\Services\StokRusakService::kategoriPulih();
         Panduan::updateOrCreate(['slug' => 'stok-rusak'], ['judul' => 'Stok Rusak', 'konten' => self::PANDUAN_RUSAK, 'modul' => 'stok', 'urutan' => 6, 'aktif' => true]);
         Cache::forget('panduan:stok-rusak');
+        // Tahap 7f: stok opname member (dicatat member sendiri di Toko Saya)
+        $sm = Panduan::where('slug', 'stok-member')->first();
+        if ($sm && ! str_contains((string) $sm->konten, 'Stok opname member')) {
+            $sm->update(['konten' => rtrim((string) $sm->konten) . "\n\n## Stok opname member\n- Member mencatat sendiri barang yang rusak / hilang / dipakai tester dll. di aplikasi member (**Toko Saya › Stok Saya › Stok opname**). Hanya bisa **mengurangi** stok, tanpa persetujuan, tidak mengubah RO, dan tidak masuk keuangan BABA (nilai = modal member).\n- Pantau di tombol **Stok opname member**: rekap per member atau **per tim** (MVO, Regional, Founder, GM, Supplier, Distributor) per periode. Rincian tiap opname tampil di halaman stok member.\n- Stok member yang ternyata **lebih** tidak bisa dicatat member; bila perlu dikoreksi lewat admin.\n"]);
+            Cache::forget('panduan:stok-member');
+        }
         // Tahap 7e: dashboard & pengingat akhir bulan
         Panduan::updateOrCreate(['slug' => 'dashboard-stok-opname'], ['judul' => 'Dashboard Stok Opname', 'konten' => self::PANDUAN_DASHBOARD, 'modul' => 'stok', 'urutan' => 8, 'aktif' => true]);
         Cache::forget('panduan:dashboard-stok-opname');

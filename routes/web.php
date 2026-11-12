@@ -350,6 +350,7 @@ Route::middleware(['auth', 'verified', 'cabang'])->group(function () {
         Route::get('/laporan', [\App\Http\Controllers\LaporanOnlineController::class, 'index'])->name('laporan');
         // Tahap 2c — stok parfum milik member (pantau saja)
         Route::get('/stok-member', [\App\Http\Controllers\StokMemberController::class, 'index'])->name('stok-member.index');
+        Route::get('/stok-member/opname', [\App\Http\Controllers\StokMemberController::class, 'opname'])->name('stok-member.opname'); // Tahap 7f
         Route::get('/stok-member/{memberId}', [\App\Http\Controllers\StokMemberController::class, 'show'])->whereNumber('memberId')->name('stok-member.show');
     });
 

@@ -6,7 +6,8 @@
 @php $rp = fn ($n) => 'Rp ' . number_format((float) $n, 0, ',', '.'); @endphp
 <div class="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-2 mb-3">
     <h5 class="mb-0 fw-bold"><i class="bi bi-people me-2 text-success"></i>Stok Member</h5>
-    <x-panduan-button slug="stok-member" />
+    <div class="d-flex gap-2"><a href="{{ route('toko-online.stok-member.opname') }}" class="btn btn-sm btn-outline-danger" data-uji="opname-member"><i class="bi bi-clipboard-check me-1"></i>Stok opname member</a>
+    <x-panduan-button slug="stok-member" /></div>
 </div>
 
 <div class="alert alert-light border small"><i class="bi bi-info-circle me-1"></i>

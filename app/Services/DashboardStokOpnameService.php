@@ -82,7 +82,17 @@ class DashboardStokOpnameService
         $grDasar = \App\Models\GantiRugiStok::whereIn('cabang_id', $lokasiIds ?: [0]);
         $grBayar = \App\Models\GantiRugiStokBayar::whereIn('ganti_rugi_stok_id', (clone $grDasar)->select('id'))->where('status', 'dibayar');
 
+        // Tahap 7f: opname member bulan ini (member tidak terikat lokasi → hanya untuk akun semua-cabang)
+        $opnameMember = null;
+        if ($u->canAccessAllBranches()) {
+            $om = \App\Models\OpnameMember::with('member')->where('created_at', '>=', now()->startOfMonth())->get();
+            $opnameMember = ['kali' => $om->count(), 'nilai' => round((float) $om->sum('total_nilai'), 2),
+                'teratas' => $om->groupBy('member_id')->map(fn ($g) => ['nama' => $g->first()->member?->nama ?? '#' . $g->first()->member_id,
+                    'no_id' => $g->first()->member?->no_id, 'nilai' => round((float) $g->sum('total_nilai'), 2)])->sortByDesc('nilai')->take(5)->values()->all()];
+        }
+
         return [
+            'opname_member' => $opnameMember,
             'status' => $this->statusBulanIni($lokasi), 'menunggu' => $menunggu, 'bulan' => $bulan->all(), 'akurasi' => $akurasi, 'sering' => $sering,
             'ini' => $ini, 'lalu' => $lalu,
             'rusak' => ['jumlah' => $rusak->count(), 'nilai' => round((float) $rusak->sum(fn ($r) => $r->nilai_sisa), 2), 'tertua' => (int) $rusak->max(fn ($r) => $r->umur_hari)],

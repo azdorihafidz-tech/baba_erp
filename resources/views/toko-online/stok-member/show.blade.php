@@ -26,6 +26,16 @@
 </table>
 </div></div>
 
+@if($opname->isNotEmpty())
+{{-- Tahap 7f: stok opname yang dicatat member sendiri --}}
+<div class="card mb-3" data-uji="opname-member-rinci"><div class="card-header small fw-semibold">Stok opname member</div><div class="card-body p-2 small">
+    @foreach($opname as $o)
+    <div class="border-bottom py-1"><span class="fw-semibold">{{ $o->nomor }}</span> · {{ $o->created_at?->format('d/m/Y H:i') }} · <span class="text-danger">Rp {{ number_format($o->total_nilai, 0, ',', '.') }}</span>
+        <div class="text-muted">{{ $o->item->map(fn ($i) => $i->nama . ' −' . $i->qty . ' (' . $i->penyebab_label . ')')->implode(', ') }}@if($o->catatan) — {{ $o->catatan }}@endif</div></div>
+    @endforeach
+</div></div>
+@endif
+
 <div class="card"><div class="card-header small fw-semibold">Riwayat stok</div><div class="table-responsive">
 <table class="table table-sm align-middle mb-0 small">
     <thead><tr><th>Tanggal</th><th>Barang</th><th>Jenis</th><th class="text-end">Jumlah</th><th class="text-end">Sisa</th><th class="d-none d-md-table-cell">Catatan</th></tr></thead>

@@ -175,6 +175,10 @@ class KasirMemberService
         $beli = PesananOnline::with('item')->where('member_id', $m->member_id)->where('status', 'diterima')->whereBetween('diterima_at', [$a, $b])->get();
         $ringkas = ['penjualan' => (float) $jual->sum('total'), 'modal' => (float) $jual->sum('modal'), 'laba' => (float) ($jual->sum('total') - $jual->sum('modal')),
             'transaksi' => $jual->count(), 'pembelian' => (float) $beli->sum(fn ($p) => (float) $p->total - (float) $p->nilai_retur), 'botol_terjual' => (int) $jual->sum(fn ($p) => $p->item->sum('qty'))];
+        // Tahap 7f: kerugian stok dari stok opname member (modal barang yang berkurang)
+        $opname = \App\Models\OpnameMember::with('item')->where('member_id', $m->member_id)->whereBetween('created_at', [$a, $b])->get();
+        $ringkas['kerugian_stok'] = round((float) $opname->sum('total_nilai'), 2);
+        $ringkas['laba_bersih'] = round($ringkas['laba'] - $ringkas['kerugian_stok'], 2);
         $dasar = ['dari' => $a->toDateString(), 'sampai' => $b->toDateString(), 'ringkas' => $ringkas];
 
         if ($jenis === 'produk') {
@@ -222,6 +226,8 @@ class KasirMemberService
             'keterangan' => $p->item->map(fn ($i) => $i->nama . ' ×' . $i->qty)->implode(', ') . ' · ' . (PenjualanMember::BAYAR[$p->bayar] ?? $p->bayar)])
             ->concat($beli->map(fn ($p) => ['tanggal' => $p->diterima_at->toIso8601String(), 'jenis' => 'beli', 'nomor' => $p->nomor,
                 'nilai' => (float) $p->total - (float) $p->nilai_retur, 'keterangan' => $p->item->map(fn ($i) => $i->nama . ' ×' . ($i->qty - $i->qty_retur))->implode(', ')]))
+            ->concat($opname->map(fn ($o) => ['tanggal' => $o->created_at->toIso8601String(), 'jenis' => 'opname', 'nomor' => $o->nomor, 'nilai' => -(float) $o->total_nilai,
+                'keterangan' => $o->item->map(fn ($i) => $i->nama . ' −' . $i->qty . ' (' . $i->penyebab_label . ')')->implode(', ')]))
             ->sortByDesc('tanggal')->values()->all();
 
         return $dasar + ['jenis' => 'transaksi', 'data' => $data];

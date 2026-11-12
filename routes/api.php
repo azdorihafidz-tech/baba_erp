@@ -42,6 +42,11 @@ Route::prefix('member')->middleware('aplikasi.member')->name('api.member.')->gro
     Route::get('kasir/{nomor}', [KasirController::class, 'show'])->name('kasir.show');
     Route::post('kasir/{nomor}/batal', [KasirController::class, 'batal'])->name('kasir.batal');
     Route::get('laporan', [KasirController::class, 'laporan'])->name('laporan');
+    // Tahap 7f — stok opname member (hanya mengurangi stok)
+    Route::get('stok/opname', [\App\Http\Controllers\Api\Member\OpnameMemberController::class, 'index'])->name('stok.opname.index');
+    Route::post('stok/opname', [\App\Http\Controllers\Api\Member\OpnameMemberController::class, 'store'])->name('stok.opname.store');
+    Route::get('stok/opname/{nomor}', [\App\Http\Controllers\Api\Member\OpnameMemberController::class, 'show'])->name('stok.opname.show');
+    Route::get('stok/opname/{nomor}/foto', [\App\Http\Controllers\Api\Member\OpnameMemberController::class, 'foto'])->name('stok.opname.foto');
     // Tahap 2d — retur
     Route::post('pesanan/{nomor}/retur', [ReturController::class, 'ajukan'])->middleware('toko.buka')->name('retur.ajukan');
     Route::get('retur', [ReturController::class, 'index'])->name('retur.index');

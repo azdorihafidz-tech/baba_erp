@@ -114,6 +114,14 @@
                 <div class="small" data-uji="ringkas-ganti-rugi">Dibebankan {{ $rp($d['ganti_rugi']['dibebankan']) }} · tunai <span class="text-success">{{ $rp($d['ganti_rugi']['tunai']) }}</span> · potong gaji <span class="text-success">{{ $rp($d['ganti_rugi']['potong_gaji']) }}</span> · sisa <span class="text-danger">{{ $rp($d['ganti_rugi']['sisa']) }}</span></div>
                 @can('stok_opname.ganti_rugi')<a href="{{ route('stok-opname.ganti-rugi') }}" class="small">Buka Ganti Rugi Karyawan →</a>@endcan
             </div></div></div>
+            @if($d['opname_member'] !== null)
+            <div class="col-12"><div class="card"><div class="card-body p-3" data-uji="ringkas-opname-member">
+                <div class="fw-semibold mb-1">Stok opname member bulan ini <span class="small text-muted">(pembukuan member)</span></div>
+                <div class="small">{{ $d['opname_member']['kali'] }} opname · nilai <span class="text-danger">{{ $rp($d['opname_member']['nilai']) }}</span></div>
+                @foreach($d['opname_member']['teratas'] as $t)<div class="small text-muted">{{ $t['nama'] }} {{ $t['no_id'] ? '· ' . $t['no_id'] : '' }} — {{ $rp($t['nilai']) }}</div>@endforeach
+                @can('toko_online.kelola')<a href="{{ route('toko-online.stok-member.opname') }}" class="small">Rekap per member / per tim →</a>@endcan
+            </div></div></div>
+            @endif
         </div>
     </div>
 </div>
