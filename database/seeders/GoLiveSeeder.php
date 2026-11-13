@@ -73,6 +73,7 @@ class GoLiveSeeder extends Seeder
             KeuanganBabaSeeder::class,           // BABA Tahap 4 — izin laporan, peran Pemilik Toko Mitra, panduan
             PrinterBabaSeeder::class,           // BABA Tahap 6b — panduan cetak struk tanpa pilih printer
             StokOpnameSeeder::class,            // BABA Tahap 7 — izin, COA, kategori, panduan Stok Opname
+            JadwalOtomatisSeeder::class,          // BABA Tahap 8 — saklar tugas otomatis + panduan
             IstilahBabaSeeder::class,            // BABA Tahap 4–5 — istilah parfum di panduan & tooltip (setelah semua panduan dibuat)
         ]);
 

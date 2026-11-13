@@ -1227,6 +1227,14 @@
             <i class="bi bi-building-gear"></i>
             <span>Pengaturan Umum</span>
         </a>
+        {{-- ERP BABA Tahap 8 — Jadwal Otomatis (titik merah = cron berhenti, hanya di hosting) --}}
+        @php try { $cronMati = app()->environment('production') && ! app(\App\Services\JadwalOtomatisService::class)->cronHidup(); } catch (\Throwable $e) { $cronMati = false; } @endphp
+        <a href="{{ route('pengaturan.jadwal') }}"
+           class="nav-link {{ request()->routeIs('pengaturan.jadwal*') ? 'active' : '' }}">
+            <i class="bi bi-clock-history"></i>
+            <span>Jadwal Otomatis</span>
+            @if($cronMati)<span class="badge rounded-pill bg-danger ms-auto" title="Cron berhenti">!</span>@endif
+        </a>
         @endif
         @can('pengaturan_penggajian')
         <a href="{{ route('pengaturan.penggajian') }}"
@@ -1338,6 +1346,21 @@
 
 <!-- ===== MAIN CONTENT ===== -->
 <main id="main-content">
+
+    {{-- ERP BABA Tahap 8: pita peringatan Owner bila cron / cadangan database bermasalah (hanya di hosting) --}}
+    @if(isset($authUser) && $authUser->role?->value === 'owner' && app()->environment('production') && ! request()->routeIs('pengaturan.jadwal*'))
+    @php
+        try { $jo = app(\App\Services\JadwalOtomatisService::class); $pitaCron = ! $jo->cronHidup(); $pitaCadangan = ! $pitaCron && ! $jo->cadanganSehat(); }
+        catch (\Throwable $e) { $pitaCron = $pitaCadangan = false; }
+    @endphp
+    @if($pitaCron)
+    <div class="alert alert-danger py-2 mb-3" data-uji="pita-cron"><i class="bi bi-exclamation-octagon-fill me-1"></i><strong>Jadwal otomatis berhenti.</strong>
+        RO belanja online & tugas otomatis lain tidak berjalan. <a href="{{ route('pengaturan.jadwal') }}" class="alert-link">Lihat cara memperbaiki →</a></div>
+    @elseif($pitaCadangan)
+    <div class="alert alert-warning py-2 mb-3" data-uji="pita-cadangan"><i class="bi bi-database-exclamation me-1"></i>Cadangan database belum dibuat dalam 26 jam terakhir.
+        <a href="{{ route('pengaturan.jadwal') }}" class="alert-link">Cek Jadwal Otomatis →</a></div>
+    @endif
+    @endif
 
     {{-- Flash Messages --}}
     @if(session('success'))

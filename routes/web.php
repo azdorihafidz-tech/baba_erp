@@ -425,6 +425,12 @@ Route::middleware(['auth', 'verified', 'cabang'])->group(function () {
         Route::get('/pengaturan/umum', [PengaturanUmumController::class, 'edit'])->name('pengaturan.umum');
         Route::put('/pengaturan/umum', [PengaturanUmumController::class, 'update'])->name('pengaturan.umum.update');
 
+        // ERP BABA Tahap 8 — Jadwal Otomatis (status cron, saklar tugas, cadangan database)
+        Route::get('/pengaturan/jadwal-otomatis', [\App\Http\Controllers\JadwalOtomatisController::class, 'index'])->name('pengaturan.jadwal');
+        Route::put('/pengaturan/jadwal-otomatis', [\App\Http\Controllers\JadwalOtomatisController::class, 'simpan'])->name('pengaturan.jadwal.simpan');
+        Route::post('/pengaturan/jadwal-otomatis/{kode}/jalankan', [\App\Http\Controllers\JadwalOtomatisController::class, 'jalankan'])->name('pengaturan.jadwal.jalankan');
+        Route::get('/pengaturan/jadwal-otomatis/cadangan/{nama}', [\App\Http\Controllers\JadwalOtomatisController::class, 'unduhCadangan'])->name('pengaturan.jadwal.cadangan');
+
         // Modal Owner (NeracaSetting) — figure "plug" manual untuk Neraca,
         // Owner-only konsisten dengan Pengaturan Penggajian/Umum di atas.
         Route::put('/laporan/neraca/setting', [LaporanNeracaController::class, 'updateSetting'])

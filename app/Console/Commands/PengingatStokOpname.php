@@ -17,7 +17,7 @@ use Illuminate\Support\Carbon;
  */
 class PengingatStokOpname extends Command
 {
-    protected $signature = 'stok-opname:pengingat {--tanggal= : uji tanggal tertentu (Y-m-d)} {--paksa : kirim walau di luar H-3}';
+    protected $signature = 'stok-opname:pengingat {--tanggal= : uji tanggal tertentu (Y-m-d)} {--paksa : kirim walau di luar masa pengingat}';
 
     protected $description = 'Ingatkan lokasi yang belum stok opname menjelang akhir bulan';
 
@@ -25,7 +25,7 @@ class PengingatStokOpname extends Command
     {
         $hari = $this->option('tanggal') ? Carbon::parse($this->option('tanggal')) : now();
         if (! $this->option('paksa') && ! DashboardStokOpnameService::masaPengingat($hari)) {
-            $this->info('Belum masa pengingat (mulai H-3 akhir bulan).');
+            $this->info('Belum masa pengingat (mulai H-' . \App\Services\JadwalOtomatisService::hariPengingat() . ' akhir bulan).');
 
             return self::SUCCESS;
         }

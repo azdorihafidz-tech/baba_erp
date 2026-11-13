@@ -181,9 +181,9 @@ Satu layar untuk Owner / penanggung jawab: lokasi mana yang sudah dan **belum** 
 - **Stok rusak tertahan** dan **Ganti rugi karyawan** — ringkasan dan tautan ke menunya.
 
 ## Pengingat akhir bulan
-- Mulai **3 hari sebelum akhir bulan**, lokasi yang belum memulai opname bulan itu mendapat pengingat di **lonceng** setiap pagi (jam 08.00) — untuk kepala lokasi (yang boleh mengajukan opname) dan Owner. Toko mitra diingatkan ke pemilik tokonya sendiri.
+- Pengingat **mati bawaan**. Nyalakan di **Pengaturan › Jadwal Otomatis** (Owner): bawaan mulai **H-3** akhir bulan jam **08.00** (keduanya bisa diubah). Lokasi yang belum memulai opname bulan itu mendapat pengingat di **lonceng** — untuk kepala lokasi (yang boleh mengajukan opname) dan Owner. Toko mitra diingatkan ke pemilik tokonya sendiri.
 - Angka merah di menu **Dashboard Opname** = jumlah lokasi yang belum opname (hanya tampil di masa pengingat).
-- Hosting wajib menjalankan jadwal otomatis (cron `schedule:run` setiap menit) — sama dengan RO otomatis.
+- Pengingat butuh cron di hosting — statusnya terlihat di **Pengaturan › Jadwal Otomatis**.
 
 ## Pilihan lokasi
 Bawaan = semua lokasi milik BABA. Toko mitra tampil bila dipilih. Izin: **Lihat Laporan Kerugian Stok**.

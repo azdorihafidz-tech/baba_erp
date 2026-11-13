@@ -106,10 +106,12 @@ class DashboardStokOpnameService
     }
 
     /** Dalam jendela pengingat: mulai H-3 sebelum akhir bulan sampai hari terakhir. */
-    public static function masaPengingat(?Carbon $hari = null): bool
+    /** Masa pengingat: mulai H-n akhir bulan (n = Pengaturan › Jadwal Otomatis, bawaan 3) sampai hari terakhir. */
+    public static function masaPengingat(?Carbon $hari = null, ?int $hariSebelum = null): bool
     {
         $hari ??= now();
+        $hariSebelum ??= JadwalOtomatisService::hariPengingat();
 
-        return $hari->day >= $hari->copy()->endOfMonth()->subDays(3)->day;
+        return $hari->day >= $hari->copy()->endOfMonth()->subDays($hariSebelum)->day;
     }
 }
