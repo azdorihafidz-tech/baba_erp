@@ -139,8 +139,9 @@
         <div class="card mt-3 border-danger">
             <div class="card-body">
                 <h6 class="text-danger fw-bold small"><i class="bi bi-exclamation-triangle me-1"></i>Zona Berbahaya</h6>
+                <p class="small text-muted mb-2">Hanya untuk barang yang <strong>belum pernah dipakai</strong>. Barang yang masih punya stok, dipakai di komposisi/resep, atau ada di PO yang belum selesai akan ditolak — hilangkan centang <strong>Aktif</strong> saja.</p>
                 <button type="submit" form="formHapusBahanBaku" class="btn btn-outline-danger btn-sm w-100"
-                    onclick="return confirm('Hapus {{ addslashes($item->nama_item) }} secara permanen?')">
+                    onclick="return confirm('Hapus {{ addslashes($item->nama_item) }}? Barang masuk Data Terhapus (bisa dipulihkan).')">
                     <i class="bi bi-trash me-1"></i>Hapus Item
                 </button>
             </div>

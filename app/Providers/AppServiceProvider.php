@@ -195,19 +195,11 @@ class AppServiceProvider extends ServiceProvider
         Cache::put($cacheKey, true, now()->endOfDay());
 
         try {
-            $recurrings = RecurringTransaksi::withoutGlobalScopes()
-                ->whereNull('deleted_at')
-                ->jatuhTempo()
-                ->get();
-
-            foreach ($recurrings as $r) {
-                // Per item: 1 gagal (mis. hari ini sudah di-closing) tidak
-                // menghentikan transaksi berulang lainnya.
-                try {
-                    DB::transaction(fn () => $r->generateTransaksi());
-                } catch (\App\Exceptions\PeriodeTerkunciException $e) {
-                    Log::info('Recurring #' . $r->id . ' dilewati: ' . $e->getMessage());
-                }
+            // 4.51 — aturan yang sama dgn cron & tombol Generate: 1 transaksi per periode
+            // jatuh tempo (tanggal_terakhir_generate selalu dicatat → tidak dobel walau cache
+            // dihapus; jatuh tempo yang terlewat ikut dibuat). Tabel belum ada → lewati.
+            if (\Illuminate\Support\Facades\Schema::hasTable('recurring_transaksis')) {
+                RecurringTransaksi::jalankanYangJatuhTempo();
             }
         } catch (\Exception $e) {
             Log::error('Recurring auto-generate failed: ' . $e->getMessage());

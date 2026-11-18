@@ -50,7 +50,7 @@
             <select name="level" class="form-select form-select-sm" onchange="this.form.submit()">
                 <option value="item" @selected($level === 'item')>Per Item</option>
                 <option value="kategori" @selected($level === 'kategori')>Per Kategori</option>
-                <option value="jenis_olahan" @selected($level === 'jenis_olahan')>Per Jenis Menu</option>
+                <option value="jenis_olahan" @selected($level === 'jenis_olahan')>Per Jenis Produk</option>
                 <option value="order" @selected($level === 'order')>Per Order</option>
             </select>
         </div>
@@ -110,7 +110,7 @@
             Breakdown
             @switch($level)
                 @case('kategori') Per Kategori @break
-                @case('jenis_olahan') Per Jenis Menu @break
+                @case('jenis_olahan') Per Jenis Produk @break
                 @case('order') Per Order @break
                 @default Per Item
             @endswitch
@@ -134,7 +134,7 @@
                     @elseif($level === 'kategori')
                         <th>Kategori</th>
                     @elseif($level === 'jenis_olahan')
-                        <th>Jenis Menu</th>
+                        <th>Jenis Produk</th>
                     @else
                         <th>No Order</th>
                         <th>Tanggal</th>

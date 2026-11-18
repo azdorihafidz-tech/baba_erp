@@ -1,16 +1,16 @@
 @extends('layouts.app')
 
-@section('title', 'Master Jenis Menu')
+@section('title', 'Master Jenis Produk')
 
 @section('content')
 <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
     <div>
-        <h4 class="mb-0 fw-bold"><i class="bi bi-list-check me-2 text-primary"></i>Master Jenis Menu</h4>
-        <small class="text-muted">Kelola jenis olahan yang tersedia di dropdown POS &amp; Jasa Giling</small>
+        <h4 class="mb-0 fw-bold"><i class="bi bi-list-check me-2 text-primary"></i>Master Jenis Produk</h4>
+        <small class="text-muted">Pengelompokan produk jual (mis. Parfum Botol, Refill, Aksesori) untuk Laporan Laba Rugi Per Jenis Produk</small>
     </div>
     <div class="d-flex gap-2 align-items-center">
         <a href="{{ route('master.jenis-olahan.create') }}" class="btn btn-primary btn-sm">
-            <i class="bi bi-plus-lg me-1"></i>Tambah Jenis Menu
+            <i class="bi bi-plus-lg me-1"></i>Tambah Jenis Produk
         </a>
         <x-panduan-button slug="jenis-olahan" />
     </div>
@@ -31,7 +31,7 @@
 
 <div class="alert alert-info py-2 small mb-3">
     <i class="bi bi-info-circle me-1"></i>
-    <strong>Catatan:</strong> Menonaktifkan jenis olahan hanya menyembunyikannya dari dropdown POS.
+    <strong>Catatan:</strong> Menonaktifkan jenis produk hanya menyembunyikannya dari pilihan di form Produk Jual; laporan lama tetap memakai namanya.
     Transaksi lama yang menggunakan jenis tersebut <strong>tetap aman dan tidak terpengaruh</strong>.
     Slug tidak bisa diubah setelah dibuat.
 </div>
@@ -39,7 +39,7 @@
 <div class="card mb-3">
     <div class="card-body py-2">
         <form method="GET" class="row g-2 align-items-end">
-            <x-search-box placeholder="Nama jenis olahan..." col="col-12 col-sm-6 col-md-4" />
+            <x-search-box placeholder="Nama jenis produk..." col="col-12 col-sm-6 col-md-4" />
             <div class="col-auto">
                 <button type="submit" class="btn btn-sm btn-outline-primary"><i class="bi bi-search"></i></button>
             </div>
@@ -58,7 +58,7 @@
             <thead class="table-light">
                 <tr>
                     <th style="width:40px">#</th>
-                    <th>Nama Jenis Menu</th>
+                    <th>Nama Jenis Produk</th>
                     <th class="d-none d-md-table-cell">Slug (value di DB)</th>
                     <th class="text-center" style="min-width:90px">Status</th>
                     <th class="text-center" style="min-width:120px">Aksi</th>
@@ -87,7 +87,7 @@
                             </a>
                             <form action="{{ route('master.jenis-olahan.destroy', $jenis) }}" method="POST"
                                   class="d-inline"
-                                  onsubmit="return confirm('{{ $jenis->is_active ? 'Nonaktifkan' : 'Aktifkan kembali' }} jenis olahan \"{{ $jenis->nama }}\"?')">
+                                  onsubmit="return confirm('{{ $jenis->is_active ? 'Nonaktifkan' : 'Aktifkan kembali' }} jenis produk \"{{ $jenis->nama }}\"?')">
                                 @csrf @method('DELETE')
                                 <button type="submit"
                                         class="btn btn-xs btn-sm {{ $jenis->is_active ? 'btn-outline-warning' : 'btn-outline-success' }}"
@@ -102,7 +102,7 @@
                 <tr>
                     <td colspan="5" class="text-center text-muted py-5">
                         <i class="bi bi-list-check display-6 d-block mb-2 opacity-25"></i>
-                        Belum ada jenis olahan.
+                        Belum ada jenis produk.
                         <a href="{{ route('master.jenis-olahan.create') }}">Tambah sekarang</a>.
                     </td>
                 </tr>

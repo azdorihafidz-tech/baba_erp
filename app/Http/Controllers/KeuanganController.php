@@ -876,7 +876,7 @@ class KeuanganController extends Controller
 
         // Filter cabang
         if (!$user->canAccessAllBranches()) {
-            $cabangId = $activeCabangId ?? $user->defaultCabangId();
+            $cabangId = \App\Support\CabangAktif::untukLaporan(); // 4.51 — sesi basi tidak bisa menunjuk cabang lain
             $query->where('cabang_id', $cabangId);
             $cabangNama = Cabang::find($cabangId)?->nama_cabang ?? '-';
         } elseif ($activeCabangId) {
@@ -888,6 +888,12 @@ class KeuanganController extends Controller
         } else {
             $cabangNama = 'Semua Cabang';
         }
+
+        // 4.51 — transfer internal & saldo awal bukan pemasukan/pengeluaran usaha (info terpisah)
+        $internal = \App\Support\TransaksiInternal::hanya(clone $query)->get(['tipe', 'jumlah']);
+        $internalMasuk  = (float) $internal->filter(fn ($t) => $t->tipe === \App\Enums\TipeTransaksiKeuangan::Pemasukan)->sum('jumlah');
+        $internalKeluar = (float) $internal->filter(fn ($t) => $t->tipe === \App\Enums\TipeTransaksiKeuangan::Pengeluaran)->sum('jumlah');
+        \App\Support\TransaksiInternal::kecualikan($query);
 
         $transaksis = $query->with('kategoriDinamis')->get();
 
@@ -911,7 +917,7 @@ class KeuanganController extends Controller
 
         return view('keuangan.laporan', compact(
             'pemasukan', 'pengeluaran', 'totalPemasukan', 'totalPengeluaran',
-            'labaRugi', 'periode', 'cabangNama', 'cabangs'
+            'labaRugi', 'periode', 'cabangNama', 'cabangs', 'internalMasuk', 'internalKeluar'
         ));
     }
 }

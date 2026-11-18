@@ -113,8 +113,11 @@ class LaporanLabaRugiService
      */
     public function getBreakdownPerJenisOlahan(Carbon $start, Carbon $end, ?int $cabangId, ?string $sort = null, ?string $dir = null)
     {
-        $expr = "COALESCE(order_items.jenis_olahan, '-')";
+        // 4.50 — order baru menyimpan nama Jenis Menu (snapshot); order lama memakai Jenis Menu
+        // produknya saat ini (Produk Jual → Jenis Menu). Tanpa keduanya → '-'.
+        $expr = "COALESCE(order_items.jenis_olahan, jo_produk.nama, '-')";
         $rows = $this->baseQuery($start, $end, $cabangId)
+            ->leftJoin('jenis_olahans as jo_produk', 'jo_produk.id', '=', 'items.jenis_olahan_id')
             ->select(
                 DB::raw($expr . ' as jenis_olahan'),
                 DB::raw('SUM(order_items.total_harga) as total_omzet'),

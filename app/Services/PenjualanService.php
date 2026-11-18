@@ -377,7 +377,8 @@ class PenjualanService
                 'harga_satuan'    => $hargaSatuan,
                 'total_harga'     => $subtotal,
                 'berat_daging'    => $row['berat_daging'] ?? null,
-                'jenis_olahan'    => $row['jenis_olahan'] ?? null,
+                // 4.50 — nama Jenis Menu produk disalin (snapshot) supaya Laba Rugi "Per Jenis Menu" terisi
+                'jenis_olahan'    => $row['jenis_olahan'] ?? ($masterItem?->jenis_olahan_id ? $masterItem->jenisOlahan?->nama : null),
                 'catatan'         => $row['catatan'] ?? null,
             ];
         }
@@ -408,7 +409,7 @@ class PenjualanService
             }
 
             // Tahap 2.5 D'mentai — 'produk_jadi' -> 'produk_jual' (1:1 rename).
-            if (! in_array($masterItem->tipe, ['bahan_baku', 'kemasan', 'produk_jual'], true)) continue;
+            if (! $masterItem->dipotongStokSendiri()) continue; // 4.50 — aturan bersama (Item::dipotongStokSendiri)
 
             $stokTersedia = $this->stokService->getStok($masterItem->id, $cabangId);
             if ($stokTersedia < $qty) {
@@ -498,7 +499,7 @@ class PenjualanService
         }
 
         // Tahap 2.5 D'mentai — 'produk_jadi' -> 'produk_jual' (1:1 rename).
-        if (in_array($item->tipe, ['bahan_baku', 'kemasan', 'produk_jual'], true)) {
+        if ($item->dipotongStokSendiri()) { // 4.50 — termasuk Produk Tambahan dan Tambahan Gratis ber-Lacak Stok
             $hpp = $this->stokService->keluar(
                 $item->id,
                 $cabangId,

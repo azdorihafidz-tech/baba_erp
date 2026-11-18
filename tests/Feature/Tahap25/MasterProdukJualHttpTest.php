@@ -222,7 +222,7 @@ class MasterProdukJualHttpTest extends TestCase
         Storage::disk('public')->assertMissing($fotoPathLama);
     }
 
-    public function test_destroy_soft_delete_dan_hapus_foto(): void
+    public function test_destroy_soft_delete_dan_foto_tetap_ada(): void
     {
         $admin = $this->buatUser('admin_pusat');
         $foto = UploadedFile::fake()->image('produk.jpg', 100, 100);
@@ -236,7 +236,8 @@ class MasterProdukJualHttpTest extends TestCase
 
         $response->assertRedirect(route('master.produk-jual.index'));
         $this->assertSoftDeleted('items', ['id' => $item->id]);
-        Storage::disk('public')->assertMissing($item->foto);
+        // 4.50 — foto TIDAK dihapus lagi (produk bisa dipulihkan lengkap dengan fotonya)
+        Storage::disk("public")->assertExists($item->foto);
     }
 
     public function test_kalkulator_resep_ajax_mengembalikan_breakdown_benar(): void

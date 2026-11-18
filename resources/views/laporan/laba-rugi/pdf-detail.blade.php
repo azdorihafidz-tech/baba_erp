@@ -21,7 +21,7 @@
         @elseif($level === 'kategori')
         <tr><th>Kategori</th><th class="num">Omzet</th><th class="num">HPP</th><th class="num">Untung</th><th class="num">Margin</th></tr>
         @elseif($level === 'jenis_olahan')
-        <tr><th>Jenis Menu</th><th class="num">Omzet</th><th class="num">HPP</th><th class="num">Untung</th><th class="num">Margin</th></tr>
+        <tr><th>Jenis Produk</th><th class="num">Omzet</th><th class="num">HPP</th><th class="num">Untung</th><th class="num">Margin</th></tr>
         @else
         <tr><th>Item</th><th>Tipe</th><th class="num">Qty</th><th>Satuan</th><th class="num">Omzet</th><th class="num">HPP</th><th class="num">Untung</th><th class="num">Margin</th></tr>
         @endif

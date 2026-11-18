@@ -74,6 +74,14 @@
     </div>
 </div>
 
+{{-- 4.51 — transfer internal & saldo awal tidak dihitung --}}
+<div class="alert alert-light border small py-2 mb-4">
+    <i class="bi bi-info-circle me-1"></i>
+    Tidak dihitung (uang hanya pindah tempat): transfer antar kas, setoran kasir, transfer dana, dan saldo awal kas —
+    masuk Rp {{ number_format($internalMasuk ?? 0, 0, ',', '.') }}, keluar Rp {{ number_format($internalKeluar ?? 0, 0, ',', '.') }}.
+    Angka di atas berbasis kas (belum memakai HPP); untuk laba dengan modal barang pakai Laba Rugi Formal atau Closing.
+</div>
+
 <div class="row g-3 mb-4">
     <!-- Grafik -->
     <div class="col-12 col-lg-7">

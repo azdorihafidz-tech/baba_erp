@@ -163,6 +163,7 @@
             @php
                 $potonganRows = [
                     ['Potongan Alpha (' . $penggajian->jumlah_alpha . ' hari)', $penggajian->potongan_absensi],
+                    ['Potongan Telat (' . (int) $penggajian->menit_telat_total . ' menit)', $penggajian->potongan_telat],
                     ['BPJS Kesehatan', $penggajian->bpjs_kesehatan],
                     ['BPJS TK (JHT)', $penggajian->bpjs_ketenagakerjaan],
                     ['PPh21', $penggajian->pph21],

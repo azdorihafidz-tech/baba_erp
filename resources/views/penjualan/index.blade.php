@@ -5,7 +5,11 @@
 @section('content')
 @php $isOwner = auth()->user()->aksesPenuh(); @endphp
 <div class="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-2 mb-3">
-    <h5 class="mb-0 fw-bold"><i class="bi bi-cart3 me-2 text-success"></i>Riwayat Penjualan</h5>
+    <div>
+        <h5 class="mb-0 fw-bold"><i class="bi bi-cart3 me-2 text-success"></i>Riwayat Penjualan</h5>
+        <small class="text-muted"><i class="bi bi-shop me-1"></i>{{ $cabangId ? ($namaCabangAktif ?? 'Cabang') : 'Semua Cabang' }}
+            — ganti lewat pilihan cabang di pojok kanan atas</small>
+    </div>
     <div class="d-flex gap-2 align-items-center">
         <a href="{{ route('penjualan.pos') }}" class="btn btn-success btn-sm">
             <i class="bi bi-plus-circle me-1"></i>Buka POS
@@ -52,6 +56,7 @@
                 <thead>
                     <tr>
                         <th>Nomor Order</th>
+                        @unless($cabangId)<th>Cabang</th>@endunless
                         <th>Tanggal</th>
                         <th>Jam</th>
                         <th>Pelanggan</th>
@@ -70,6 +75,7 @@
                                 {{ $o->nomor_order }}
                             </a>
                         </td>
+                        @unless($cabangId)<td class="small">{{ $o->cabang?->nama_cabang ?? '-' }}</td>@endunless
                         <td>{{ $o->tanggal_order->format('d/m/Y') }}</td>
                         <td><span class="text-muted small">{{ $o->created_at?->format('H:i') ?? '-' }}</span></td>
                         <td>{{ $o->nama_pelanggan ?? $o->pelanggan?->nama_pelanggan ?? '-' }}</td>
@@ -127,7 +133,7 @@
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="9" class="text-center text-muted py-4">
+                        <td colspan="{{ $cabangId ? 9 : 10 }}" class="text-center text-muted py-4">
                             <i class="bi bi-inbox fs-3 d-block mb-2"></i>Tidak ada data penjualan
                         </td>
                     </tr>
@@ -148,7 +154,7 @@
                     <a href="{{ route('penjualan.show', $o) }}" class="fw-semibold text-decoration-none">
                         {{ $o->nomor_order }}
                     </a>
-                    <div class="text-muted small">{{ $o->tanggal_order->format('d/m/Y') }} &bull; {{ $o->created_at?->format('H:i') ?? '-' }}</div>
+                    <div class="text-muted small">{{ $o->tanggal_order->format('d/m/Y') }} &bull; {{ $o->created_at?->format('H:i') ?? '-' }}@unless($cabangId) &bull; {{ $o->cabang?->nama_cabang ?? '-' }}@endunless</div>
                 </div>
                 <span class="badge {{ $o->status->badgeClass() }}">{{ $o->status->label() }}</span>
             </div>

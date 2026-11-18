@@ -250,7 +250,14 @@
                 Karyawan ini sudah memiliki akun login: <strong>{{ $karyawan->user->email }}</strong>
                 (Role: {{ $karyawan->user->role->label() }})
             </div>
+            @php
+                // 4.50 — akun Owner & user tanpa centangan Edit User: email/role hanya ditampilkan (tidak dikirim).
+                // Dulu pilihan role tidak memuat "Owner" → menyimpan karyawan milik Owner diam-diam menurunkan role-nya.
+                $akunOwner = $karyawan->user->role === \App\Enums\RoleUser::Owner;
+                $bolehUbahAkun = ! $akunOwner && auth()->user()->can('user.edit');
+            @endphp
             <div class="row g-3">
+                @if($bolehUbahAkun)
                 <div class="col-12 col-md-6">
                     <label class="form-label">Email Login</label>
                     <input type="email" name="user_email" class="form-control @error('user_email') is-invalid @enderror"
@@ -271,14 +278,21 @@
                     </select>
                     @error('user_role')<div class="invalid-feedback">{{ $message }}</div>@enderror
                 </div>
+                @else
+                <div class="col-12 small text-muted">
+                    <i class="bi bi-lock-fill me-1"></i>
+                    {{ $akunOwner ? 'Ini akun Owner — email/role diubah lewat Pengaturan → Manajemen User oleh Owner.' : 'Mengubah email/role akun login butuh centangan Edit User (lewat Pengaturan → Manajemen User).' }}
+                </div>
+                @endif
             </div>
             @else
             {{-- Karyawan belum punya akun — tampilkan opsi buat akun --}}
             <div class="form-check form-switch mb-3">
                 <input class="form-check-input" type="checkbox" id="buat_akun_login" name="buat_akun_login"
-                    value="1" {{ old('buat_akun_login') ? 'checked' : '' }} onchange="toggleAkunSection()">
+                    value="1" {{ old('buat_akun_login') ? 'checked' : '' }} onchange="toggleAkunSection()" @cannot('user.create') disabled @endcannot>
                 <label class="form-check-label" for="buat_akun_login">
                     <strong>Buat akun login untuk karyawan ini</strong>
+                    @cannot('user.create')<span class="small text-muted d-block">Butuh centangan Tambah User.</span>@endcannot
                 </label>
                 <small class="d-block text-muted">Karyawan dapat login ke sistem untuk akses fitur absensi, penilaian, dan slip gaji.</small>
             </div>

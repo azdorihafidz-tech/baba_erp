@@ -28,7 +28,7 @@
 <div class="text-center mb-3">
     <h4 class="fw-bold mb-0">LAPORAN LABA RUGI</h4>
     <div class="text-muted">{{ $dari->format('d/m/Y') }} — {{ $sampai->format('d/m/Y') }}</div>
-    <div class="text-muted small">{{ $cabangTerpilih?->nama_cabang ?? 'Semua Cabang' }} — Breakdown: {{ ['item'=>'Per Item','kategori'=>'Per Kategori','jenis_olahan'=>'Per Jenis Menu','order'=>'Per Order'][$level] ?? 'Per Item' }}</div>
+    <div class="text-muted small">{{ $cabangTerpilih?->nama_cabang ?? 'Semua Cabang' }} — Breakdown: {{ ['item'=>'Per Item','kategori'=>'Per Kategori','jenis_olahan'=>'Per Jenis Produk','order'=>'Per Order'][$level] ?? 'Per Item' }}</div>
 </div>
 
 <table class="table table-bordered table-sm mb-4">
@@ -56,7 +56,7 @@
     </tbody>
 </table>
 
-<h6 class="fw-bold">Breakdown {{ ['item'=>'Per Item','kategori'=>'Per Kategori','jenis_olahan'=>'Per Jenis Menu','order'=>'Per Order'][$level] ?? 'Per Item' }}</h6>
+<h6 class="fw-bold">Breakdown {{ ['item'=>'Per Item','kategori'=>'Per Kategori','jenis_olahan'=>'Per Jenis Produk','order'=>'Per Order'][$level] ?? 'Per Item' }}</h6>
 <table class="table table-bordered table-sm mb-3">
     <thead class="table-light">
         <tr>
@@ -65,7 +65,7 @@
             @elseif($level === 'kategori')
                 <th>Kategori</th>
             @elseif($level === 'jenis_olahan')
-                <th>Jenis Menu</th>
+                <th>Jenis Produk</th>
             @else
                 <th>No Order</th><th>Tanggal</th><th>Pelanggan</th><th>Kasir</th>
             @endif

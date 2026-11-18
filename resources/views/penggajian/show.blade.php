@@ -138,6 +138,7 @@
                         @php
                             $potonganItems = [
                                 'Potongan Alpha (' . $penggajian->jumlah_alpha . ' hari)' => $penggajian->potongan_absensi,
+                                'Potongan Telat (' . (int) $penggajian->menit_telat_total . ' menit)' => $penggajian->potongan_telat,
                                 'BPJS Kesehatan'           => $penggajian->bpjs_kesehatan,
                                 'BPJS Ketenagakerjaan JHT' => $penggajian->bpjs_ketenagakerjaan,
                                 'PPh21'                    => $penggajian->pph21,
@@ -266,6 +267,12 @@
                     <tr>
                         <td class="px-3 py-2 text-muted">Pot. Absensi</td>
                         <td class="px-3 py-2 text-end text-danger">- Rp {{ number_format($penggajian->potongan_absensi, 0, ',', '.') }}</td>
+                    </tr>
+                    @endif
+                    @if((float)$penggajian->potongan_telat > 0)
+                    <tr>
+                        <td class="px-3 py-2 text-muted">Pot. Telat ({{ (int) $penggajian->menit_telat_total }} menit)</td>
+                        <td class="px-3 py-2 text-end text-danger">- Rp {{ number_format($penggajian->potongan_telat, 0, ',', '.') }}</td>
                     </tr>
                     @endif
                     <tr class="table-primary">

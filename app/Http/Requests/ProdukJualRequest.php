@@ -49,6 +49,7 @@ class ProdukJualRequest extends FormRequest
                 ->where(fn ($q) => $cabangId ? $q->where(fn ($w) => $w->where('cabang_id', $cabangId)->orWhereNull('cabang_id')) : $q)],
             'nama_item'        => ['required', 'string', 'max:150'],
             'item_category_id' => ['nullable', 'exists:item_categories,id'],
+            'jenis_olahan_id'  => ['nullable', 'exists:jenis_olahans,id'], // 4.50
             'tipe'             => ['required', Rule::in(['produk_jual', 'produk_tambahan'])],
             'satuan'           => ['required', 'string', 'max:20'],
             'harga_jual'       => ['required', 'numeric', 'min:0'],

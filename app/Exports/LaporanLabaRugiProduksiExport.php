@@ -84,7 +84,7 @@ class LaporanLabaRugiProduksiExport implements FromArray, WithStyles
         return match ($this->level) {
             'order' => ['No Order', 'Tanggal', 'Pelanggan', 'Kasir', 'Omzet', 'HPP', 'Untung', 'Margin'],
             'kategori' => ['Kategori', 'Omzet', 'HPP', 'Untung', 'Margin'],
-            'jenis_olahan' => ['Jenis Menu', 'Omzet', 'HPP', 'Untung', 'Margin'],
+            'jenis_olahan' => ['Jenis Produk', 'Omzet', 'HPP', 'Untung', 'Margin'],
             default => ['Item', 'Tipe', 'Qty', 'Satuan', 'Omzet', 'HPP', 'Untung', 'Margin'],
         };
     }

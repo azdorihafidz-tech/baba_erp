@@ -222,9 +222,10 @@
         <div class="card-body">
             <div class="form-check form-switch mb-3">
                 <input class="form-check-input" type="checkbox" id="buat_akun_login" name="buat_akun_login"
-                    value="1" {{ old('buat_akun_login') ? 'checked' : '' }} onchange="toggleAkunSection()">
+                    value="1" {{ old('buat_akun_login') ? 'checked' : '' }} onchange="toggleAkunSection()" @cannot('user.create') disabled @endcannot>
                 <label class="form-check-label" for="buat_akun_login">
                     <strong>Buat akun login untuk karyawan ini</strong> <x-tooltip key="karyawan.buat_akun_login" />
+                    @cannot('user.create')<span class="small text-muted d-block">Butuh centangan Tambah User.</span>@endcannot
                 </label>
                 <small class="d-block text-muted">Karyawan dapat login ke sistem untuk akses fitur absensi, penilaian, dan slip gaji.</small>
             </div>

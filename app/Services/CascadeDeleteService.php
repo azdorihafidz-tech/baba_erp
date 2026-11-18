@@ -52,8 +52,41 @@ class CascadeDeleteService
      *
      * Return: array jumlah record yang ter-soft-delete per entitas.
      */
+    /**
+     * 4.51 — Cabang yang sudah beroperasi TIDAK boleh dihapus: dulu ikut menyembunyikan semua
+     * order, PO, stok, transaksi kas, absensi & gaji cabang itu (hilang dari semua laporan).
+     * Cabang seperti itu cukup dinonaktifkan. Hapus hanya untuk cabang yang salah dibuat/kosong.
+     *
+     * @return string[] alasan (kosong = boleh dihapus)
+     */
+    public function alasanCabangTidakBolehDihapus(Cabang $cabang): array
+    {
+        $id = $cabang->id;
+        $cek = [
+            'order'              => DB::table('orders')->where('cabang_id', $id)->whereNull('deleted_at')->count(),
+            'purchase order'     => DB::table('purchase_orders')->where('cabang_id', $id)->whereNull('deleted_at')->count(),
+            'transaksi kas'      => DB::table('transaksi_keuangans')->where('cabang_id', $id)->whereNull('deleted_at')->count(),
+            'pergerakan stok'    => DB::table('stock_movements')->where(fn ($q) => $q->where('lokasi_asal_id', $id)->orWhere('lokasi_tujuan_id', $id))->count(),
+            'absensi'            => DB::table('absensis')->where('cabang_id', $id)->whereNull('deleted_at')->count(),
+            'slip gaji'          => DB::table('penggajians')->where('cabang_id', $id)->whereNull('deleted_at')->count(),
+        ];
+        $alasan = [];
+        foreach ($cek as $nama => $n) {
+            if ($n > 0) {
+                $alasan[] = "{$n} {$nama}";
+            }
+        }
+
+        return $alasan;
+    }
+
     public function deleteCabangCascade(Cabang $cabang): array
     {
+        if ($alasan = $this->alasanCabangTidakBolehDihapus($cabang)) {
+            throw new \Exception('cabang ini sudah punya ' . implode(', ', $alasan)
+                . '. Cabang yang sudah beroperasi tidak dihapus supaya laporan tetap utuh — pakai tombol Nonaktifkan.');
+        }
+
         return DB::transaction(function () use ($cabang) {
             $id  = $cabang->id;
             $now = Carbon::now();
@@ -237,24 +270,78 @@ class CascadeDeleteService
 
     public function previewItemDelete(Item $item): array
     {
-        $id = $item->id;
+        // 4.50 — riwayat order & PO tidak ikut terhapus; hanya baris stok (bernilai 0)
         return [
-            'order_item'           => DB::table('order_items')->where('item_id', $id)->whereNull('deleted_at')->count(),
-            'purchase_order_item'  => DB::table('purchase_order_items')->where('item_id', $id)->whereNull('deleted_at')->count(),
-            'stok'                 => DB::table('stocks')->where('item_id', $id)->whereNull('deleted_at')->count(),
+            'stok' => DB::table('stocks')->where('item_id', $item->id)->whereNull('deleted_at')->count(),
         ];
+    }
+
+    /**
+     * 4.50 — Alasan barang TIDAK boleh dihapus (kosong = boleh). Barang yang masih dipakai
+     * harus dinonaktifkan, bukan dihapus: menghapusnya menyembunyikan stok bernilai,
+     * merusak komposisi produk/Bumbu Pusat/Resep Produksi, atau baris PO yang belum selesai.
+     *
+     * @return string[]
+     */
+    public function alasanItemTidakBolehDihapus(Item $item): array
+    {
+        $id = $item->id;
+        $alasan = [];
+
+        $stok = (float) DB::table('stocks')->where('item_id', $id)->whereNull('deleted_at')->sum('qty');
+        $batch = (float) DB::table('stock_batches')->where('item_id', $id)->whereNull('deleted_at')->where('qty_sisa', '>', 0)->sum('qty_sisa');
+        if (abs($stok) > 0.0005 || $batch > 0.0005) {
+            $alasan[] = 'masih ada stok ' . rtrim(rtrim(number_format(max($stok, $batch), 3, ',', '.'), '0'), ',') . ' ' . $item->satuan;
+        }
+
+        $dipakai = DB::table('resep_bumbu_items as ri')
+            ->join('resep_bumbu as rb', 'rb.id', '=', 'ri.resep_bumbu_id')
+            ->leftJoin('items as p', 'p.id', '=', 'rb.item_id')
+            ->where('ri.item_id', $id)
+            ->where(fn ($q) => $q->whereNull('rb.item_id')->orWhereNull('p.deleted_at'))
+            ->selectRaw("COALESCE(p.nama_item, CONCAT('Bumbu Pusat ', rb.nama)) as nama")
+            ->distinct()->limit(5)->pluck('nama');
+        if ($dipakai->isNotEmpty()) {
+            $alasan[] = 'dipakai di komposisi: ' . $dipakai->implode(', ');
+        }
+
+        if (\Illuminate\Support\Facades\Schema::hasTable('resep_produksi')) {
+            $resepProduksi = DB::table('resep_produksi')->where('item_id', $id)->exists()
+                || DB::table('resep_produksi_items')->where('item_id', $id)->exists();
+            if ($resepProduksi) {
+                $alasan[] = 'dipakai di Resep Produksi';
+            }
+        }
+
+        $poAktif = DB::table('purchase_order_items as poi')
+            ->join('purchase_orders as po', 'po.id', '=', 'poi.purchase_order_id')
+            ->where('poi.item_id', $id)->whereNull('poi.deleted_at')->whereNull('po.deleted_at')
+            ->whereIn('po.status', ['draft', 'disetujui', 'dikirim_supplier'])
+            ->distinct()->pluck('po.nomor_po');
+        if ($poAktif->isNotEmpty()) {
+            $alasan[] = 'ada di PO yang belum selesai: ' . $poAktif->implode(', ');
+        }
+
+        return $alasan;
     }
 
     public function deleteItemCascade(Item $item): array
     {
+        $alasan = $this->alasanItemTidakBolehDihapus($item);
+        if ($alasan) {
+            throw new \Exception("Barang {$item->nama_item} tidak bisa dihapus karena " . implode('; ', $alasan)
+                . '. Hilangkan centang Aktif saja supaya barang tidak dipakai lagi — riwayatnya tetap aman.');
+        }
+
+        // 4.50 — riwayat (baris order & PO) TIDAK ikut disembunyikan lagi; dulu ikut soft-delete
+        // sehingga Laporan Produk & detail PO kehilangan barisnya. Yang dihapus: barang + baris
+        // stoknya (sudah 0, dipastikan oleh pengecekan di atas).
         return DB::transaction(function () use ($item) {
             $id  = $item->id;
             $now = Carbon::now();
             $deleted = [];
 
-            $deleted['order_item']          = DB::table('order_items')->where('item_id', $id)->whereNull('deleted_at')->update(['deleted_at' => $now]);
-            $deleted['purchase_order_item'] = DB::table('purchase_order_items')->where('item_id', $id)->whereNull('deleted_at')->update(['deleted_at' => $now]);
-            $deleted['stok']                = DB::table('stocks')->where('item_id', $id)->whereNull('deleted_at')->update(['deleted_at' => $now]);
+            $deleted['stok'] = DB::table('stocks')->where('item_id', $id)->whereNull('deleted_at')->update(['deleted_at' => $now]);
 
             $item->delete();
             $deleted['item'] = 1;
@@ -272,13 +359,18 @@ class CascadeDeleteService
         return DB::transaction(function () use ($item) {
             $id       = $item->id;
             $restored = [];
+            $waktuHapus = DB::table('items')->where('id', $id)->value('deleted_at');
 
             DB::table('items')->where('id', $id)->update(['deleted_at' => null]);
             $restored['item'] = 1;
 
-            $restored['order_item']          = DB::table('order_items')->where('item_id', $id)->whereNotNull('deleted_at')->update(['deleted_at' => null]);
-            $restored['purchase_order_item'] = DB::table('purchase_order_items')->where('item_id', $id)->whereNotNull('deleted_at')->update(['deleted_at' => null]);
-            $restored['stok']                = DB::table('stocks')->where('item_id', $id)->whereNotNull('deleted_at')->update(['deleted_at' => null]);
+            // 4.50 — hanya baris yang dulu ikut terhapus BERSAMA barang ini (deleted_at sama persis),
+            // termasuk baris order & PO dari cara hapus lama. Order/PO yang dihapus sendiri tidak ikut kembali.
+            if ($waktuHapus) {
+                $restored['order_item']          = DB::table('order_items')->where('item_id', $id)->where('deleted_at', $waktuHapus)->update(['deleted_at' => null]);
+                $restored['purchase_order_item'] = DB::table('purchase_order_items')->where('item_id', $id)->where('deleted_at', $waktuHapus)->update(['deleted_at' => null]);
+                $restored['stok']                = DB::table('stocks')->where('item_id', $id)->where('deleted_at', $waktuHapus)->update(['deleted_at' => null]);
+            }
 
             activity('CascadeItemRestore')->causedBy(auth()->user())
                 ->withProperties(['item_id' => $id, 'nama_item' => $item->nama_item, 'restored_counts' => array_filter($restored, fn($v) => $v > 0)])
@@ -409,33 +501,22 @@ class CascadeDeleteService
 
     // ══════════════════════════════════════════════════════════════════════════
     // PELANGGAN
-    // Child dengan deleted_at: orders, order_items (via orders)
+    // 4.50 — hanya pelanggan yang dihapus; order-nya tetap (catatan penjualan).
     // ══════════════════════════════════════════════════════════════════════════
 
     public function previewPelangganDelete(Pelanggan $pelanggan): array
     {
-        $id = $pelanggan->id;
-        $orderIds = DB::table('orders')->where('pelanggan_id', $id)->whereNull('deleted_at')->pluck('id');
-        return [
-            'order'      => $orderIds->count(),
-            'order_item' => DB::table('order_items')->whereIn('order_id', $orderIds)->whereNull('deleted_at')->count(),
-        ];
+        return [];
     }
 
     public function deletePelangganCascade(Pelanggan $pelanggan): array
     {
+        // 4.50 — ORDER PELANGGAN TIDAK IKUT DIHAPUS lagi. Dulu semua order + order_items
+        // pelanggan ikut soft-delete: omzet hilang dari laporan padahal uang & stoknya tetap
+        // tercatat di kas/batch. Order adalah catatan penjualan, bukan milik data pelanggan.
         return DB::transaction(function () use ($pelanggan) {
             $id  = $pelanggan->id;
-            $now = Carbon::now();
             $deleted = [];
-
-            $orderIds = DB::table('orders')->where('pelanggan_id', $id)->whereNull('deleted_at')->pluck('id');
-
-            if ($orderIds->isNotEmpty()) {
-                $deleted['order_item'] = DB::table('order_items')->whereIn('order_id', $orderIds)->whereNull('deleted_at')->update(['deleted_at' => $now]);
-            }
-
-            $deleted['order'] = DB::table('orders')->where('pelanggan_id', $id)->whereNull('deleted_at')->update(['deleted_at' => $now]);
 
             $pelanggan->delete();
             $deleted['pelanggan'] = 1;
@@ -453,16 +534,23 @@ class CascadeDeleteService
         return DB::transaction(function () use ($pelanggan) {
             $id       = $pelanggan->id;
             $restored = [];
+            $waktuHapus = DB::table('pelanggans')->where('id', $id)->value('deleted_at');
 
             DB::table('pelanggans')->where('id', $id)->update(['deleted_at' => null]);
             $restored['pelanggan'] = 1;
 
-            $orderIds = DB::table('orders')->where('pelanggan_id', $id)->whereNotNull('deleted_at')->pluck('id');
+            // 4.50 — hanya order yang DULU ikut terhapus bersama pelanggan ini (cara lama:
+            // deleted_at sama persis). Order yang dihapus sendiri lewat Riwayat Order tidak ikut kembali.
+            $orderIds = $waktuHapus
+                ? DB::table('orders')->where('pelanggan_id', $id)->where('deleted_at', $waktuHapus)->pluck('id')
+                : collect();
 
-            $restored['order'] = DB::table('orders')->where('pelanggan_id', $id)->whereNotNull('deleted_at')->update(['deleted_at' => null]);
+            $restored['order'] = $orderIds->isNotEmpty()
+                ? DB::table('orders')->whereIn('id', $orderIds)->update(['deleted_at' => null])
+                : 0;
 
             if ($orderIds->isNotEmpty()) {
-                $restored['order_item'] = DB::table('order_items')->whereIn('order_id', $orderIds)->whereNotNull('deleted_at')->update(['deleted_at' => null]);
+                $restored['order_item'] = DB::table('order_items')->whereIn('order_id', $orderIds)->where('deleted_at', $waktuHapus)->update(['deleted_at' => null]);
             }
 
             activity('CascadePelangganRestore')->causedBy(auth()->user())

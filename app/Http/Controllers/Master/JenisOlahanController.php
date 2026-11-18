@@ -51,7 +51,7 @@ class JenisOlahanController extends Controller
         JenisOlahan::create($data);
 
         return redirect()->route('master.jenis-olahan.index')
-            ->with('success', "Jenis Menu \"{$data['nama']}\" berhasil ditambahkan.");
+            ->with('success', "Jenis Produk \"{$data['nama']}\" berhasil ditambahkan.");
     }
 
     public function edit(JenisOlahan $jenisOlahan)
@@ -72,7 +72,7 @@ class JenisOlahanController extends Controller
         ]);
 
         return redirect()->route('master.jenis-olahan.index')
-            ->with('success', "Jenis Menu \"{$jenisOlahan->nama}\" berhasil diperbarui.");
+            ->with('success', "Jenis Produk \"{$jenisOlahan->nama}\" berhasil diperbarui.");
     }
 
     public function destroy(JenisOlahan $jenisOlahan)
@@ -83,6 +83,6 @@ class JenisOlahanController extends Controller
         $jenisOlahan->update(['is_active' => false]);
 
         return redirect()->route('master.jenis-olahan.index')
-            ->with('success', "Jenis Menu \"{$jenisOlahan->nama}\" dinonaktifkan (data transaksi lama tetap aman).");
+            ->with('success', "Jenis Produk \"{$jenisOlahan->nama}\" dinonaktifkan (data transaksi lama tetap aman).");
     }
 }

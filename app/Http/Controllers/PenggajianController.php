@@ -80,15 +80,17 @@ class PenggajianController extends Controller
             'potongan_lain' => $request->potongan_lain ?? 0,
         ];
 
-        $count = $this->penggajianService->bulkGenerate(
+        $hasil = $this->penggajianService->bulkGenerate(
             (int) $request->cabang_id,
             $request->periode,
             $override
         );
+        $count = $hasil['dibuat'];
 
         // Notifikasi ke semua karyawan di cabang tersebut
         $penggajians = Penggajian::where('cabang_id', $request->cabang_id)
             ->where('periode', $request->periode)
+            ->where('status', 'draft') // slip terkunci tidak dihitung ulang → tidak diberi tahu lagi
             ->with('karyawan.user')
             ->get();
         foreach ($penggajians as $pg) {
@@ -101,7 +103,8 @@ class PenggajianController extends Controller
         }
 
         return redirect()->route('penggajian.index', ['periode' => $request->periode])
-            ->with('success', "Berhasil generate {$count} slip gaji untuk periode {$request->periode}.");
+            ->with('success', "Berhasil generate {$count} slip gaji untuk periode {$request->periode}."
+                . ($hasil['dilewati'] ? ' Dilewati (sudah disetujui/dibayar): ' . implode(', ', $hasil['dilewati']) . '.' : ''));
     }
 
     /**
@@ -242,7 +245,11 @@ class PenggajianController extends Controller
             $override['potongan_absensi'] = (int) str_replace('.', '', $request->input('potongan_absensi', '0'));
         }
 
-        $penggajian = $this->penggajianService->generate($karyawan, $request->periode, $override);
+        try {
+            $penggajian = $this->penggajianService->generate($karyawan, $request->periode, $override);
+        } catch (\RuntimeException $e) {
+            return back()->withInput()->with('error', $e->getMessage());
+        }
 
         if ($request->filled('catatan')) {
             $penggajian->update(['catatan' => $request->catatan]);
@@ -320,7 +327,11 @@ class PenggajianController extends Controller
             $override['potongan_absensi'] = (int) str_replace('.', '', $request->input('potongan_absensi', '0'));
         }
 
-        $this->penggajianService->generate($karyawan, $request->periode, $override);
+        try {
+            $this->penggajianService->generate($karyawan, $request->periode, $override);
+        } catch (\RuntimeException $e) {
+            return back()->withInput()->with('error', $e->getMessage());
+        }
 
         if ($request->filled('catatan')) {
             $penggajian->refresh()->update(['catatan' => $request->catatan]);

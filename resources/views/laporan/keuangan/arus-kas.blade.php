@@ -70,6 +70,15 @@
     </div>
 </div>
 
+{{-- 4.51 — rincian uang yang hanya berpindah tempat --}}
+<div class="alert alert-light border small py-2 mb-4">
+    <i class="bi bi-info-circle me-1"></i>
+    Termasuk transfer internal (antar kas, setoran kasir, transfer dana) &amp; saldo awal kas:
+    masuk Rp {{ number_format($internalMasuk ?? 0, 0, ',', '.') }}, keluar Rp {{ number_format($internalKeluar ?? 0, 0, ',', '.') }}.
+    Tanpa itu: masuk Rp {{ number_format($totalMasuk - ($internalMasuk ?? 0), 0, ',', '.') }},
+    keluar Rp {{ number_format($totalKeluar - ($internalKeluar ?? 0), 0, ',', '.') }}.
+</div>
+
 <!-- Tabel Transaksi -->
 <div class="card">
     <div class="card-header d-flex align-items-center justify-content-between py-3 px-4">

@@ -7,45 +7,23 @@ use App\Notifications\RecurringNotification;
 use App\Services\NotificationService;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class GenerateRecurringTransaksiCommand extends Command
 {
     protected $signature = 'recurring:generate {--date= : Tanggal spesifik (Y-m-d)}';
-    protected $description = 'Generate recurring transactions yang jatuh tempo hari ini';
+    protected $description = 'Generate recurring transactions yang jatuh tempo (termasuk yang terlewat), 1x per periode';
 
     public function handle(): int
     {
-        $date      = $this->option('date') ? Carbon::parse($this->option('date')) : Carbon::today();
-        $templates = RecurringTransaksi::withoutGlobalScopes()
-            ->whereNull('deleted_at')
-            ->jatuhTempo($date)
-            ->get();
+        $date = $this->option('date') ? Carbon::parse($this->option('date')) : Carbon::today();
 
-        if ($templates->isEmpty()) {
-            $this->info('Tidak ada recurring yang jatuh tempo pada ' . $date->format('d/m/Y'));
-            return Command::SUCCESS;
-        }
+        // 4.51 — aturan bersama (RecurringTransaksi::jalankanYangJatuhTempo): frekuensi
+        // harian/mingguan/bulanan/tahunan, 1 transaksi per periode, tidak dobel dgn pemicu on-request.
+        $generated = RecurringTransaksi::jalankanYangJatuhTempo($date);
 
-        $generated = 0;
-        foreach ($templates as $template) {
-            try {
-                DB::transaction(function () use ($template, $date) {
-                    $template->generateTransaksi($date);
-                    $template->update(['tanggal_terakhir_generate' => $date->toDateString()]);
-                });
-                $this->info("  ✓ {$template->nama_template} (Rp " . number_format($template->jumlah, 0, ',', '.') . ')');
-                $generated++;
-            } catch (\Exception $e) {
-                $this->error("  ✗ {$template->nama_template}: " . $e->getMessage());
-                Log::error("Recurring generate gagal [{$template->id}]: " . $e->getMessage());
-            }
-        }
+        $this->info("Selesai. {$generated} transaksi berulang dibuat untuk " . $date->format('d/m/Y') . '.');
 
-        $this->info("Selesai. {$generated}/{$templates->count()} transaksi di-generate.");
-
-        // Notifikasi ke Owner/Admin Pusat jika ada draft yang berhasil dibuat
         if ($generated > 0) {
             try {
                 NotificationService::send(

@@ -229,6 +229,11 @@ class DashboardController extends Controller
         $gudangPusat = Cabang::gudangPusat()->first();
         $gudangId = $gudangPusat?->id;
 
+        // 4.50 — hanya user yang boleh mengakses gudang ini (dulu bisa dibuka lewat alamat langsung)
+        if (! $gudangId || ! \App\Support\CabangAktif::bolehAkses($gudangId)) {
+            return redirect()->route('dashboard.cabang');
+        }
+
         // Total stok gudang
         $totalStokGudang = Stock::where('lokasi_id', $gudangId)->count();
 
@@ -275,6 +280,12 @@ class DashboardController extends Controller
 
     public function pusat(Request $request)
     {
+        // 4.50 — data SEMUA cabang: hanya role yang boleh melihat semua cabang (sidebar sudah
+        // begitu, tapi dulu alamat /dashboard/pusat bisa dibuka langsung oleh user mana pun).
+        if (! auth()->user()->canAccessAllBranches()) {
+            return redirect()->route('dashboard');
+        }
+
         $bulanIni = Carbon::now()->format('Y-m');
         $today = Carbon::today();
 

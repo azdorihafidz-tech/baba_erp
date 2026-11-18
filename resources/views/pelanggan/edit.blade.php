@@ -61,6 +61,15 @@
                     <label class="form-label fw-semibold">Catatan</label>
                     <textarea name="catatan" class="form-control" rows="2">{{ old('catatan', $pelanggan->catatan) }}</textarea>
                 </div>
+
+                <div class="col-12">
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" role="switch" id="pelangganAktif" name="is_active" value="1"
+                            {{ old('is_active', $pelanggan->is_active) ? 'checked' : '' }}>
+                        <label class="form-check-label fw-semibold" for="pelangganAktif">Aktif</label>
+                    </div>
+                    <div class="form-text">Matikan kalau pelanggan sudah tidak dipakai: tidak muncul lagi di pilihan pelanggan POS, tetapi riwayat belanja, laporan, dan progres loyalty tetap ada.</div>
+                </div>
             </div>
 
             <div class="d-flex gap-2 mt-4">

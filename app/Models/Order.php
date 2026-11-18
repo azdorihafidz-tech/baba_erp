@@ -210,7 +210,8 @@ class Order extends Model
 
     public function pelanggan()
     {
-        return $this->belongsTo(Pelanggan::class);
+        // 4.50 — pelanggan yang dihapus tetap terbaca di order lamanya
+        return $this->belongsTo(Pelanggan::class)->withTrashed();
     }
 
     public function kas()

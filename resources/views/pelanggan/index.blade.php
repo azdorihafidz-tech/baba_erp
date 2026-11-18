@@ -56,7 +56,7 @@
                     @forelse($pelanggans as $p)
                     <tr>
                         <td><code class="text-success">{{ $p->kode_pelanggan }}</code></td>
-                        <td class="fw-semibold">{{ $p->nama_pelanggan }}</td>
+                        <td class="fw-semibold">{{ $p->nama_pelanggan }}@unless($p->is_active) <span class="badge bg-secondary-subtle text-secondary ms-1">Nonaktif</span>@endunless</td>
                         <td>{{ $p->telepon ?? '-' }}</td>
                         <td>{{ $p->kota ?? '-' }}</td>
                         <td class="text-center">
@@ -101,7 +101,7 @@
         <div class="card-body">
             <div class="d-flex justify-content-between align-items-start mb-2">
                 <div>
-                    <div class="fw-semibold">{{ $p->nama_pelanggan }}</div>
+                    <div class="fw-semibold">{{ $p->nama_pelanggan }}@unless($p->is_active) <span class="badge bg-secondary-subtle text-secondary ms-1">Nonaktif</span>@endunless</div>
                     <code class="text-success small">{{ $p->kode_pelanggan }}</code>
                 </div>
                 <span class="badge bg-light text-dark">{{ $p->orders_count }} order</span>

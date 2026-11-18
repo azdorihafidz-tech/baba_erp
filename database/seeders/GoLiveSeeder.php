@@ -68,6 +68,8 @@ class GoLiveSeeder extends Seeder
             PosUbahHargaSeeder::class,          // 4.47 — izin Ubah Harga Jual di POS + panduan POS
             WarnaAplikasiSeeder::class,         // 4.48 — panduan & tooltip Warna Aplikasi (setelah IdentitasUsahaSeeder)
             Porting449Seeder::class,           // 4.49 — porting coffeeshop: label gambar, POS HP, produksi, kiriman, retur (setelah LabelProdukSeeder)
+            Perbaikan450Seeder::class,        // Porting Dimsum 4.50 — panduan & tooltip perbaikan temuan audit Kamus Menu
+            Perbaikan451Seeder::class,        // Porting Dimsum 4.51 — panduan & tooltip perbaikan temuan B–G
             ProduksiParfumSeeder::class,         // BABA Tahap 1 — konsentrasi parfum, panduan Produksi Parfum (setelah Porting449Seeder)
             TokoOnlineSeeder::class,             // BABA Tahap 2 — izin, panduan, tooltip Toko Online
             KeuanganBabaSeeder::class,           // BABA Tahap 4 — izin laporan, peran Pemilik Toko Mitra, panduan

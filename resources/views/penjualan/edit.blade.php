@@ -12,13 +12,15 @@
     </a>
 </div>
 
-@if($order->status === \App\Enums\StatusOrder::Selesai)
+@php $bolehUbahUang = $order->status === \App\Enums\StatusOrder::Pending; @endphp
+@if(! $bolehUbahUang)
 <div class="alert alert-warning d-flex gap-2 mb-3" style="font-size:.85rem">
     <i class="bi bi-exclamation-triangle-fill flex-shrink-0 mt-1"></i>
     <span>
-        <strong>Order ini sudah Selesai.</strong>
-        Perubahan akan tercatat di audit log dan akan mempengaruhi jumlah di Transaksi Keuangan terkait.
-        Pastikan perubahan sudah dikonfirmasi sebelum disimpan.
+        <strong>Order ini sudah {{ $order->status->label() }}.</strong>
+        Hanya nama/telepon pelanggan dan catatan yang bisa diubah. <strong>Diskon dan metode bayar dikunci</strong>
+        karena uangnya sudah tercatat di kas dan Setoran Kasir — kalau salah, <strong>Batalkan</strong> order ini
+        lalu buat order baru yang benar (lalu Tandai Pengganti).
     </span>
 </div>
 @endif
@@ -127,11 +129,12 @@
                             @error('telepon_pelanggan')<div class="invalid-feedback">{{ $message }}</div>@enderror
                         </div>
 
+                        @if($bolehUbahUang)
                         <div class="col-12 col-sm-6">
                             <label class="form-label fw-semibold">Tipe Pembayaran <span class="text-danger">*</span></label>
                             <select name="tipe_pembayaran" class="form-select @error('tipe_pembayaran') is-invalid @enderror" required>
                                 @foreach($tipesPembayaran as $tp)
-                                <option value="{{ $tp->value }}" @selected(old('tipe_pembayaran', $order->tipe_pembayaran->value) === $tp->value)>
+                                <option value="{{ $tp->value }}" @selected(old('tipe_pembayaran', $order->tipe_pembayaran?->value) === $tp->value)>
                                     {{ $tp->label() }}
                                 </option>
                                 @endforeach
@@ -142,6 +145,16 @@
                         <div class="col-12 col-sm-6">
                             <x-input-rupiah name="diskon" label="Diskon" :value="old('diskon', (int) $order->diskon)" id="diskonInput" />
                         </div>
+                        @else
+                        <div class="col-12 col-sm-6">
+                            <label class="form-label fw-semibold">Tipe Pembayaran <i class="bi bi-lock-fill text-muted" title="Dikunci — order sudah dibayar"></i></label>
+                            <input type="text" class="form-control" value="{{ $order->tipe_pembayaran?->label() ?? '—' }}" disabled>
+                        </div>
+                        <div class="col-12 col-sm-6">
+                            <label class="form-label fw-semibold">Diskon <i class="bi bi-lock-fill text-muted" title="Dikunci — order sudah dibayar"></i></label>
+                            <input type="text" class="form-control" value="Rp {{ number_format($order->diskon, 0, ',', '.') }}" disabled>
+                        </div>
+                        @endif
 
                         <div class="col-12">
                             <label class="form-label fw-semibold">Catatan</label>
@@ -165,7 +178,9 @@
                                     <span>Total Bayar:</span>
                                     <span class="text-success" id="previewTotalBayar">Rp {{ number_format($order->total_bayar, 0, ',', '.') }}</span>
                                 </div>
-                                <div class="text-muted small mt-1">* TransaksiKeuangan akan diperbarui otomatis setelah simpan.</div>
+                                @if((float) $order->service_charge > 0 || (float) $order->take_away_fee > 0)
+                                <div class="text-muted small mt-1">Termasuk service charge &amp; take away fee (service charge ikut menyesuaikan diskon).</div>
+                                @endif
                             </div>
                         </div>
 
@@ -189,11 +204,19 @@
 <script>
 (function () {
     const totalHarga = {{ (float) $order->total_harga }};
+    @php
+        $subtotalLamaJs = max(0, (float) $order->total_harga - (float) $order->diskon);
+        $persenScJs = $subtotalLamaJs > 0 ? (float) $order->service_charge / $subtotalLamaJs : (float) ($order->cabang?->service_charge_persen ?? 0) / 100;
+    @endphp
+    const persenSc   = {{ $persenScJs }};
+    const takeAway   = {{ (float) $order->take_away_fee }};
+    const hidden     = document.querySelector('input[type="hidden"][name="diskon"]');
+    if (!hidden) return; // order sudah dibayar — diskon dikunci, pratinjau tetap
 
     function updatePreview() {
-        const hidden = document.querySelector('input[type="hidden"][name="diskon"]');
-        const diskon = parseFloat(hidden?.value || 0) || 0;
-        const total  = Math.max(0, totalHarga - diskon);
+        const diskon = Math.min(totalHarga, parseFloat(hidden?.value || 0) || 0);
+        const sub    = Math.max(0, totalHarga - diskon);
+        const total  = Math.round(sub + sub * persenSc + takeAway);
 
         document.getElementById('previewDiskon').textContent =
             '- Rp ' + diskon.toLocaleString('id-ID');

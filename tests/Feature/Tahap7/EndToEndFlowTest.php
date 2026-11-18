@@ -70,7 +70,8 @@ class EndToEndFlowTest extends TestCase
         $itemTakeaway = Item::where('kode_item', 'PJ-MNM-001')->firstOrFail();
         $itemFrozen = Item::where('kode_item', 'PJ-FRZ-001')->firstOrFail();
         $itemTambahan = Item::where('kode_item', 'TB-TMB-001')->firstOrFail(); // garpu gratis
-        foreach ([$itemDineIn, $itemTakeaway, $itemFrozen] as $it) {
+        // 4.50 — Tambahan Gratis ber-Lacak Stok (garpu) sekarang ikut dipotong stoknya, jadi perlu stok juga
+        foreach ([$itemDineIn, $itemTakeaway, $itemFrozen, $itemTambahan] as $it) {
             $this->stokAmanUntukItem($it, $cabang->id);
         }
         $kas = Kas::where('cabang_id', $cabang->id)->where('default_untuk', 'tunai')->first();

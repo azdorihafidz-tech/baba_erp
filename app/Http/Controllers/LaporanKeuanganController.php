@@ -31,10 +31,11 @@ class LaporanKeuanganController extends Controller
             $sampai = Carbon::parse(session('labarugi_sampai', Carbon::now()->toDateString()))->endOfDay();
         }
 
-        $cabangId = $request->cabang_id;
-        if (!$cabangId && !$user->canAccessAllBranches()) {
-            $cabangId = session('active_cabang_id') ?? $user->defaultCabangId();
-        }
+        // 4.51 — role tanpa akses semua cabang SELALU dibatasi ke cabangnya (dulu ?cabang_id=X bisa
+        // membuka cabang lain). Role semua cabang: pilihan cabang di filter, atau cabang aktif header.
+        $cabangId = $user->canAccessAllBranches()
+            ? ($request->cabang_id ?: session('active_cabang_id'))
+            : \App\Support\CabangAktif::untukLaporan();
 
         // Pemasukan grouped by kategori
         // Catatan: withoutGlobalScope(CabangScope::class) — BUKAN withoutGlobalScopes()
@@ -44,6 +45,15 @@ class LaporanKeuanganController extends Controller
             ->where('tipe', TipeTransaksiKeuangan::Pemasukan)
             ->whereBetween('tanggal_transaksi', [$dari->toDateString(), $sampai->toDateString()]);
         \App\Support\KeuanganBaba::saring($pemasukanQuery, 'cabang_id', $cabangId); // Tahap 4: tanpa toko mitra
+        // Porting Dimsum 4.51 — transfer internal (antar kas, setoran kasir, transfer dana) & saldo awal kas
+        // bukan pemasukan/pengeluaran usaha → tidak dihitung (ditampilkan terpisah sebagai info).
+        $internalQuery = TransaksiKeuangan::withoutGlobalScope(CabangScope::class)
+            ->whereBetween('tanggal_transaksi', [$dari->toDateString(), $sampai->toDateString()]);
+        \App\Support\KeuanganBaba::saring($internalQuery, 'cabang_id', $cabangId);
+        \App\Support\TransaksiInternal::hanya($internalQuery);
+        $internalMasuk  = (float) (clone $internalQuery)->where('tipe', TipeTransaksiKeuangan::Pemasukan)->sum('jumlah');
+        $internalKeluar = (float) (clone $internalQuery)->where('tipe', TipeTransaksiKeuangan::Pengeluaran)->sum('jumlah');
+        \App\Support\TransaksiInternal::kecualikan($pemasukanQuery);
 
         $pemasukan = $pemasukanQuery->selectRaw('kategori, SUM(jumlah) as total')
             ->groupBy('kategori')
@@ -55,6 +65,7 @@ class LaporanKeuanganController extends Controller
             ->where('tipe', TipeTransaksiKeuangan::Pengeluaran)
             ->whereBetween('tanggal_transaksi', [$dari->toDateString(), $sampai->toDateString()]);
         \App\Support\KeuanganBaba::saring($pengeluaranQuery, 'cabang_id', $cabangId);
+        \App\Support\TransaksiInternal::kecualikan($pengeluaranQuery);
 
         $pengeluaran = $pengeluaranQuery->selectRaw('kategori, SUM(jumlah) as total')
             ->groupBy('kategori')
@@ -74,12 +85,14 @@ class LaporanKeuanganController extends Controller
                 ->where('tipe', TipeTransaksiKeuangan::Pemasukan)
                 ->where('tanggal_transaksi', 'like', $bln . '%');
             \App\Support\KeuanganBaba::saring($qMasuk, 'cabang_id', $cabangId);
+            \App\Support\TransaksiInternal::kecualikan($qMasuk);
             $grafikPemasukan[] = (float) $qMasuk->sum('jumlah');
 
             $qKeluar = TransaksiKeuangan::withoutGlobalScope(CabangScope::class)
                 ->where('tipe', TipeTransaksiKeuangan::Pengeluaran)
                 ->where('tanggal_transaksi', 'like', $bln . '%');
             \App\Support\KeuanganBaba::saring($qKeluar, 'cabang_id', $cabangId);
+            \App\Support\TransaksiInternal::kecualikan($qKeluar);
             $grafikPengeluaran[] = (float) $qKeluar->sum('jumlah');
         }
 
@@ -96,7 +109,8 @@ class LaporanKeuanganController extends Controller
         return view('laporan.keuangan.laba-rugi', compact(
             'pemasukan', 'pengeluaran', 'totalPemasukan', 'totalPengeluaran', 'labaRugi',
             'cabangs', 'cabangId', 'dari', 'sampai',
-            'grafikLabels', 'grafikPemasukan', 'grafikPengeluaran'
+            'grafikLabels', 'grafikPemasukan', 'grafikPengeluaran',
+            'internalMasuk', 'internalKeluar'
         ));
     }
 
@@ -109,10 +123,11 @@ class LaporanKeuanganController extends Controller
 
         $dari = $request->dari ? Carbon::parse($request->dari) : Carbon::now()->startOfMonth();
         $sampai = $request->sampai ? Carbon::parse($request->sampai) : Carbon::now();
-        $cabangId = $request->cabang_id;
-        if (!$cabangId && !$user->canAccessAllBranches()) {
-            $cabangId = session('active_cabang_id') ?? $user->defaultCabangId();
-        }
+        // 4.51 — role tanpa akses semua cabang SELALU dibatasi ke cabangnya (dulu ?cabang_id=X bisa
+        // membuka cabang lain). Role semua cabang: pilihan cabang di filter, atau cabang aktif header.
+        $cabangId = $user->canAccessAllBranches()
+            ? ($request->cabang_id ?: session('active_cabang_id'))
+            : \App\Support\CabangAktif::untukLaporan();
 
         $query = TransaksiKeuangan::withoutGlobalScope(CabangScope::class)
             ->with(['cabang', 'kategoriDinamis'])
@@ -122,6 +137,11 @@ class LaporanKeuanganController extends Controller
         $totalMasuk = (clone $query)->where('tipe', TipeTransaksiKeuangan::Pemasukan)->sum('jumlah');
         $totalKeluar = (clone $query)->where('tipe', TipeTransaksiKeuangan::Pengeluaran)->sum('jumlah');
         $saldo = $totalMasuk - $totalKeluar;
+        // 4.51 — arus kas tetap menghitung SEMUA uang yang bergerak (itu memang arus kas), tapi
+        // bagian transfer internal & saldo awal ditampilkan terpisah supaya tidak dikira omzet/biaya.
+        $internal = \App\Support\TransaksiInternal::hanya(clone $query);
+        $internalMasuk  = (float) (clone $internal)->where('tipe', TipeTransaksiKeuangan::Pemasukan)->sum('jumlah');
+        $internalKeluar = (float) (clone $internal)->where('tipe', TipeTransaksiKeuangan::Pengeluaran)->sum('jumlah');
 
         if ($request->export === 'excel') {
             $transaksis = $query->orderBy('tanggal_transaksi')->get();
@@ -134,7 +154,7 @@ class LaporanKeuanganController extends Controller
 
         return view('laporan.keuangan.arus-kas', compact(
             'transaksis', 'cabangs', 'cabangId', 'dari', 'sampai',
-            'totalMasuk', 'totalKeluar', 'saldo'
+            'totalMasuk', 'totalKeluar', 'saldo', 'internalMasuk', 'internalKeluar'
         ));
     }
 

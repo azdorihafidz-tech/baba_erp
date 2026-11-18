@@ -21,21 +21,29 @@ class OrderObserver
     }
 
     /**
-     * Sinkronisasi total_bayar dan keterangan ke TransaksiKeuangan terkait.
-     * Menggunakan query builder (mass update) untuk mencegah loop balik dari TransaksiKeuanganObserver.
+     * Sinkronisasi KETERANGAN Transaksi Keuangan order ini (nomor order / nama pelanggan).
+     *
+     * 4.50 — JUMLAH sengaja TIDAK disentuh lagi. Dulu jumlah setiap baris ditimpa
+     * total_bayar lewat withoutEvents: saldo kas & order_payments (Setoran Kasir) tidak
+     * ikut berubah, dan pada split payment setiap baris jadi bernilai total penuh.
+     * Total order yang sudah dibayar sekarang tidak bisa diubah (PenjualanController::update);
+     * order Pending belum punya transaksi keuangan.
      */
     public function updated(Order $order): void
     {
-        if (!$order->wasChanged(['total_bayar', 'nomor_order', 'nama_pelanggan'])) return;
+        if (!$order->wasChanged(['nomor_order', 'nama_pelanggan'])) return;
 
-        TransaksiKeuangan::withoutEvents(function () use ($order) {
+        $dasar = 'Order ' . $order->nomor_order . ($order->nama_pelanggan ? ' — ' . $order->nama_pelanggan : '');
+
+        TransaksiKeuangan::withoutEvents(function () use ($order, $dasar) {
             TransaksiKeuangan::where('referensi_type', 'order')
                 ->where('referensi_id', $order->id)
-                ->update([
-                    'jumlah'     => $order->total_bayar,
-                    'keterangan' => 'Order ' . $order->nomor_order
-                        . ($order->nama_pelanggan ? ' — ' . $order->nama_pelanggan : ''),
-                ]);
+                ->get(['id', 'keterangan'])
+                ->each(function ($t) use ($dasar) {
+                    // split payment: pertahankan akhiran metode, mis. " (Tunai)"
+                    $akhiran = preg_match('/ \((Tunai|Transfer Bank|Transfer|QRIS)\)$/u', (string) $t->keterangan, $m) ? $m[0] : '';
+                    TransaksiKeuangan::whereKey($t->id)->update(['keterangan' => $dasar . $akhiran]);
+                });
         });
     }
 

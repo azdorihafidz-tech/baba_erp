@@ -18,7 +18,7 @@ class Penggajian extends Model
         'gaji_pokok', 'tunjangan', 'tunjangan_jabatan', 'tunjangan_makan',
         'tunjangan_transport', 'tunjangan_kehadiran',
         'uang_lembur', 'bonus', 'insentif', 'thr', 'komisi',
-        'potongan_absensi', 'potongan_lain', 'potongan_ganti_rugi',
+        'potongan_absensi', 'potongan_telat', 'potongan_lain', 'potongan_ganti_rugi',
         'bpjs_kesehatan', 'bpjs_ketenagakerjaan', 'pph21', 'kasbon',
         'total_gaji', 'status', 'tanggal_bayar',
         'tarif_lembur_per_jam_override', 'potongan_alpa_per_hari_override',
@@ -38,6 +38,7 @@ class Penggajian extends Model
         'uang_lembur',
         'bonus',
         'potongan_absensi',
+        'menit_telat_total', 'potongan_telat', // porting Dimsum 4.51
         'potongan_lain',
         'potongan_ganti_rugi', // BABA Tahap 7d: cicilan ganti rugi barang hilang (GantiRugiStokService)
         'bpjs_kesehatan',
@@ -79,6 +80,8 @@ class Penggajian extends Model
             'thr'                  => 'decimal:2',
             'komisi'               => 'decimal:2',
             'potongan_absensi'     => 'decimal:2',
+            'potongan_telat'       => 'decimal:2',
+            'menit_telat_total'    => 'integer',
             'bpjs_kesehatan'       => 'decimal:2',
             'bpjs_ketenagakerjaan' => 'decimal:2',
             'pph21'                => 'decimal:2',

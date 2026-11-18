@@ -63,7 +63,19 @@
                 </td>
                 <td class="text-end fw-semibold small">Rp {{ number_format($r->jumlah,0,',','.') }}</td>
                 <td class="small d-none d-md-table-cell">{{ ucfirst($r->frekuensi) }}</td>
-                <td class="text-center small">Tgl {{ $r->tanggal_jatuh_tempo }}</td>
+                @php
+                    // 4.51 — jatuh tempo sesuai frekuensi + tanggal berikutnya
+                    $nextDue = $r->is_active ? $r->jatuhTempoBerikutnya() : null;
+                    $hariNama = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+                    if ($r->frekuensi === 'harian') {
+                        $jtLabel = 'Setiap hari';
+                    } elseif ($r->frekuensi === 'mingguan') {
+                        $jtLabel = 'Setiap ' . $hariNama[\Carbon\Carbon::parse($r->tanggal_mulai)->dayOfWeek];
+                    } else {
+                        $jtLabel = 'Tgl ' . $r->tanggal_jatuh_tempo;
+                    }
+                @endphp
+                <td class="text-center small">{{ $jtLabel }}@if($nextDue)<div class="text-muted">berikutnya {{ $nextDue->format('d/m/Y') }}</div>@endif</td>
                 <td class="small d-none d-lg-table-cell text-muted">
                     {{ $r->tanggal_terakhir_generate ? \Carbon\Carbon::parse($r->tanggal_terakhir_generate)->format('d/m/Y') : '-' }}
                 </td>

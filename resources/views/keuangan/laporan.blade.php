@@ -6,7 +6,7 @@
 <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-4">
     <div>
         <h5 class="fw-bold mb-0"><i class="bi bi-file-earmark-text me-2 text-primary"></i>Laporan Keuangan</h5>
-        <p class="text-muted mb-0 small">Laporan Laba / Rugi — {{ $cabangNama }}</p>
+        <p class="text-muted mb-0 small">Pemasukan &amp; Pengeluaran Usaha (berbasis kas) — {{ $cabangNama }}</p>
     </div>
     <div class="d-flex gap-2">
         <button onclick="window.print()" class="btn btn-sm btn-outline-secondary">
@@ -47,10 +47,18 @@
     </div>
 </div>
 
+{{-- 4.51 — transfer internal & saldo awal tidak dihitung --}}
+<div class="alert alert-light border small py-2">
+    <i class="bi bi-info-circle me-1"></i>
+    Tidak dihitung (uang hanya pindah tempat): transfer antar kas, setoran kasir, transfer dana, dan saldo awal kas —
+    masuk Rp {{ number_format($internalMasuk ?? 0, 0, ',', '.') }}, keluar Rp {{ number_format($internalKeluar ?? 0, 0, ',', '.') }}.
+    Ini berbasis kas (belum memakai HPP). Untuk laba dengan modal barang pakai Laporan → Laba Rugi Formal atau Closing.
+</div>
+
 {{-- Laporan --}}
 <div class="card">
     <div class="card-header d-flex justify-content-between">
-        <span class="fw-bold">Laporan Laba / Rugi</span>
+        <span class="fw-bold">Pemasukan &amp; Pengeluaran Usaha</span>
         <span class="text-muted small">Periode: {{ \Carbon\Carbon::parse($periode . '-01')->format('F Y') }}</span>
     </div>
     <div class="card-body p-0">

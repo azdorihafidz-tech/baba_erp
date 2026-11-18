@@ -99,6 +99,10 @@ class KaryawanController extends Controller
 
         $data['status'] = $data['status'] ?? 'aktif';
         $buatAkun = $request->boolean('buat_akun_login');
+        // 4.50 — membuat akun login = membuat user → ikut centangan Tambah User (sama dgn menu Manajemen User)
+        if ($buatAkun && ! auth()->user()->can('user.create')) {
+            return back()->withInput()->with('error', 'Membuat akun login butuh centangan Tambah User. Simpan karyawan tanpa akun, lalu minta yang berwenang membuatkan akunnya.');
+        }
 
         return DB::transaction(function () use ($request, $data, $buatAkun) {
             $karyawan = Karyawan::create($data);
@@ -224,6 +228,26 @@ class KaryawanController extends Controller
             $data['foto'] = $request->file('foto')->store('karyawan', 'public');
         } else {
             unset($data['foto']);
+        }
+
+        // 4.50 — akun login yang terhubung mengikuti aturan menu Manajemen User: buat akun butuh
+        // Tambah User, ubah email/role butuh Edit User, dan akun Owner hanya boleh diubah Owner
+        // (dulu bisa lewat form Karyawan, mis. Admin Pusat menurunkan role Owner).
+        $actor = auth()->user();
+        if (! $hasUser && $request->boolean('buat_akun_login') && ! $actor->can('user.create')) {
+            return back()->withInput()->with('error', 'Membuat akun login butuh centangan Tambah User.');
+        }
+        if ($hasUser && ($request->filled('user_email') || $request->filled('user_role'))) {
+            $linked = User::find($karyawan->user_id);
+            $berubah = $linked && (
+                ($request->filled('user_email') && $request->user_email !== $linked->email)
+                || ($request->filled('user_role') && $request->user_role !== $linked->role?->value));
+            if ($berubah && $linked->aksesPenuh()) {
+                return back()->withInput()->with('error', 'Akun login karyawan ini adalah akun Owner — email/role-nya diubah lewat Pengaturan → Manajemen User oleh Owner, bukan dari form Karyawan.');
+            }
+            if ($berubah && ! $actor->can('user.edit')) {
+                return back()->withInput()->with('error', 'Mengubah email/role akun login butuh centangan Edit User.');
+            }
         }
 
         return DB::transaction(function () use ($request, $karyawan, $data, $hasUser) {

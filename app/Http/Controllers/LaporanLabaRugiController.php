@@ -47,7 +47,7 @@ class LaporanLabaRugiController extends Controller
         $user = auth()->user();
         $data = $this->buildData($request);
         $labelLevel = [
-            'item' => 'Item', 'kategori' => 'Kategori', 'jenis_olahan' => 'Jenis Menu', 'order' => 'Order',
+            'item' => 'Item', 'kategori' => 'Kategori', 'jenis_olahan' => 'Jenis Produk', 'order' => 'Order',
         ][$data['level']] ?? 'Item';
         $cabangNamaFilter = $data['cabangTerpilih']->nama_cabang ?? 'Semua Cabang';
 

@@ -122,7 +122,8 @@ class PelangganController extends Controller
     {
         abort_unless(auth()->user()->can('pelanggan.edit'), 403);
 
-        $pelanggan->update($request->validated());
+        // 4.50 — Nonaktif = tidak muncul di pilihan pelanggan POS; riwayat & order tetap.
+        $pelanggan->update($request->validated() + ['is_active' => $request->boolean('is_active')]);
 
         return redirect()->route('pelanggan.index')
             ->with('success', 'Data pelanggan berhasil diperbarui.');

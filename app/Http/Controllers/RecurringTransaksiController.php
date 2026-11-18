@@ -178,12 +178,19 @@ class RecurringTransaksiController extends Controller
     {
         abort_unless(auth()->user()->can('recurring.edit'), 403);
 
+        // 4.51 — tombol Generate hanya membuat transaksi untuk periode jatuh tempo yang BELUM dibuat
+        // (dulu selalu membuat → bisa dobel dengan yang dibuat otomatis).
+        $due = $recurring->perluDibuat(Carbon::today());
+        if (! $due) {
+            $next = $recurring->jatuhTempoBerikutnya();
+            return back()->with('error', "Transaksi \"{$recurring->nama_template}\" untuk periode ini sudah dibuat"
+                . ($recurring->tanggal_terakhir_generate ? ' (' . Carbon::parse($recurring->tanggal_terakhir_generate)->format('d/m/Y') . ')' : '')
+                . ($next ? '. Jatuh tempo berikutnya ' . $next->format('d/m/Y') . '.' : '.')
+                . ($recurring->is_active ? '' : ' Template ini nonaktif.'));
+        }
         try {
-            DB::transaction(function () use ($recurring) {
-                $recurring->generateTransaksi(Carbon::today());
-                $recurring->update(['tanggal_terakhir_generate' => Carbon::today()]);
-            });
-            return back()->with('success', "Transaksi dari template \"{$recurring->nama_template}\" berhasil dibuat.");
+            DB::transaction(fn () => $recurring->generateTransaksi($due));
+            return back()->with('success', "Transaksi dari template \"{$recurring->nama_template}\" untuk jatuh tempo " . $due->format('d/m/Y') . ' berhasil dibuat.');
         } catch (\Exception $e) {
             return back()->with('error', 'Gagal generate: ' . $e->getMessage());
         }

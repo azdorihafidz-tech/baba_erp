@@ -33,6 +33,8 @@
                     <select name="frekuensi" class="form-select @error('frekuensi') is-invalid @enderror" required>
                         <option value="bulanan"  @selected(old('frekuensi',$recurring->frekuensi)==='bulanan')>Bulanan</option>
                         <option value="mingguan" @selected(old('frekuensi',$recurring->frekuensi)==='mingguan')>Mingguan</option>
+                        <option value="harian"   @selected(old('frekuensi',$recurring->frekuensi)==='harian')>Harian</option>
+                        <option value="tahunan"  @selected(old('frekuensi',$recurring->frekuensi)==='tahunan')>Tahunan</option>
                     </select>
                     @error('frekuensi')<div class="invalid-feedback">{{ $message }}</div>@enderror
                 </div>
@@ -52,8 +54,9 @@
                     <div class="input-group">
                         <span class="input-group-text">Tgl</span>
                         <input type="number" name="tanggal_jatuh_tempo" class="form-control @error('tanggal_jatuh_tempo') is-invalid @enderror"
-                               value="{{ old('tanggal_jatuh_tempo', $recurring->tanggal_jatuh_tempo) }}" min="1" max="28" required>
+                               value="{{ old('tanggal_jatuh_tempo', $recurring->tanggal_jatuh_tempo) }}" min="1" max="31" required>
                     </div>
+                    <div class="form-text">Bulanan: tanggal tiap bulan (29–31 → hari terakhir bulan pendek). Tahunan: tanggal di bulan Tanggal Mulai. Mingguan: hari yang sama dengan Tanggal Mulai. Harian: tidak dipakai.</div>
                     @error('tanggal_jatuh_tempo')<div class="invalid-feedback">{{ $message }}</div>@enderror
                 </div>
 
@@ -108,13 +111,6 @@
                         <input class="form-check-input" type="checkbox" name="is_active" id="isActive" value="1"
                                @checked(old('is_active', $recurring->is_active))>
                         <label class="form-check-label" for="isActive">Aktifkan template ini</label>
-                    </div>
-                </div>
-                <div class="col-12 col-md-6">
-                    <div class="form-check form-switch">
-                        <input class="form-check-input" type="checkbox" name="auto_approve" id="autoApprove" value="1"
-                               @checked(old('auto_approve', $recurring->auto_approve))>
-                        <label class="form-check-label" for="autoApprove">Auto-approve transaksi yang di-generate</label>
                     </div>
                 </div>
 

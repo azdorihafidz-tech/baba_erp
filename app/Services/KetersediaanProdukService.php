@@ -18,7 +18,6 @@ use Illuminate\Support\Facades\DB;
  */
 class KetersediaanProdukService
 {
-    private const TIPE_POTONG_SENDIRI = ['bahan_baku', 'kemasan', 'produk_jual'];
     public const BATAS_MENIPIS = 5;
 
     /**
@@ -74,7 +73,7 @@ class KetersediaanProdukService
                 continue;
             }
 
-            if (in_array($p->tipe, self::TIPE_POTONG_SENDIRI, true)) {
+            if ($p->dipotongStokSendiri()) { // 4.50 — aturan bersama (Item::dipotongStokSendiri)
                 $qty = (float) ($stok[$p->id] ?? 0);
                 $hasil[$p->id] = $this->baris($qty > 0, $qty, (string) $p->satuan, null, 'Stok tersedia: ' . fmt_qty($qty) . ' ' . $p->satuan);
                 continue;

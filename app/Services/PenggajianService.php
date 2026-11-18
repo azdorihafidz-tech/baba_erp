@@ -39,11 +39,24 @@ class PenggajianService
         return round($pajak / 12); // per bulan
     }
 
+    /** Porting Dimsum 4.51 — slip yang sudah Disetujui/Dibayar tidak boleh dihitung ulang (dulu nominal tertimpa & status jadi Draft lagi). */
+    public const STATUS_TERKUNCI = ['disetujui', 'dibayar'];
+
+    public function slipTerkunci(Karyawan $karyawan, string $periode): ?Penggajian
+    {
+        return Penggajian::where('karyawan_id', $karyawan->id)->where('periode', $periode)
+            ->whereIn('status', self::STATUS_TERKUNCI)->first();
+    }
+
     /**
      * Generate slip gaji untuk 1 karyawan pada periode tertentu
      */
     public function generate(Karyawan $karyawan, string $periode, array $override = []): Penggajian
     {
+        if ($terkunci = $this->slipTerkunci($karyawan, $periode)) {
+            throw new \RuntimeException("Slip gaji {$karyawan->nama_lengkap} periode {$periode} sudah {$terkunci->status} — tidak bisa dihitung ulang. Slip yang sudah disetujui/dibayar dianggap final.");
+        }
+
         return DB::transaction(function () use ($karyawan, $periode, $override) {
             [$tahun, $bulan] = explode('-', $periode);
             $tanggalAwal  = Carbon::create($tahun, $bulan, 1)->startOfMonth();
@@ -126,13 +139,21 @@ class PenggajianService
             $brutoBulan = $gajiPokok + $tunjanganJabatan + $tunjanganMakan + $tunjanganTransport + $uangLembur + $bonus + $insentif + $tunjangan;
             $pph21      = (float) ($override['pph21'] ?? $this->hitungPph21($brutoBulan * 12));
 
+            // Porting Dimsum 4.51 — potongan telat: total menit telat (Scan Absensi) × tarif per menit
+            // (Pengaturan Penggajian). Dulu tarifnya tersimpan tapi tidak pernah dipakai.
+            $menitTelat         = (int) $absensis->where('status', 'hadir')->sum('menit_telat');
+            $tarifTelatPerMenit = (float) PengaturanGaji::getSetting('potongan_telat_per_menit', 0);
+            $potonganTelat      = isset($override['potongan_telat']) && $override['potongan_telat'] !== ''
+                ? (float) $override['potongan_telat']
+                : round($menitTelat * $tarifTelatPerMenit);
+
             $kasbon      = (float) ($override['kasbon']       ?? 0);
             $potonganLain= (float) ($override['potongan_lain'] ?? 0);
 
             // ── TOTAL ─────────────────────────────────────────────────────
             $totalPenambahan  = $gajiPokok + $tunjanganJabatan + $tunjanganMakan + $tunjanganTransport
                 + $tunjanganKehadiran + $uangLembur + $bonus + $insentif + $thr + $komisi + $tunjangan;
-            $totalPotongan    = $potonganAbsensi + $bpjsKesehatan + $bpjsTk + $pph21 + $kasbon + $potonganLain;
+            $totalPotongan    = $potonganAbsensi + $potonganTelat + $bpjsKesehatan + $bpjsTk + $pph21 + $kasbon + $potonganLain;
             $totalGaji        = max(0, $totalPenambahan - $totalPotongan);
 
             $slip = Penggajian::updateOrCreate(
@@ -142,6 +163,7 @@ class PenggajianService
                     'jumlah_hari_kerja'    => $hariKerja,
                     'jumlah_hadir'         => $jumlahHadir,
                     'jumlah_alpha'         => $jumlahAlpha,
+                    'menit_telat_total'    => $menitTelat,
                     'jam_lembur_total'     => $jamLembur,
                     'gaji_pokok'           => $gajiPokok,
                     'tunjangan_jabatan'    => $tunjanganJabatan,
@@ -155,6 +177,7 @@ class PenggajianService
                     'thr'                  => $thr,
                     'komisi'               => $komisi,
                     'potongan_absensi'     => $potonganAbsensi,
+                    'potongan_telat'       => $potonganTelat,
                     'bpjs_kesehatan'       => $bpjsKesehatan,
                     'bpjs_ketenagakerjaan' => $bpjsTk,
                     'pph21'                => $pph21,
@@ -178,21 +201,29 @@ class PenggajianService
     }
 
     /**
-     * Bulk generate untuk semua karyawan aktif di cabang
+     * Generate untuk semua karyawan aktif di cabang.
+     * Porting Dimsum 4.51 — slip yang sudah Disetujui/Dibayar DILEWATI (tidak ditimpa).
+     *
+     * @return array{dibuat: int, dilewati: string[]}
      */
-    public function bulkGenerate(int $cabangId, string $periode, array $override = []): int
+    public function bulkGenerate(int $cabangId, string $periode, array $override = []): array
     {
         $karyawans = Karyawan::withoutGlobalScope(\App\Models\Scopes\CabangScope::class)
             ->where('cabang_id', $cabangId)
             ->where('status', 'aktif')
             ->get();
 
-        $count = 0;
+        $dibuat = 0;
+        $dilewati = [];
         foreach ($karyawans as $k) {
+            if ($this->slipTerkunci($k, $periode)) {
+                $dilewati[] = $k->nama_lengkap;
+                continue;
+            }
             $this->generate($k, $periode, $override);
-            $count++;
+            $dibuat++;
         }
 
-        return $count;
+        return ['dibuat' => $dibuat, 'dilewati' => $dilewati];
     }
 }

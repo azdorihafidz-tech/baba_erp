@@ -72,7 +72,8 @@ class NeracaService
         // Aset Lancar — Persediaan (FIFO stock_batches, qty_sisa masih ada)
         $persediaanQuery = StockBatch::join('items', 'items.id', '=', 'stock_batches.item_id')
             ->where('stock_batches.qty_sisa', '>', 0)
-            ->whereNull('stock_batches.deleted_at');
+            ->whereNull('stock_batches.deleted_at')
+            ->whereNull('items.deleted_at'); // porting Dimsum 4.51 — stok barang yang sudah dihapus tidak dihitung (sama dgn Dashboard/Laporan Stok)
         \App\Support\KeuanganBaba::saring($persediaanQuery, 'stock_batches.lokasi_id', $cabangId);
         $persediaanPerTipe = (clone $persediaanQuery)
             ->selectRaw('items.tipe, SUM(stock_batches.qty_sisa * stock_batches.harga_beli_per_unit) as nilai')

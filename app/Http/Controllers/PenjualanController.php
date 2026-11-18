@@ -489,11 +489,14 @@ class PenjualanController extends Controller
         $authUser = auth()->user();
         $query    = Order::with(['cabang', 'kasir']);
 
-        // Filter per cabang
-        if (!$authUser->canAccessAllBranches()) {
-            $cabangId = session('active_cabang_id') ?? $authUser->defaultCabangId();
+        // Filter per cabang = cabang aktif di header. Dulu role akses semua cabang
+        // (Owner/Admin Pusat/Tim IT) selalu melihat semua cabang walau cabang di
+        // header sudah dipilih. null = "Semua Cabang"; role cabang selalu cabangnya.
+        $cabangId = \App\Support\CabangAktif::untukLaporan();
+        if ($cabangId !== null) {
             $query->where('cabang_id', $cabangId);
         }
+        $namaCabangAktif = $cabangId ? \App\Models\Cabang::whereKey($cabangId)->value('nama_cabang') : null;
 
         if ($request->filled('status')) {
             $query->where('status', $request->status);
@@ -525,7 +528,7 @@ class PenjualanController extends Controller
         $statuses = StatusOrder::cases();
         $tipes    = TipeOrder::cases();
 
-        return view('penjualan.index', compact('orders', 'statuses', 'tipes'));
+        return view('penjualan.index', compact('orders', 'statuses', 'tipes', 'cabangId', 'namaCabangAktif'));
     }
 
     public function show(Order $order)
@@ -638,26 +641,54 @@ class PenjualanController extends Controller
             return back()->with('error', "Order berstatus '{$order->status->label()}' tidak bisa diedit.");
         }
 
+        // 4.50 — diskon & metode bayar HANYA boleh diubah selama order belum dibayar (Pending).
+        // Order Selesai/Dibatalkan sudah punya pembayaran, saldo kas & rincian Setoran Kasir —
+        // mengubah totalnya di sini dulu membuat kas & laporan tidak cocok. Koreksi = Batalkan + order baru.
+        $bolehUbahUang = $order->status === StatusOrder::Pending;
+
         $validated = $request->validate([
             'nama_pelanggan'    => 'nullable|string|max:100',
             'telepon_pelanggan' => 'nullable|string|max:20',
-            'tipe_pembayaran'   => 'required|in:' . implode(',', array_column(TipePembayaran::cases(), 'value')),
-            'diskon'            => 'required|numeric|min:0',
+            'tipe_pembayaran'   => ($bolehUbahUang ? 'required' : 'nullable') . '|in:' . implode(',', array_column(TipePembayaran::cases(), 'value')),
+            'diskon'            => ($bolehUbahUang ? 'required' : 'nullable') . '|numeric|min:0',
             'catatan'           => 'nullable|string|max:500',
         ]);
 
-        $diskon     = (float) str_replace('.', '', $validated['diskon'] ?? 0);
-        $totalBayar = max(0, (float) $order->total_harga - $diskon);
+        $data = [
+            'nama_pelanggan'    => $validated['nama_pelanggan'] ?? null,
+            'telepon_pelanggan' => $validated['telepon_pelanggan'] ?? null,
+            'catatan'           => $validated['catatan'] ?? null,
+        ];
 
-        $order->update([
-            'nama_pelanggan'    => $validated['nama_pelanggan'],
-            'telepon_pelanggan' => $validated['telepon_pelanggan'],
-            'tipe_pembayaran'   => $validated['tipe_pembayaran'],
-            'diskon'            => $diskon,
-            'total_bayar'       => $totalBayar,
-            'catatan'           => $validated['catatan'],
-        ]);
-        // OrderObserver::updated() fires → syncs total_bayar ke TransaksiKeuangan otomatis
+        if ($bolehUbahUang) {
+            $diskon = min((float) $order->total_harga, (float) str_replace('.', '', (string) ($validated['diskon'] ?? 0)));
+            $subtotalLama = max(0, (float) $order->total_harga - (float) $order->diskon);
+            $subtotalBaru = max(0, (float) $order->total_harga - $diskon);
+            // Service charge ikut diskon dengan persen yang sama seperti saat bill dibuat; take away fee tetap.
+            $persenSc = $subtotalLama > 0
+                ? (float) $order->service_charge / $subtotalLama
+                : (float) ($order->cabang?->service_charge_persen ?? 0) / 100;
+            $serviceCharge = round($subtotalBaru * $persenSc, 2);
+
+            $data += [
+                'tipe_pembayaran' => $validated['tipe_pembayaran'],
+                'diskon'          => $diskon,
+                'service_charge'  => $serviceCharge,
+                'total_bayar'     => $subtotalBaru + $serviceCharge + (float) $order->take_away_fee,
+            ];
+        } else {
+            $diskonDikirim = $request->filled('diskon') ? (float) str_replace('.', '', (string) $validated['diskon']) : null;
+            $tipeDikirim   = $validated['tipe_pembayaran'] ?? null;
+            if (($diskonDikirim !== null && abs($diskonDikirim - (float) $order->diskon) >= 0.01)
+                || ($tipeDikirim !== null && $tipeDikirim !== $order->tipe_pembayaran?->value)) {
+                return back()->withInput()->with('error',
+                    "Order {$order->nomor_order} sudah dibayar, jadi diskon dan metode bayar tidak bisa diubah "
+                    . '(saldo kas & Setoran Kasir tidak akan ikut berubah). Batalkan order ini lalu buat order baru yang benar.');
+            }
+        }
+
+        $order->update($data);
+        // OrderObserver::updated() — keterangan Transaksi Keuangan ikut nama pelanggan; jumlah tidak disentuh.
 
         return redirect()->route('penjualan.show', $order)
             ->with('success', "Order {$order->nomor_order} berhasil diperbarui.");

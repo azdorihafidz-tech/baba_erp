@@ -74,7 +74,7 @@ class MasterProdukJualController extends Controller
         abort_unless(auth()->user()->can('master.produk_jual.create'), 403);
 
         $data = $request->safe()->only([
-            'kode_item', 'nama_item', 'item_category_id', 'tipe', 'satuan',
+            'kode_item', 'nama_item', 'item_category_id', 'jenis_olahan_id', 'tipe', 'satuan',
             'harga_jual', 'deskripsi',
         ]);
         $data['cabang_id']       = $request->cabangPemilik();
@@ -146,7 +146,7 @@ class MasterProdukJualController extends Controller
         abort_unless(CabangAktif::bolehAkses($produkJual->cabang_id), 403);
 
         $data = $request->safe()->only([
-            'kode_item', 'nama_item', 'item_category_id', 'tipe', 'satuan',
+            'kode_item', 'nama_item', 'item_category_id', 'jenis_olahan_id', 'tipe', 'satuan',
             'harga_jual', 'deskripsi',
         ]);
         $data['kode_item']       = strtoupper($data['kode_item']);
@@ -190,9 +190,8 @@ class MasterProdukJualController extends Controller
 
         try {
             $nama = $produkJual->nama_item;
-            if ($produkJual->foto) {
-                Storage::disk('public')->delete($produkJual->foto);
-            }
+            // 4.50 — file foto TIDAK dihapus: produk hanya masuk Data Terhapus dan bisa dipulihkan
+            // (dulu fotonya hilang permanen walau produknya dipulihkan).
             $cascadeService->deleteItemCascade($produkJual);
 
             return redirect()->route('master.produk-jual.index')

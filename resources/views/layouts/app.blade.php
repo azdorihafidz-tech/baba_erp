@@ -608,7 +608,15 @@
             <span>Pelanggan</span>
         </a>
         @endcan
-        {{-- BABA: menu Jenis Menu & Master Bumbu Pusat (khusus dimsum) dihapus — diganti Resep Parfum (Tahap 1) --}}
+        {{-- BABA: Master Bumbu Pusat (khusus dimsum) dihapus — diganti Resep Parfum (Tahap 1).
+             Porting Dimsum 4.50 (keputusan Owner P5): Jenis Menu kembali sebagai "Jenis Produk" untuk Laba Rugi Per Jenis Produk --}}
+        @can('jenis-olahan.view')
+        <a href="{{ route('master.jenis-olahan.index') }}"
+           class="nav-link {{ request()->routeIs('master.jenis-olahan.*') ? 'active' : '' }}">
+            <i class="bi bi-collection"></i>
+            <span>Jenis Produk</span>
+        </a>
+        @endcan
         @can('loyalty.view')
         <a href="{{ route('loyalty-program.index') }}"
            class="nav-link {{ request()->routeIs('loyalty-program.*') ? 'active' : '' }}">

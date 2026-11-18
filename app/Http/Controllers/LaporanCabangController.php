@@ -23,11 +23,13 @@ class LaporanCabangController extends Controller
         $fromStr = $dari->toDateString();
         $toStr   = $sampai->toDateString();
 
-        // Pemasukan & pengeluaran per cabang (semua tipe)
+        // Pemasukan & pengeluaran USAHA per cabang — 4.51: tanpa transfer internal & saldo awal
+        // (setoran/transfer dana ditampilkan di kolom setoran sendiri di bawah).
         $trxPerCabang = DB::table('transaksi_keuangans as tk')
             ->join('cabangs as c', 'c.id', '=', 'tk.cabang_id')
             ->whereNull('tk.deleted_at')
             ->whereBetween('tk.tanggal_transaksi', [$fromStr, $toStr])
+            ->tap(fn ($q) => \App\Support\TransaksiInternal::kecualikan($q, 'tk'))
             ->selectRaw("
                 tk.cabang_id,
                 c.nama_cabang,

@@ -696,6 +696,7 @@ class ClosingService
             ->join('items', 'items.id', '=', 'stock_batches.item_id')
             ->where('stock_batches.qty_sisa', '>', 0)
             ->whereNull('stock_batches.deleted_at')
+            ->whereNull('items.deleted_at') // porting Dimsum 4.51 — sama dgn NeracaService
             ->tap(fn ($q) => \App\Support\KeuanganBaba::saring($q, 'stock_batches.lokasi_id', $cabangId))
             ->selectRaw('items.tipe, SUM(stock_batches.qty_sisa * stock_batches.harga_beli_per_unit) as nilai')
             ->groupBy('items.tipe')
