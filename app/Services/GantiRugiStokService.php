@@ -87,6 +87,9 @@ class GantiRugiStokService
         if (abs($nilai - $bagianPokok) > 0.5 && mb_strlen($alasan) < 5) {
             throw new StokOpnameException('Nilai berbeda dari harga pokok (' . $this->opname->rupiah($bagianPokok) . '): tulis alasannya, mis. "dibebankan harga jual sebagai sanksi".');
         }
+        if ($cara === 'potong_gaji' && ! \App\Support\Paket::aktif('penggajian')) {
+            throw new StokOpnameException('Potong gaji butuh modul Penggajian yang belum termasuk paket. Pilih tunai.');
+        }
         $cicilan = $cara === 'potong_gaji' ? max(1, min(12, (int) ($d['cicilan_bulan'] ?? 1))) : 1;
 
         return DB::transaction(function () use ($u, $x, $o, $k, $cara, $nilai, $bagianPokok, $alasan, $cicilan, $d) {

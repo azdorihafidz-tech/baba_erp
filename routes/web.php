@@ -419,6 +419,10 @@ Route::middleware(['auth', 'verified', 'cabang'])->group(function () {
         Route::post('/{user}/toggle', 'toggle')->name('toggle');
         Route::post('/{user}/password', 'resetPassword')->name('password');
     });
+    Route::middleware('role:teknisi')->prefix('paket')->name('paket.')->controller(\App\Http\Controllers\PaketController::class)->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::post('/', 'update')->name('update');
+    });
     Route::get('/aktivitas-tim-it', [\App\Http\Controllers\AktivitasTimItController::class, 'index'])->name('aktivitas-tim-it.index');
 
     // ===== MANAJEMEN ROLE & PERMISSION (Owner & Tim IT — RoleMiddleware) =====

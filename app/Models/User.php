@@ -95,7 +95,12 @@ class User extends Authenticatable
      */
     public function hasPermission(string $permission): bool
     {
-        // Owner & Tim IT selalu bisa segalanya
+        // Paket: izin milik modul yang tidak termasuk paket selalu ditolak (juga Owner & Tim IT)
+        if (! \App\Support\Paket::izinDiizinkan($permission)) {
+            return false;
+        }
+
+        // Owner & Tim IT selalu bisa segalanya (di dalam paket)
         if ($this->aksesPenuh()) {
             return true;
         }
@@ -123,7 +128,7 @@ class User extends Authenticatable
     public function getPermissions(): array
     {
         if ($this->aksesPenuh()) {
-            return Permission::pluck('name')->toArray();
+            return Permission::pluck('name')->filter(fn ($n) => \App\Support\Paket::izinDiizinkan($n))->values()->toArray();
         }
 
         $roleValue = $this->role?->value;
@@ -131,13 +136,15 @@ class User extends Authenticatable
             return [];
         }
 
-        return Cache::remember("role_permissions_{$roleValue}", 300, function () use ($roleValue) {
+        $izin = Cache::remember("role_permissions_{$roleValue}", 300, function () use ($roleValue) {
             return DB::table('role_permissions')
                 ->join('permissions', 'permissions.id', '=', 'role_permissions.permission_id')
                 ->where('role_permissions.role', $roleValue)
                 ->pluck('permissions.name')
                 ->toArray();
         });
+
+        return array_values(array_filter($izin, fn ($n) => \App\Support\Paket::izinDiizinkan($n)));
     }
 
     public function karyawan()

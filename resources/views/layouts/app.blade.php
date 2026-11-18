@@ -1243,6 +1243,11 @@
             <i class="bi bi-person-gear"></i>
             <span>Tim IT</span>
         </a>
+        <a href="{{ route('paket.index') }}"
+           class="nav-link {{ request()->routeIs('paket.*') ? 'active' : '' }}">
+            <i class="bi bi-box2-heart"></i>
+            <span>Paket & Langganan</span>
+        </a>
         @endif
         @can('pengaturan_penggajian')
         <a href="{{ route('pengaturan.penggajian') }}"
@@ -1361,6 +1366,9 @@
 
 <!-- ===== MAIN CONTENT ===== -->
 <main id="main-content">
+
+    {{-- Porting Dimsum 4.53: pita masa langganan & segel paket --}}
+    <x-pita-langganan />
 
     {{-- ERP BABA Tahap 8: pita peringatan Owner bila cron / cadangan database bermasalah (hanya di hosting) --}}
     @if(isset($authUser) && $authUser->aksesPenuh() && app()->environment('production') && ! request()->routeIs('pengaturan.jadwal*'))

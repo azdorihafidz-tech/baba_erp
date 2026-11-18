@@ -20,7 +20,8 @@ class StatusTokoController extends Controller
     public function __invoke(Request $request, PesananOnlineService $svc): JsonResponse
     {
         $id = $request->attributes->get('member_id');
-        $buka = TokoOnlinePengaturan::ambil()->bukaUntuk($id);
+        // Paket (porting Dimsum 4.53): modul Toko Online mati / baca-saja = toko tertutup untuk belanja baru
+        $buka = TokoOnlinePengaturan::ambil()->bukaUntuk($id) && \App\Support\Paket::aktif('toko_online') && ! \App\Support\Paket::bacaSaja();
         if (! $id) {
             return response()->json(['ok' => true, 'buka' => $buka]);
         }

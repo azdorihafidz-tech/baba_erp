@@ -124,6 +124,10 @@ class AppServiceProvider extends ServiceProvider
 
         // Owner bypass semua gate check
         Gate::before(function (User $user, string $ability) {
+            // Paket: izin milik modul yang tidak termasuk paket ditolak untuk SEMUA user (porting Dimsum 4.53)
+            if (! \App\Support\Paket::izinDiizinkan($ability)) {
+                return false;
+            }
             if ($user->aksesPenuh()) { // Owner & Tim IT
                 return true;
             }
@@ -181,6 +185,9 @@ class AppServiceProvider extends ServiceProvider
 
     private function triggerRecurringIfNeeded(): void
     {
+        if (! \App\Support\Paket::aktif('keuangan') || \App\Support\Paket::bacaSaja()) {
+            return; // Transaksi Berulang tidak termasuk paket / langganan habis (baca-saja)
+        }
         $cacheKey = 'recurring_run_' . now()->toDateString();
         if (Cache::has($cacheKey)) {
             return;

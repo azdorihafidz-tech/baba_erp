@@ -126,11 +126,37 @@ class JadwalOtomatisService
     }
 
     /** Jalankan satu tugas di dalam proses (tanpa proc_open) dan catat hasilnya. @return array{status:string, pesan:string} */
+    /** Modul Paket pemilik tugas (porting Dimsum 4.53). Kirim RO wajib: tetap jalan walau modul mati / baca-saja (keputusan Owner P2). */
+    public const MODUL_TUGAS = ['ro_kirim' => 'toko_online', 'pesanan_online' => 'toko_online', 'recurring' => 'keuangan',
+        'stok_opname_pengingat' => 'stok_opname', 'aset_depresiasi' => 'aset', 'loyalty' => 'loyalty'];
+
+    /** Alasan tugas dilewati (modul tidak termasuk paket / baca-saja), null = boleh jalan. */
+    public static function alasanDilewati(string $kode): ?string
+    {
+        if (! empty(self::TUGAS[$kode]['wajib'])) {
+            return null;
+        }
+        $modul = self::MODUL_TUGAS[$kode] ?? null;
+        if ($modul && ! \App\Support\Paket::aktif($modul)) {
+            return 'Dilewati — modul ' . \App\Support\Paket::MODUL[$modul][0] . ' tidak termasuk paket.';
+        }
+        if (\App\Support\Paket::bacaSaja()) {
+            return 'Dilewati — aplikasi dalam mode baca-saja (langganan berakhir).';
+        }
+
+        return null;
+    }
+
     public function jalankan(string $kode, string $oleh = 'jadwal'): array
     {
         $t = self::TUGAS[$kode] ?? throw new \InvalidArgumentException('Tugas tidak dikenal.');
         $this->pastikan();
         $row = JadwalOtomatis::where('kode', $kode)->first();
+        if ($lewat = self::alasanDilewati($kode)) {
+            $row->update(['terakhir_mulai' => now(), 'terakhir_oleh' => $oleh, 'terakhir_selesai' => now(), 'terakhir_status' => 'dilewati', 'terakhir_pesan' => $lewat]);
+
+            return ['status' => 'dilewati', 'pesan' => $lewat];
+        }
         $row->update(['terakhir_mulai' => now(), 'terakhir_oleh' => $oleh]);
         try {
             $kodeKeluar = Artisan::call($t['perintah']);
@@ -151,6 +177,11 @@ class JadwalOtomatisService
     public function detak(): void
     {
         DB::table('pengaturan_umums')->orderBy('id')->limit(1)->update(['cron_terakhir' => now()]);
+        try {
+            \App\Support\Paket::peringatkanSegelRusak(); // mode lunak: Tim IT diberi tahu, paling banyak sekali sehari
+        } catch (\Throwable $e) {
+            Log::warning('Peringatan segel paket gagal: ' . $e->getMessage());
+        }
     }
 
     public function cronTerakhir(): ?Carbon

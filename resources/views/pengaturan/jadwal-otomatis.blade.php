@@ -46,6 +46,7 @@
             <label class="fw-semibold" for="aktif_{{ $kode }}">{{ $t['label'] }}</label>
             @if($t['wajib'])<span class="badge bg-secondary ms-1">selalu hidup</span>@endif
             <div class="small text-muted">{{ $t['ket'] }}</div>
+            @if($lewat = \App\Services\JadwalOtomatisService::alasanDilewati($kode))<div class="small text-warning-emphasis" data-uji="lewat-{{ $kode }}"><i class="bi bi-slash-circle me-1"></i>{{ $lewat }}</div>@endif
             <div class="small mt-1 d-flex flex-wrap align-items-center gap-2">
                 <span><i class="bi bi-calendar-event me-1"></i>{{ $t['waktu'] }}@if($t['jam'] && ! $t['ubah_jam']) jam {{ $t['jam'] }}@endif</span>
                 @if($t['ubah_jam'])
@@ -58,7 +59,7 @@
             </div>
             <div class="small mt-1" data-uji="terakhir-{{ $kode }}">
                 @if($r->terakhir_selesai)
-                <span class="badge bg-{{ $r->terakhir_status === 'berhasil' ? 'success' : 'danger' }}">{{ $r->terakhir_status === 'berhasil' ? 'Berhasil' : 'Gagal' }}</span>
+                <span class="badge bg-{{ ['berhasil' => 'success', 'dilewati' => 'secondary'][$r->terakhir_status] ?? 'danger' }}">{{ ['berhasil' => 'Berhasil', 'dilewati' => 'Dilewati'][$r->terakhir_status] ?? 'Gagal' }}</span>
                 <span class="text-muted">{{ $r->terakhir_selesai->locale('id')->diffForHumans() }} ({{ $r->terakhir_oleh === 'manual' ? 'dijalankan manual' : 'terjadwal' }})</span>
                 @if($r->terakhir_pesan)<div class="text-muted text-truncate" title="{{ $r->terakhir_pesan }}">{{ $r->terakhir_pesan }}</div>@endif
                 @else

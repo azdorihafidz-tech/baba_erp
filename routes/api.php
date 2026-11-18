@@ -13,7 +13,7 @@ use Illuminate\Support\Facades\Route;
 | API untuk server aplikasi member BABA (antar-server, ditandatangani). Bukan untuk browser.
 | Prefix /api (bootstrap/app.php). Middleware 'aplikasi.member' = VerifikasiAplikasiMember.
 */
-Route::prefix('member')->middleware('aplikasi.member')->name('api.member.')->group(function () {
+Route::prefix('member')->middleware(['aplikasi.member', \App\Http\Middleware\CekPaketMember::class])->name('api.member.')->group(function () {
     Route::get('sehat', SehatController::class)->name('sehat');
     // Tahap 2f: status toko untuk akun ini + angka ringkas menu (tanpa saklar, supaya menu tahu harus Segera hadir)
     Route::get('status-toko', StatusTokoController::class)->name('status-toko');

@@ -27,6 +27,8 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->web(append: [
             \App\Http\Middleware\TerapkanBranding::class,
             \App\Http\Middleware\CatatAktivitasTeknisi::class, // Aktivitas Tim IT
+            \App\Http\Middleware\CekPaket::class,              // modul di luar paket → "tidak termasuk paket"
+            \App\Http\Middleware\ModeBacaSaja::class,          // langganan habis → simpan/ubah ditolak
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {

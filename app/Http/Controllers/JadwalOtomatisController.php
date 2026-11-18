@@ -42,6 +42,10 @@ class JadwalOtomatisController extends Controller
         $label = JadwalOtomatisService::TUGAS[$kode]['label'];
         activity('JadwalOtomatis')->causedBy(auth()->user())->log("Jalankan sekarang: {$label} ({$h['status']})");
 
+        if ($h['status'] === 'dilewati') {
+            return back()->with('warning', e("{$label}: " . $h['pesan']));
+        }
+
         return back()->with($h['status'] === 'berhasil' ? 'success' : 'error', e("{$label}: " . ($h['status'] === 'berhasil' ? 'selesai' : 'gagal') . ' — ' . mb_substr($h['pesan'] ?: '-', 0, 200)));
     }
 
