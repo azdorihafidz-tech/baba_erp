@@ -25,6 +25,11 @@ class Perbaikan450Seeder extends Seeder
             $panduan->save();
         }
 
+        // BABA (keputusan Owner P5): nama centangan ikut istilah "Jenis Produk"
+        foreach (['jenis-olahan.view' => 'Lihat Master Jenis Produk', 'jenis-olahan.manage' => 'Kelola Master Jenis Produk'] as $nama => $tampil) {
+            \Illuminate\Support\Facades\DB::table('permissions')->where('name', $nama)->update(['display_name' => $tampil]);
+        }
+
         Tooltip::updateOrCreate(['key' => 'master_produk_jual.jenis_menu'], [
             'title'   => 'Jenis Produk (opsional)',
             'content' => 'Kelompok produk untuk Laporan Laba Rugi pilihan "Per Jenis Produk" (mis. Parfum Botol, Refill). Daftar Jenis Produk diatur di menu Penjualan → Jenis Produk. Tidak mengubah harga, stok, atau tampilan POS.',

@@ -1284,6 +1284,11 @@
             <i class="bi bi-journal-text"></i>
             <span>Panduan</span>
         </a>
+        <a href="{{ route('kamus-menu.index') }}"
+           class="nav-link {{ request()->routeIs('kamus-menu.*') ? 'active' : '' }}">
+            <i class="bi bi-search-heart"></i>
+            <span>Kamus Menu</span>
+        </a>
 
         <!-- KEAMANAN -->
         @if(isset($authUser) && ($authUser->isTeknisi() || $authUser->canAny(['lihat_audit_log', 'lihat_data_terhapus', 'lihat_backup'])))
@@ -1339,6 +1344,9 @@
                 onclick="toggleDarkMode()" title="Ganti tema">
             <i class="bi bi-moon-stars" id="darkModeIcon" style="font-size:0.9rem"></i>
         </button>
+
+        <!-- Porting Dimsum 4.50 — Kamus Menu: penjelasan menu yang sedang dibuka -->
+        <x-kamus-menu-tombol />
 
         <!-- Bell Notification Component -->
         <x-notification-bell />

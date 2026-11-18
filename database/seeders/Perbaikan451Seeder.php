@@ -16,6 +16,25 @@ class Perbaikan451Seeder extends Seeder
 
     public function run(): void
     {
+        // BABA (keputusan Owner P6, 18 Nov 2026): Backup Database menampilkan cadangan harian dari cron server.
+        Panduan::updateOrCreate(['slug' => 'backup-database'], [
+            'judul' => 'Backup Database', 'modul' => 'keamanan', 'urutan' => 30, 'aktif' => true,
+            'konten' => <<<'MD'
+## Tujuan
+Melihat dan mengunduh **cadangan database ERP** yang dibuat otomatis setiap hari.
+
+## Langkah-langkah
+1. Buka **Keamanan → Backup Database**.
+2. Lihat status: **Aman** bila cadangan terbaru dibuat kurang dari 26 jam yang lalu.
+3. Klik **Unduh** untuk menyimpan salinan di komputer atau penyimpanan lain (sesekali, mis. seminggu sekali).
+
+## Catatan Penting
+- Cadangan dibuat oleh **cron server** setiap hari jam 02.00 dan disimpan 14 hari (yang lebih lama terhapus otomatis). Cara memasangnya ada di **Pengaturan → Jadwal Otomatis** (Owner).
+- Tidak ada lagi tombol "Buat backup" — cara lama itu tidak bisa berjalan di server hosting.
+- File cadangan berisi seluruh data ERP. Jangan dibagikan.
+MD,
+        ]);
+
         foreach ($this->sections() as $slug => $konten) {
             $panduan = Panduan::where('slug', $slug)->first();
             if (! $panduan || str_contains((string) $panduan->konten, self::MARKER)) {

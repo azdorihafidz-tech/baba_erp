@@ -412,6 +412,10 @@ Route::middleware(['auth', 'verified', 'cabang'])->group(function () {
             ->name('user.reset-password');
     });
 
+    // ===== KAMUS MENU (porting Dimsum 4.50, semua user login; entri ikut izin & paket menunya) =====
+    Route::get('/kamus-menu', [\App\Http\Controllers\KamusMenuController::class, 'index'])->name('kamus-menu.index');
+    Route::get('/kamus-menu/{slug}', [\App\Http\Controllers\KamusMenuController::class, 'show'])->name('kamus-menu.show');
+
     // ===== Tim IT (porting Dimsum 4.53) — khusus akun Tim IT =====
     Route::middleware('role:teknisi')->prefix('tim-it')->name('tim-it.')->controller(\App\Http\Controllers\TimItController::class)->group(function () {
         Route::get('/', 'index')->name('index');

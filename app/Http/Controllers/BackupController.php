@@ -2,93 +2,62 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Artisan;
-use Illuminate\Support\Facades\Storage;
+use App\Services\JadwalOtomatisService;
 
+/**
+ * Keamanan → Backup Database. Porting Dimsum 4.50 audit + keputusan Owner P6 (18 Nov 2026):
+ * dulu memakai `backup:run` (spatie) yang gagal di hosting (proc_open mati). Cadangan sungguhan kini dibuat
+ * cron cPanel tiap hari (lihat Pengaturan › Jadwal Otomatis) — halaman ini menampilkan & mengunduh file itu.
+ */
 class BackupController extends Controller
 {
-    private string $disk = 'local';
-    private string $folder = 'backups';
+    private const POLA = '/^erp-\d{8}-\d{4}\.sql\.gz$/';
+
+    public function __construct(private JadwalOtomatisService $jadwal)
+    {
+    }
 
     public function index()
     {
         abort_unless(auth()->user()->can('lihat_backup'), 403, 'Anda tidak memiliki akses ke Backup Database.');
 
-        $files = $this->getBackupFiles();
-        return view('backup.index', compact('files'));
+        return view('backup.index', [
+            'files' => $this->jadwal->cadangan(),
+            'sehat' => $this->jadwal->cadanganSehat(),
+            'simpanHari' => JadwalOtomatisService::SIMPAN_CADANGAN_HARI,
+        ]);
     }
 
+    /** Tombol lama "Buat backup" — tidak dipakai lagi (gagal di hosting). */
     public function run()
     {
         abort_unless(auth()->user()->can('buat_backup'), 403, 'Anda tidak memiliki akses untuk membuat backup.');
 
-        try {
-            Artisan::call('backup:run', ['--only-db' => true, '--disable-notifications' => true]);
-            $output = Artisan::output();
-            return back()->with('success', 'Backup berhasil dibuat. ' . trim($output));
-        } catch (\Exception $e) {
-            return back()->with('error', 'Backup gagal: ' . $e->getMessage());
-        }
+        return back()->with('warning', 'Cadangan database dibuat otomatis setiap hari jam 02.00 oleh server. Cara memasangnya ada di Pengaturan › Jadwal Otomatis.');
     }
 
     public function download(string $filename)
     {
         abort_unless(auth()->user()->can('download_backup'), 403, 'Anda tidak memiliki akses untuk download backup.');
+        $path = $this->path($filename);
 
-        $path = $this->folder . '/' . $filename;
-        if (!Storage::disk($this->disk)->exists($path)) {
-            abort(404, 'File backup tidak ditemukan.');
-        }
-        return Storage::disk($this->disk)->download($path);
+        return response()->download($path, $filename, ['Content-Type' => 'application/gzip']);
     }
 
     public function destroy(string $filename)
     {
         abort_unless(auth()->user()->can('hapus_backup'), 403, 'Anda tidak memiliki akses untuk menghapus backup.');
+        @unlink($this->path($filename));
 
-        $path = $this->folder . '/' . $filename;
-        if (Storage::disk($this->disk)->exists($path)) {
-            Storage::disk($this->disk)->delete($path);
-        }
-        return back()->with('success', "Backup {$filename} berhasil dihapus.");
+        return back()->with('success', "Cadangan {$filename} dihapus.");
     }
 
-    private function getBackupFiles(): array
+    private function path(string $filename): string
     {
-        $files = [];
+        abort_unless(preg_match(self::POLA, $filename) === 1, 404, 'File cadangan tidak ditemukan.');
+        $path = $this->jadwal->folderCadangan() . DIRECTORY_SEPARATOR . $filename;
+        abort_unless(is_file($path), 404, 'File cadangan tidak ditemukan.');
 
-        // Cari semua file zip di semua subfolder backup
-        $allFiles = Storage::disk($this->disk)->allFiles($this->folder);
-
-        foreach ($allFiles as $filePath) {
-            if (!str_ends_with($filePath, '.zip')) {
-                continue;
-            }
-            $size    = Storage::disk($this->disk)->size($filePath);
-            $lastMod = Storage::disk($this->disk)->lastModified($filePath);
-
-            $files[] = [
-                'path'      => $filePath,
-                'name'      => basename($filePath),
-                'folder'    => dirname($filePath),
-                'size'      => $this->formatSize($size),
-                'size_raw'  => $size,
-                'date'      => \Carbon\Carbon::createFromTimestamp($lastMod)->format('d/m/Y H:i'),
-                'timestamp' => $lastMod,
-            ];
-        }
-
-        usort($files, fn($a, $b) => $b['timestamp'] - $a['timestamp']);
-
-        return $files;
-    }
-
-    private function formatSize(int $bytes): string
-    {
-        if ($bytes >= 1073741824) return round($bytes / 1073741824, 2) . ' GB';
-        if ($bytes >= 1048576)    return round($bytes / 1048576, 2)    . ' MB';
-        if ($bytes >= 1024)       return round($bytes / 1024, 2)       . ' KB';
-        return $bytes . ' B';
+        return $path;
     }
 }
