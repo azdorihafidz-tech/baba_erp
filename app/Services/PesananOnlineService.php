@@ -818,7 +818,7 @@ class PesananOnlineService
     public function kabariStaf(PesananOnline $p, string $kejadian): void
     {
         try {
-            $staf = User::where('is_active', true)->get()->filter(fn (User $u) => $u->can('toko_online.pesanan'));
+            $staf = User::pelanggan()->where('is_active', true)->get()->filter(fn (User $u) => $u->can('toko_online.pesanan'));
             NotificationService::send($staf, new PesananOnlineNotification($p, $kejadian));
         } catch (\Throwable $e) {
             Log::warning(__METHOD__ . " {$p->nomor}: " . $e->getMessage());

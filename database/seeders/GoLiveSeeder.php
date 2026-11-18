@@ -74,6 +74,7 @@ class GoLiveSeeder extends Seeder
             PrinterBabaSeeder::class,           // BABA Tahap 6b — panduan cetak struk tanpa pilih printer
             StokOpnameSeeder::class,            // BABA Tahap 7 — izin, COA, kategori, panduan Stok Opname
             JadwalOtomatisSeeder::class,          // BABA Tahap 8 — saklar tugas otomatis + panduan
+            PaketLanggananSeeder::class,         // Porting Dimsum 4.53 — panduan Tim IT, Aktivitas Tim IT, Paket & Langganan
             IstilahBabaSeeder::class,            // BABA Tahap 4–5 — istilah parfum di panduan & tooltip (setelah semua panduan dibuat)
         ]);
 

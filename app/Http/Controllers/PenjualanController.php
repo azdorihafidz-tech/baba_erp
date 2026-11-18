@@ -533,7 +533,7 @@ class PenjualanController extends Controller
         $this->pastikanBolehLihat($order);
         $order->load(['cabang', 'kasir', 'pelanggan', 'items.item', 'dikerjakanOleh', 'parentOrder', 'childOrders']);
 
-        $isOwner = auth()->user()->role === \App\Enums\RoleUser::Owner;
+        $isOwner = auth()->user()->aksesPenuh();
 
         $riwayatPembatalan = \Spatie\Activitylog\Models\Activity::where('subject_type', Order::class)
             ->where('subject_id', $order->id)
@@ -614,7 +614,7 @@ class PenjualanController extends Controller
         if ($order->customer_type === 'internal') { // 4.49 — nilainya sudah tercatat di kas cabang tujuan
             return redirect()->route('penjualan.show', $order)->with('error', 'Kiriman/retur antar cabang tidak bisa diedit. Gunakan Tolak/Batalkan atau Retur.');
         }
-        $isOwner = auth()->user()->role === \App\Enums\RoleUser::Owner;
+        $isOwner = auth()->user()->aksesPenuh();
         if (!$isOwner && in_array($order->status, [StatusOrder::Selesai, StatusOrder::Dibatalkan])) {
             return redirect()->route('penjualan.show', $order)
                 ->with('error', "Order berstatus '{$order->status->label()}' tidak bisa diedit.");
@@ -633,7 +633,7 @@ class PenjualanController extends Controller
         if ($order->customer_type === 'internal') { // 4.49
             return back()->with('error', 'Kiriman/retur antar cabang tidak bisa diedit. Gunakan Tolak/Batalkan atau Retur.');
         }
-        $isOwner = auth()->user()->role === \App\Enums\RoleUser::Owner;
+        $isOwner = auth()->user()->aksesPenuh();
         if (!$isOwner && in_array($order->status, [StatusOrder::Selesai, StatusOrder::Dibatalkan])) {
             return back()->with('error', "Order berstatus '{$order->status->label()}' tidak bisa diedit.");
         }
@@ -674,7 +674,7 @@ class PenjualanController extends Controller
         // Rule: non-Owner cuma boleh batalkan order yang dibuat HARI INI.
         // Owner bypass (existing Gate::before juga sudah bypass abort_unless di atas,
         // tapi rule tanggal ini terpisah dari permission, jadi dicek manual).
-        $isOwner    = auth()->user()->role === \App\Enums\RoleUser::Owner;
+        $isOwner    = auth()->user()->aksesPenuh();
         $isHariSama = $order->created_at->isToday();
 
         if (!$isOwner && !$isHariSama) {

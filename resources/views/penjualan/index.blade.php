@@ -3,7 +3,7 @@
 @section('title', 'Riwayat Penjualan')
 
 @section('content')
-@php $isOwner = auth()->user()->role === \App\Enums\RoleUser::Owner; @endphp
+@php $isOwner = auth()->user()->aksesPenuh(); @endphp
 <div class="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-2 mb-3">
     <h5 class="mb-0 fw-bold"><i class="bi bi-cart3 me-2 text-success"></i>Riwayat Penjualan</h5>
     <div class="d-flex gap-2 align-items-center">
@@ -99,7 +99,7 @@
                                     <i class="bi bi-printer-fill"></i><sub style="font-size:8px">2x</sub>
                                 </button>
                                 @can('order.edit')
-                                @if(auth()->user()->role === \App\Enums\RoleUser::Owner || !in_array($o->status, [\App\Enums\StatusOrder::Selesai, \App\Enums\StatusOrder::Dibatalkan]))
+                                @if(auth()->user()->aksesPenuh() || !in_array($o->status, [\App\Enums\StatusOrder::Selesai, \App\Enums\StatusOrder::Dibatalkan]))
                                 <a href="{{ route('penjualan.edit', $o) }}" class="btn btn-outline-warning" title="Edit">
                                     <i class="bi bi-pencil"></i>
                                 </a>
@@ -169,7 +169,7 @@
                     <i class="bi bi-printer-fill"></i><sub style="font-size:8px">2x</sub>
                 </button>
                 @can('order.edit')
-                @if(auth()->user()->role === \App\Enums\RoleUser::Owner || !in_array($o->status, [\App\Enums\StatusOrder::Selesai, \App\Enums\StatusOrder::Dibatalkan]))
+                @if(auth()->user()->aksesPenuh() || !in_array($o->status, [\App\Enums\StatusOrder::Selesai, \App\Enums\StatusOrder::Dibatalkan]))
                 <a href="{{ route('penjualan.edit', $o) }}" class="btn btn-sm btn-outline-warning">
                     <i class="bi bi-pencil"></i>
                 </a>

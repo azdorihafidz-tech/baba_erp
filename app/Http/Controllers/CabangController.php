@@ -76,7 +76,7 @@ class CabangController extends Controller
      */
     public function create()
     {
-        $users = User::where('is_active', true)
+        $users = User::pelanggan()->where('is_active', true)
             ->whereIn('role', ['manajer_cabang', 'admin_gudang', 'owner', 'admin_pusat'])
             ->orderBy('name')
             ->get();
@@ -183,7 +183,7 @@ class CabangController extends Controller
      */
     public function edit(Cabang $cabang)
     {
-        $users = User::where('is_active', true)
+        $users = User::pelanggan()->where('is_active', true)
             ->whereIn('role', ['manajer_cabang', 'admin_gudang', 'owner', 'admin_pusat'])
             ->orderBy('name')
             ->get();

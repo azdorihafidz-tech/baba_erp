@@ -37,7 +37,7 @@ class PengingatStokOpname extends Command
             return self::SUCCESS;
         }
         $penerima = [];
-        $users = User::where('is_active', true)->with('cabangs')->get();
+        $users = User::pelanggan()->where('is_active', true)->with('cabangs')->get();
         foreach ($belum as $c) {
             $mitra = StokOpnameService::lokasiMitra($c);
             foreach ($users as $u) {

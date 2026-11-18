@@ -11,6 +11,8 @@ enum RoleUser: string
     case Kasir = 'kasir';
     case OperatorProduksi = 'operator_produksi';
     case Helper = 'helper';
+    /** Tim IT penyedia aplikasi — tersembunyi dari pelanggan (porting Dimsum 4.53, _rancangan/RANCANGAN-KAMUS-TIMIT-PAKET.md). */
+    case Teknisi = 'teknisi';
 
     public function label(): string
     {
@@ -22,11 +24,12 @@ enum RoleUser: string
             RoleUser::Kasir => 'Kasir',
             RoleUser::OperatorProduksi => 'Operator Produksi',
             RoleUser::Helper => 'Helper',
+            RoleUser::Teknisi => 'Tim IT',
         };
     }
 
     public function canAccessAllBranches(): bool
     {
-        return in_array($this, [self::Owner, self::AdminPusat]);
+        return in_array($this, [self::Owner, self::AdminPusat, self::Teknisi]);
     }
 }

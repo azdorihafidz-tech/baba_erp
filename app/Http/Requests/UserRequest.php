@@ -35,7 +35,7 @@ class UserRequest extends FormRequest
             ],
             'telepon'     => ['nullable', 'string', 'max:20'],
             // 4.43: role Owner hanya boleh diberikan oleh Owner
-            'role'        => ['required', Rule::in(\App\Support\Roles::values($this->user()?->role === RoleUser::Owner))],
+            'role'        => ['required', Rule::in(\App\Support\Roles::values($this->user()?->aksesPenuh() ?? false))],
             'is_active'   => ['sometimes', 'boolean'],
             'cabang_ids'  => ['nullable', 'array'],
             'cabang_ids.*'=> $cabangRule,

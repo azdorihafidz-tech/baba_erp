@@ -320,7 +320,7 @@ class ReturOnlineService
     private function kabariStaf(ReturOnline $r): void
     {
         try {
-            $staf = User::where('is_active', true)->get()->filter(fn (User $u) => $u->can('toko_online.pesanan'));
+            $staf = User::pelanggan()->where('is_active', true)->get()->filter(fn (User $u) => $u->can('toko_online.pesanan'));
             NotificationService::send($staf, new ReturOnlineNotification($r));
         } catch (\Throwable $e) {
             Log::warning(__METHOD__ . " {$r->nomor}: " . $e->getMessage());

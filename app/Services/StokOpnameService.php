@@ -120,8 +120,8 @@ class StokOpnameService
             'periksa' => $o->status === 'hitung' && $u->can('stok_opname.ajukan'),
             'batal'   => $o->berjalan && $u->can('stok_opname.batal'),
             'setujui' => $o->status === 'diajukan' && $u->can('stok_opname.setujui')
-                // penghitung tidak menyetujui hitungannya sendiri — kecuali Owner & pemilik toko mitra (stoknya sendiri)
-                && ($u->role === \App\Enums\RoleUser::Owner || $o->milik_mitra || ! in_array((int) $u->id, $this->penghitungIds($o), true)),
+                // penghitung tidak menyetujui hitungannya sendiri — kecuali Owner/Tim IT & pemilik toko mitra (stoknya sendiri)
+                && ($u->aksesPenuh() || $o->milik_mitra || ! in_array((int) $u->id, $this->penghitungIds($o), true)),
             default   => false,
         };
     }
@@ -696,7 +696,7 @@ class StokOpnameService
         try {
             $o->loadMissing('cabang');
             if ($kejadian === 'diajukan') {
-                $ke = User::where('is_active', true)->get()->filter(fn (User $x) => $x->id !== $pelaku->id && $this->boleh($x, $o, 'setujui'));
+                $ke = User::pelanggan()->where('is_active', true)->get()->filter(fn (User $x) => $x->id !== $pelaku->id && $this->boleh($x, $o, 'setujui'));
             } else {
                 $ids = array_unique(array_filter(array_merge([(int) $o->diajukan_oleh, (int) $o->dibuat_oleh], $this->penghitungIds($o))));
                 $ke = User::where('is_active', true)->whereIn('id', $ids)->where('id', '!=', $pelaku->id)->get();

@@ -64,6 +64,23 @@ class User extends Authenticatable
         return $this->defaultCabang()?->id;
     }
 
+    public function isTeknisi(): bool
+    {
+        return $this->role === RoleUser::Teknisi;
+    }
+
+    /** Owner pelanggan atau Tim IT — semua yang dulu "khusus Owner". Hak baru "khusus Owner" WAJIB memakai ini. */
+    public function aksesPenuh(): bool
+    {
+        return $this->role === RoleUser::Owner || $this->role === RoleUser::Teknisi;
+    }
+
+    /** User milik pelanggan (bukan Tim IT) — dipakai di daftar/pilihan user & penerima notifikasi. */
+    public function scopePelanggan($query)
+    {
+        return $query->where('users.role', '<>', RoleUser::Teknisi->value);
+    }
+
     public function canAccessAllBranches(): bool
     {
         return $this->role?->canAccessAllBranches() ?? false;
@@ -78,8 +95,8 @@ class User extends Authenticatable
      */
     public function hasPermission(string $permission): bool
     {
-        // Owner selalu bisa segalanya
-        if ($this->role === RoleUser::Owner) {
+        // Owner & Tim IT selalu bisa segalanya
+        if ($this->aksesPenuh()) {
             return true;
         }
 
@@ -105,7 +122,7 @@ class User extends Authenticatable
      */
     public function getPermissions(): array
     {
-        if ($this->role === RoleUser::Owner) {
+        if ($this->aksesPenuh()) {
             return Permission::pluck('name')->toArray();
         }
 

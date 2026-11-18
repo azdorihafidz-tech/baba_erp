@@ -124,7 +124,7 @@ class AppServiceProvider extends ServiceProvider
 
         // Owner bypass semua gate check
         Gate::before(function (User $user, string $ability) {
-            if ($user->role?->value === 'owner') {
+            if ($user->aksesPenuh()) { // Owner & Tim IT
                 return true;
             }
         });
@@ -169,6 +169,13 @@ class AppServiceProvider extends ServiceProvider
         Event::listen(NotificationSent::class, SendBellPusherSignal::class);
 
         // On-request recurring trigger: generate sekali per hari tanpa perlu cron
+        // Aktivitas Tim IT — catat setiap login akun Tim IT (porting Dimsum 4.53)
+        Event::listen(\Illuminate\Auth\Events\Login::class, function ($e) {
+            if (method_exists($e->user, 'isTeknisi') && $e->user->isTeknisi()) {
+                activity('TimIT')->causedBy($e->user)->withProperties(['ip' => request()->ip()])->log('Login');
+            }
+        });
+
         $this->triggerRecurringIfNeeded();
     }
 

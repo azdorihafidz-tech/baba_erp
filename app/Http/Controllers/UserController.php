@@ -15,7 +15,7 @@ class UserController extends Controller
     public function index(Request $request)
     {
         $authUser = $request->user();
-        $query = User::with('cabangs');
+        $query = User::with('cabangs')->pelanggan(); // akun Tim IT tidak tampil ke pelanggan
 
         // Role tanpa akses semua cabang hanya lihat user di cabangnya sendiri
         if (! $authUser->canAccessAllBranches()) {
@@ -59,8 +59,8 @@ class UserController extends Controller
         $roles = \App\Support\Roles::semua()->all(); // Tahap D 4.38: + role buatan
 
         $stats = [
-            'total'  => User::count(),
-            'aktif'  => User::where('is_active', true)->count(),
+            'total'  => User::pelanggan()->count(),
+            'aktif'  => User::pelanggan()->where('is_active', true)->count(),
             'owner'  => User::where('role', 'owner')->count() + User::where('role', 'admin_pusat')->count(),
             'staff'  => User::whereIn('role', ['kasir', 'operator_produksi'])->count(),
         ];
@@ -71,7 +71,7 @@ class UserController extends Controller
     public function create(Request $request)
     {
         $authUser = $request->user();
-        $roles = \App\Support\Roles::semua($authUser->role === RoleUser::Owner)->all(); // 4.43: Owner hanya oleh Owner
+        $roles = \App\Support\Roles::semua($authUser->aksesPenuh())->all(); // 4.43: Owner hanya oleh Owner
         $cabangs = $authUser->canAccessAllBranches()
             ? Cabang::aktif()->orderBy('nama_cabang')->get()
             : $authUser->cabangs()->aktif()->get();
@@ -121,7 +121,7 @@ class UserController extends Controller
 
         $this->pastikanBolehKelola($user);
 
-        $roles   = \App\Support\Roles::semua($authUser->role === RoleUser::Owner)->all(); // 4.43: Owner hanya oleh Owner
+        $roles   = \App\Support\Roles::semua($authUser->aksesPenuh())->all(); // 4.43: Owner hanya oleh Owner
         $cabangs = $authUser->canAccessAllBranches()
             ? Cabang::aktif()->orderBy('nama_cabang')->get()
             : $authUser->cabangs()->aktif()->get();
@@ -240,7 +240,12 @@ class UserController extends Controller
     {
         $authUser = auth()->user();
 
-        if ($user->role === RoleUser::Owner && $authUser->role !== RoleUser::Owner) {
+        // Akun Tim IT dikelola di menu Tim IT, tidak terlihat dari Manajemen User
+        if ($user->isTeknisi()) {
+            abort(404);
+        }
+
+        if ($user->role === RoleUser::Owner && ! $authUser->aksesPenuh()) {
             abort(403, 'Hanya Owner yang boleh mengubah akun Owner.');
         }
 

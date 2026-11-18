@@ -412,7 +412,16 @@ Route::middleware(['auth', 'verified', 'cabang'])->group(function () {
             ->name('user.reset-password');
     });
 
-    // ===== MANAJEMEN ROLE & PERMISSION (Owner only) =====
+    // ===== Tim IT (porting Dimsum 4.53) — khusus akun Tim IT =====
+    Route::middleware('role:teknisi')->prefix('tim-it')->name('tim-it.')->controller(\App\Http\Controllers\TimItController::class)->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::post('/', 'store')->name('store');
+        Route::post('/{user}/toggle', 'toggle')->name('toggle');
+        Route::post('/{user}/password', 'resetPassword')->name('password');
+    });
+    Route::get('/aktivitas-tim-it', [\App\Http\Controllers\AktivitasTimItController::class, 'index'])->name('aktivitas-tim-it.index');
+
+    // ===== MANAJEMEN ROLE & PERMISSION (Owner & Tim IT — RoleMiddleware) =====
     Route::middleware('role:owner')->group(function () {
         Route::get('/role', [RoleController::class, 'index'])->name('role.index');
         Route::post('/role/{role}/permissions', [RoleController::class, 'updatePermissions'])

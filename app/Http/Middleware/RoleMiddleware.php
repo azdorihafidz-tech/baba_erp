@@ -21,6 +21,11 @@ class RoleMiddleware
 
         $userRole = $request->user()->role?->value;
 
+        // Tim IT lolos di semua halaman "khusus Owner"
+        if ($userRole === RoleUser::Teknisi->value && in_array(RoleUser::Owner->value, $roles, true)) {
+            return $next($request);
+        }
+
         if (empty($roles) || in_array($userRole, $roles)) {
             return $next($request);
         }
